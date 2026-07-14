@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ArrowLeft, Loader2, Plus, Save, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
+import ImageUpload from '../components/ImageUpload';
 import {
   buildProductFormFromProduct,
   buildProductPayloadFromForm,
@@ -470,30 +471,58 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
                 <label htmlFor="image" className="mb-2 block text-sm font-semibold text-brand-dark">
                   Main Image URL
                 </label>
-                <input
-                  id="image"
-                  name="image"
-                  type="text"
-                  value={form.image}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                />
+                <div className="space-y-2">
+                  <input
+                    id="image"
+                    name="image"
+                    type="text"
+                    value={form.image}
+                    onChange={handleChange}
+                    placeholder="https://..."
+                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                  />
+                  <ImageUpload
+                    label=""
+                    folder="products"
+                    onUploadSuccess={(url) => {
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        image: url,
+                      }));
+                    }}
+                  />
+                </div>
               </div>
 
               <div>
                 <label htmlFor="imageList" className="mb-2 block text-sm font-semibold text-brand-dark">
                   Additional Image URLs
                 </label>
-                <textarea
-                  id="imageList"
-                  name="imageList"
-                  rows="4"
-                  value={form.imageList}
-                  onChange={handleChange}
-                  placeholder="One image URL per line"
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                />
+                <div className="space-y-2">
+                  <textarea
+                    id="imageList"
+                    name="imageList"
+                    rows="4"
+                    value={form.imageList}
+                    onChange={handleChange}
+                    placeholder="One image URL per line"
+                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                  />
+                  <ImageUpload
+                    label=""
+                    folder="products"
+                    onUploadSuccess={(url) => {
+                      setForm((currentForm) => {
+                        const currentList = currentForm.imageList ? currentForm.imageList.trim() : '';
+                        const nextList = currentList ? `${currentList}\n${url}` : url;
+                        return {
+                          ...currentForm,
+                          imageList: nextList,
+                        };
+                      });
+                    }}
+                  />
+                </div>
               </div>
 
               <div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import ImageUpload from '../components/ImageUpload';
 import {
   ArrowLeft,
   BarChart3,
@@ -516,7 +517,10 @@ const AdminProfessionalPage = () => {
               <div className="grid gap-6">
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field label="Banner Title" value={bannerForm.title} onChange={(value) => setBannerForm((form) => ({ ...form, title: value }))} />
-                  <Field label="Banner Image" value={bannerForm.image} onChange={(value) => setBannerForm((form) => ({ ...form, image: value }))} />
+                  <div className="space-y-2">
+                    <Field label="Banner Image" value={bannerForm.image} onChange={(value) => setBannerForm((form) => ({ ...form, image: value }))} />
+                    <ImageUpload label="" folder="banners" onUploadSuccess={(url) => setBannerForm((form) => ({ ...form, image: url }))} />
+                  </div>
                   <Field label="Banner Subtitle" value={bannerForm.subtitle} onChange={(value) => setBannerForm((form) => ({ ...form, subtitle: value }))} />
                   <Field label="Link URL" value={bannerForm.linkUrl} onChange={(value) => setBannerForm((form) => ({ ...form, linkUrl: value }))} />
                 </div>
@@ -526,7 +530,10 @@ const AdminProfessionalPage = () => {
                   <Field label="Section Key" value={sectionForm.key} onChange={(value) => setSectionForm((form) => ({ ...form, key: value }))} />
                   <Field label="Section Title" value={sectionForm.title} onChange={(value) => setSectionForm((form) => ({ ...form, title: value }))} />
                   <Field label="Section Body" value={sectionForm.body} onChange={(value) => setSectionForm((form) => ({ ...form, body: value }))} textarea />
-                  <Field label="Section Image" value={sectionForm.image} onChange={(value) => setSectionForm((form) => ({ ...form, image: value }))} />
+                  <div className="space-y-2">
+                    <Field label="Section Image" value={sectionForm.image} onChange={(value) => setSectionForm((form) => ({ ...form, image: value }))} />
+                    <ImageUpload label="" folder="sections" onUploadSuccess={(url) => setSectionForm((form) => ({ ...form, image: url }))} />
+                  </div>
                 </div>
                 <button type="button" onClick={saveHomepageSection} className="self-start rounded-md bg-brand-primary px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-white">Save Section</button>
 
@@ -554,7 +561,10 @@ const AdminProfessionalPage = () => {
             <Section icon={Image} title="Media Library">
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Title" value={mediaForm.title} onChange={(value) => setMediaForm((form) => ({ ...form, title: value }))} />
-                <Field label="URL" value={mediaForm.url} onChange={(value) => setMediaForm((form) => ({ ...form, url: value }))} />
+                <div className="space-y-2">
+                  <Field label="URL" value={mediaForm.url} onChange={(value) => setMediaForm((form) => ({ ...form, url: value }))} />
+                  <ImageUpload label="" folder="media-library" onUploadSuccess={(url) => setMediaForm((form) => ({ ...form, url }))} />
+                </div>
                 <Field label="Alt Text" value={mediaForm.altText} onChange={(value) => setMediaForm((form) => ({ ...form, altText: value }))} />
                 <Field label="Folder" value={mediaForm.folder} onChange={(value) => setMediaForm((form) => ({ ...form, folder: value }))} />
                 <Field label="Tags CSV" value={mediaForm.tags} onChange={(value) => setMediaForm((form) => ({ ...form, tags: value }))} />

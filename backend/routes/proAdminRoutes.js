@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import {
   archiveMedia,
   bulkOrderActions,
@@ -18,6 +19,7 @@ import {
   upsertMedia,
   upsertPolicy,
   upsertStaffUser,
+  uploadImage,
 } from '../controllers/proAdminController.js';
 import { protect, requirePermission } from '../middleware/authMiddleware.js';
 import { PERMISSIONS } from '../utils/permissions.js';
@@ -60,6 +62,19 @@ router.route('/cms/faqs').post(protect, requirePermission(PERMISSIONS.CMS_MANAGE
 router.route('/cms/faqs/:id').put(protect, requirePermission(PERMISSIONS.CMS_MANAGE), upsertFaq);
 router.route('/cms/policies').post(protect, requirePermission(PERMISSIONS.CMS_MANAGE), upsertPolicy);
 router.route('/cms/policies/:id').put(protect, requirePermission(PERMISSIONS.CMS_MANAGE), upsertPolicy);
+
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
+
+router.route('/upload').post(
+  protect,
+  requirePermission(PERMISSIONS.MEDIA_MANAGE),
+  upload.single('image'),
+  uploadImage
+);
 
 router
   .route('/media')

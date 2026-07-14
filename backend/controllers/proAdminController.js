@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import cloudinary from '../config/cloudinary.js';
 import AuditLog from '../models/auditLogModel.js';
 import Category from '../models/categoryModel.js';
 import MediaAsset from '../models/mediaAssetModel.js';
@@ -675,6 +676,31 @@ const getPublicPolicy = async (req, res) => {
   res.json(policy);
 };
 
+const uploadImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  const uploadStream = cloudinary.uploader.upload_stream(
+    { folder: 'apex-spices' },
+    (error, result) => {
+      if (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({ message: 'Cloudinary upload failed' });
+      }
+      res.status(200).json({
+        url: result.secure_url,
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height,
+        sizeBytes: result.bytes,
+      });
+    }
+  );
+
+  uploadStream.end(req.file.buffer);
+};
+
 export {
   archiveMedia,
   bulkOrderActions,
@@ -694,4 +720,5 @@ export {
   upsertMedia,
   upsertPolicy,
   upsertStaffUser,
+  uploadImage,
 };
