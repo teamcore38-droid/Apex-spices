@@ -7,6 +7,9 @@ const users = [
     email: 'admin@apexlinkgroup.com',
     password: bcrypt.hashSync('password123', 10),
     isAdmin: true,
+    security: {
+      adminTwoFactorEnabled: false,
+    },
   },
   {
     name: 'John Doe',
