@@ -99,21 +99,10 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  const stateMap = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting',
-  };
-
-  res.json({
+  res.status(200).json({
     status: 'ok',
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
-    database: {
-      state: stateMap[mongoose.connection.readyState] || 'unknown',
-    },
+    service: 'ApexLink Backend'
   });
 });
 
