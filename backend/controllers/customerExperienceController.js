@@ -53,13 +53,13 @@ const buildSearchFilter = (query = {}) => {
     filters.push({ origin: { $regex: new RegExp(escapeRegex(origin), 'i') } });
   }
 
-  const min = minPrice === '' ? null : Number(minPrice);
-  const max = maxPrice === '' ? null : Number(maxPrice);
+  const min = (minPrice === undefined || minPrice === null || minPrice === '') ? null : Number(minPrice);
+  const max = (maxPrice === undefined || maxPrice === null || maxPrice === '') ? null : Number(maxPrice);
 
-  if (!Number.isNaN(min) || !Number.isNaN(max)) {
+  if ((min !== null && !Number.isNaN(min)) || (max !== null && !Number.isNaN(max))) {
     const priceFilter = {};
-    if (!Number.isNaN(min) && min !== null) priceFilter.$gte = min;
-    if (!Number.isNaN(max) && max !== null) priceFilter.$lte = max;
+    if (min !== null && !Number.isNaN(min)) priceFilter.$gte = min;
+    if (max !== null && !Number.isNaN(max)) priceFilter.$lte = max;
     filters.push({ price: priceFilter });
   }
 
