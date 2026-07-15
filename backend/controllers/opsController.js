@@ -4,6 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { captureException } from '../utils/errorMonitoring.js';
 import { sendAlert } from '../utils/alertService.js';
+import Product from '../models/productModel.js';
+import User from '../models/userModel.js';
+import Order from '../models/orderModel.js';
+import Category from '../models/categoryModel.js';
+import products from '../data/products.js';
+import categories from '../data/categories.js';
+import users from '../data/users.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const startedAt = new Date();
@@ -106,6 +113,34 @@ const getOpenApi = async (_req, res) => {
   res.type('application/json').send(contents);
 };
 
+const seedDatabase = async (req, res) => {
+  if (req.query.secret !== 'ApexSpicesSeed123') {
+    return res.status(403).json({ message: 'Forbidden: Invalid seed secret' });
+  }
+
+  try {
+    await Order.deleteMany();
+    await Product.deleteMany();
+    await Category.deleteMany();
+    await User.deleteMany();
+
+    const createdUsers = await User.insertMany(users);
+    const adminUser = createdUsers[0]._id;
+
+    const sampleProducts = products.map((p) => {
+      return { ...p, user: adminUser };
+    });
+
+    await Product.insertMany(sampleProducts);
+    await Category.insertMany(categories);
+
+    res.json({ message: 'Database successfully seeded!' });
+  } catch (error) {
+    console.error('[opsController:seedDatabase]', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export {
   getMetrics,
   getOpenApi,
@@ -113,4 +148,5 @@ export {
   getReadiness,
   recordClientError,
   uptimeCheck,
+  seedDatabase,
 };
