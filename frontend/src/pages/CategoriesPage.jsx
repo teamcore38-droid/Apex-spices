@@ -26,7 +26,7 @@ const CategoriesPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] py-16">
+    <div className="min-h-screen bg-[#f4f7fb] pt-6 pb-16">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="relative overflow-hidden rounded-[32px] bg-brand-dark px-6 py-16 text-white shadow-2xl sm:px-10">
           <div className="absolute -right-16 top-0 h-48 w-48 rounded-full bg-brand-accent/20 blur-3xl" />
@@ -34,10 +34,10 @@ const CategoriesPage = () => {
           <div className="relative z-10 max-w-3xl">
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Browse by Collection</p>
             <h1 className="mt-4 font-serif text-4xl font-bold leading-tight sm:text-5xl">
-              Find the right industry for every sourcing need
+              Find the right category for every culinary need
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
-              Explore curated collections spanning textiles, food products, technology, industrial equipment, and more — all verified for premium quality.
+              Explore curated collections spanning whole spices, ground spices, and hand-crafted blends — all verified for premium quality.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link

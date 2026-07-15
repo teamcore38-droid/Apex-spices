@@ -641,7 +641,7 @@ const CheckoutInner = ({ stripeEnabled, stripe = null, elements = null }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] py-12">
+    <div className="min-h-screen bg-[#f7f9fc] pt-6 pb-12">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Checkout</p>

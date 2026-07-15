@@ -34,7 +34,7 @@ const ContactPage = () => {
       {
         icon: Mail,
         title: 'Email Support',
-        body: 'hello@apexlinkgroup.com\nwholesale@apexlinkgroup.com',
+        body: 'hello@apexspices.com\nwholesale@apexspices.com',
       },
     ],
     []
@@ -80,13 +80,13 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] py-16">
+    <div className="min-h-screen bg-[#fcfaf7] pt-6 pb-16">
       <div className="container mx-auto max-w-6xl px-4">
         <section className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Contact Apex Link Group</p>
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Contact Apex Spices</p>
           <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">Let’s make your next order effortless</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
-            Reach out for order support, wholesale inquiries, gifting help, or product questions. We aim to respond with the same care we bring to every product on our marketplace.
+            Reach out for order support, wholesale inquiries, gifting help, or product questions. We aim to respond with the same care we bring to every product in our collection.
           </p>
         </section>
 

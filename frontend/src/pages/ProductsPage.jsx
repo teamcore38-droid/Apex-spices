@@ -168,7 +168,7 @@ const ProductsPage = () => {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] py-16">
+    <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] pt-6 pb-16">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#e2e9f3] to-transparent opacity-70" />
       <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-multiply" />
 
