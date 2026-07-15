@@ -44,19 +44,13 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isReviewPaused, setIsReviewPaused] = useState(false);
-  const [heroBg, setHeroBg] = useState('/hero-background.webp');
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setHeroBg('/hero-background-mobile.webp');
-      } else {
-        setHeroBg('/hero-background.webp');
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const slideTimer = setInterval(() => {
+      setActiveSlide((prev) => (prev === 0 ? 1 : 0));
+    }, 6000);
+    return () => clearInterval(slideTimer);
   }, []);
 
   const testimonials = [
@@ -200,16 +194,51 @@ const HomePage = () => {
   return (
     <div>
       <div className="relative flex min-h-[88svh] items-center justify-center overflow-hidden bg-brand-dark md:h-[85vh] md:min-h-0">
-        <div
-          className="absolute inset-0 transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
-            opacity: 0.55,
-          }}
-        ></div>
+        {/* Hero Background Slider */}
+        {[
+          {
+            desktop: '/hero-background.webp',
+            mobile: '/hero-background-mobile.webp',
+          },
+          {
+            desktop: '/hero-background1.webp',
+            mobile: '/hero-background-mobile1.webp',
+          },
+        ].map((slide, index) => {
+          const isActive = activeSlide === index;
+          return (
+            <div
+              key={index}
+              className="absolute inset-0"
+              style={{
+                opacity: isActive ? 1 : 0,
+                transition: 'opacity 1500ms ease-in-out',
+              }}
+            >
+              {/* Desktop Background */}
+              <div
+                className="absolute inset-0 hidden md:block"
+                style={{
+                  backgroundImage: `url(${slide.desktop})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundAttachment: 'fixed',
+                  opacity: 0.55,
+                }}
+              />
+              {/* Mobile Background */}
+              <div
+                className="absolute inset-0 block md:hidden"
+                style={{
+                  backgroundImage: `url(${slide.mobile})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  opacity: 0.55,
+                }}
+              />
+            </div>
+          );
+        })}
         <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent opacity-85"></div>
         <div className="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center md:py-0">
           <span className="mb-3 block text-[11px] font-bold uppercase tracking-[0.26em] text-brand-accent md:mb-4 md:text-sm md:tracking-[0.3em]">
