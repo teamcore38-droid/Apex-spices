@@ -95,7 +95,8 @@ const getAdvancedSearch = async (req, res) => {
     Product.find(filter)
       .sort(sortMap[sort] || { isFeatured: -1, isBestSeller: -1, createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     Product.aggregate([
       { $match: filter },
       {

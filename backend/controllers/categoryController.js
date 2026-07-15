@@ -82,7 +82,7 @@ const getCategories = async (req, res) => {
 
     const filter = isAdminRequest ? {} : { isActive: true };
 
-    const categories = await Category.find(filter).sort({ displayOrder: 1, name: 1 });
+    const categories = await Category.find(filter).sort({ displayOrder: 1, name: 1 }).lean();
 
     res.json(categories);
   } catch (error) {
@@ -97,7 +97,7 @@ const getCategories = async (req, res) => {
 const getCategoryBySlug = async (req, res) => {
   try {
     const slug = slugify(req.params.slug);
-    const category = await Category.findOne({ slug, isActive: true });
+    const category = await Category.findOne({ slug, isActive: true }).lean();
 
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });

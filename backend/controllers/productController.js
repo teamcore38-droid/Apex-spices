@@ -189,7 +189,7 @@ const findProductByIdWithVisibility = async (productId, reqUser) => {
         ...buildActiveProductFilter(),
       };
 
-  return Product.findOne(filter);
+  return Product.findOne(filter).lean();
 };
 
 const buildCategoryFilter = async (categoryValue) => {
@@ -457,7 +457,8 @@ const getProducts = async (req, res) => {
     const products = await Product.find(queryFilter)
       .sort(sortOption)
       .skip(skip)
-      .limit(limitNumber);
+      .limit(limitNumber)
+      .lean();
 
     res.json(
       buildPaginationPayload({
@@ -505,7 +506,7 @@ const getProductBySlug = async (req, res) => {
     const product = await Product.findOne({
       slug,
       ...(hasPermission(req.user, 'catalog:read') ? {} : buildActiveProductFilter()),
-    });
+    }).lean();
 
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
