@@ -39,9 +39,9 @@ const Header = () => {
         <Link to="/" className="flex flex-col items-center">
           <div className="flex items-center gap-2 text-lg font-serif font-bold uppercase tracking-[0.14em] text-brand-accent sm:text-xl sm:tracking-[0.18em] lg:text-2xl lg:tracking-widest">
             <img
-              src="/Apex Logo.jpg"
+              src="/logo.webp"
               alt="Apex Spices logo"
-              className="h-10 w-10 rounded-full object-cover ring-1 ring-white/20 sm:h-12 sm:w-12"
+              className="h-10 w-auto object-contain sm:h-12"
             />
             <span className="whitespace-nowrap">APEX SPICES</span>
           </div>
