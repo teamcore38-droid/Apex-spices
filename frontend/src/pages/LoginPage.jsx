@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
+import { LockKeyhole, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
@@ -49,7 +50,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="bg-[#f7f9fc] py-20">
+    <div className="bg-[#fcfaf7] py-20">
       <div className="container mx-auto flex justify-center px-4">
         <div className="w-full max-w-md rounded-[32px] bg-white p-8 shadow-[0_18px_40px_rgba(11,31,58,0.08)] border border-gray-100">
           <div className="text-center">
@@ -78,7 +79,7 @@ const LoginPage = () => {
                       required
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                      className="w-full rounded-xl border border-gray-200 bg-[#fcfaf7] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -97,13 +98,20 @@ const LoginPage = () => {
                   <div className="relative">
                     <LockKeyhole size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                      className="w-full rounded-xl border border-gray-200 bg-[#fcfaf7] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                       placeholder="Enter your password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-primary focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
               </>
@@ -118,7 +126,7 @@ const LoginPage = () => {
                     inputMode="numeric"
                     value={twoFactorCode}
                     onChange={(event) => setTwoFactorCode(event.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                    className="w-full rounded-xl border border-gray-200 bg-[#fcfaf7] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                     placeholder="6-digit code"
                   />
                 </div>
