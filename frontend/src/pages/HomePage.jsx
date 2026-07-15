@@ -44,14 +44,14 @@ const HomePage = () => {
   const [error, setError] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isReviewPaused, setIsReviewPaused] = useState(false);
-  const [heroBg, setHeroBg] = useState('/Hero Background.webp');
+  const [heroBg, setHeroBg] = useState('/hero-background.webp');
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setHeroBg('/Hero Bckground Mobile.webp');
+        setHeroBg('/hero-background-mobile.webp');
       } else {
-        setHeroBg('/Hero Background.webp');
+        setHeroBg('/hero-background.webp');
       }
     };
     handleResize();
@@ -431,7 +431,7 @@ const HomePage = () => {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: "url('/review section background.webp')",
+            backgroundImage: "url('/review-section-background.webp')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             opacity: 0.16,
