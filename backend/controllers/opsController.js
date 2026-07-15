@@ -114,7 +114,13 @@ const getOpenApi = async (_req, res) => {
 };
 
 const seedDatabase = async (req, res) => {
-  if (req.query.secret !== 'ApexSpicesSeed123') {
+  const seedSecret = process.env.DB_SEED_SECRET;
+
+  if (!seedSecret) {
+    return res.status(403).json({ message: 'Forbidden: Database seeding is disabled on this environment' });
+  }
+
+  if (req.query.secret !== seedSecret) {
     return res.status(403).json({ message: 'Forbidden: Invalid seed secret' });
   }
 
