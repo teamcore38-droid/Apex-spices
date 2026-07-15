@@ -36,18 +36,20 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-brand-dark py-3 text-brand-light shadow-md lg:py-4">
       <div className="container mx-auto flex items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
-        <Link to="/" className="flex flex-col items-center">
-          <div className="flex items-center gap-2 text-lg font-serif font-bold uppercase tracking-[0.14em] text-brand-accent sm:text-xl sm:tracking-[0.18em] lg:text-2xl lg:tracking-widest">
-            <img
-              src="/logo.webp"
-              alt="Apex Spices logo"
-              className="h-10 w-auto object-contain sm:h-12"
-            />
-            <span className="whitespace-nowrap">APEX SPICES</span>
+        <Link to="/" className="flex items-center gap-3">
+          <img
+            src="/logo.webp"
+            alt="Apex Spices logo"
+            className="h-12 w-auto object-contain sm:h-16"
+          />
+          <div className="flex flex-col items-start justify-center">
+            <span className="font-serif text-lg font-bold uppercase tracking-[0.14em] text-brand-accent sm:text-xl sm:tracking-[0.18em] lg:text-2xl lg:tracking-widest whitespace-nowrap leading-none">
+              APEX SPICES
+            </span>
+            <span className="mt-1 text-[9px] font-medium tracking-[0.18em] text-brand-accent/85 sm:text-[10px] whitespace-nowrap leading-none">
+              PREMIUM SPICES & HERBS
+            </span>
           </div>
-          <span className="mt-1 hidden text-[10px] tracking-[0.18em] text-brand-accent/80 xl:block">
-            PREMIUM SPICES & HERBS
-          </span>
         </Link>
 
         <nav className="hidden items-center gap-4 text-xs font-semibold uppercase tracking-[0.15em] lg:flex xl:gap-7 xl:text-sm xl:tracking-[0.2em]">
