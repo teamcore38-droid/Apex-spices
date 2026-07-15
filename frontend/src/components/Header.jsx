@@ -8,8 +8,6 @@ const PRIMARY_NAV_LINKS = [
   ['HOME', '/'],
   ['SHOP', '/products'],
   ['CATEGORIES', '/categories'],
-  ['RFQ', '/rfq'],
-  ['EXPERIENCE', '/customer-experience'],
   ['TRACK ORDER', '/track-order'],
   ['ABOUT', '/about'],
   ['CONTACT', '/contact'],
@@ -36,19 +34,19 @@ const Header = () => {
     location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#081729] py-3 text-[#f7f9fc] shadow-md lg:py-4">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-brand-dark py-3 text-brand-light shadow-md lg:py-4">
       <div className="container mx-auto flex items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
         <Link to="/" className="flex flex-col items-center">
           <div className="flex items-center gap-2 text-lg font-serif font-bold uppercase tracking-[0.14em] text-brand-accent sm:text-xl sm:tracking-[0.18em] lg:text-2xl lg:tracking-widest">
             <img
               src="/Apex Logo.jpg"
-              alt="Apex Link Group logo"
+              alt="Apex Spices logo"
               className="h-10 w-10 rounded-full object-cover ring-1 ring-white/20 sm:h-12 sm:w-12"
             />
-            <span className="whitespace-nowrap">APEX LINK GROUP</span>
+            <span className="whitespace-nowrap">APEX SPICES</span>
           </div>
           <span className="mt-1 hidden text-[10px] tracking-[0.18em] text-brand-accent/80 xl:block">
-            GLOBAL MARKETPLACE
+            PREMIUM SPICES & HERBS
           </span>
         </Link>
 
@@ -85,7 +83,7 @@ const Header = () => {
             <div className="relative">
               <ShoppingBag size={22} className="text-brand-accent" />
               {cartItems.length > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-[#081729]">
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-brand-dark">
                   {cartItems.reduce((acc, item) => acc + item.qty, 0)}
                 </span>
               )}

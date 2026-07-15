@@ -33,13 +33,13 @@ const Footer = () => {
       <div className="container mx-auto grid grid-cols-1 gap-8 px-4 md:grid-cols-4">
         <div>
           <h3 className="mb-4 flex items-center text-xl font-serif font-bold text-brand-accent">
-            <Globe size={20} className="mr-2" /> APEX LINK GROUP
+            <Globe size={20} className="mr-2" /> APEX SPICES
           </h3>
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-brand-accent/70">
-            Global Marketplace
+            Premium Spices & Herbs
           </p>
           <p className="text-sm leading-7 text-gray-300">
-            A premium multi-industry marketplace connecting trusted manufacturers and suppliers with customers worldwide — from textiles and food products to IT solutions and industrial equipment.
+            A premium e-commerce marketplace connecting trusted growers and suppliers with culinary enthusiasts worldwide — whole spices, ground spices, and hand-crafted blends.
           </p>
         </div>
 
@@ -75,7 +75,7 @@ const Footer = () => {
         </div>
 
         <div>
-          <h4 className="mb-4 font-semibold uppercase tracking-wider">Marketplace</h4>
+          <h4 className="mb-4 font-semibold uppercase tracking-wider">Shop Collections</h4>
           <ul className="space-y-2 text-sm text-gray-300">
             <li>
               <Link to="/products" className="transition-colors hover:text-brand-accent">
@@ -84,22 +84,22 @@ const Footer = () => {
             </li>
             <li>
               <Link to="/categories" className="transition-colors hover:text-brand-accent">
-                All Industries
+                All Categories
               </Link>
             </li>
             <li>
-              <Link to="/category/textiles-apparel" className="transition-colors hover:text-brand-accent">
-                Textiles &amp; Apparel
+              <Link to="/category/whole-spices" className="transition-colors hover:text-brand-accent">
+                Whole Spices
               </Link>
             </li>
             <li>
-              <Link to="/category/it-solutions-electronics" className="transition-colors hover:text-brand-accent">
-                IT Solutions &amp; Electronics
+              <Link to="/category/ground-spices" className="transition-colors hover:text-brand-accent">
+                Ground Spices
               </Link>
             </li>
             <li>
-              <Link to="/category/industrial-machinery" className="transition-colors hover:text-brand-accent">
-                Industrial &amp; Machinery
+              <Link to="/category/spicy-blends" className="transition-colors hover:text-brand-accent">
+                Spicy Blends
               </Link>
             </li>
           </ul>
@@ -157,7 +157,7 @@ const Footer = () => {
       </div>
 
       <div className="container mx-auto mt-12 border-t border-white/10 px-4 pt-8 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} Apex Link Group — Global Marketplace. All rights reserved.
+        &copy; {new Date().getFullYear()} Apex Spices. All rights reserved.
       </div>
     </footer>
   );
