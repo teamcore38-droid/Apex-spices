@@ -330,22 +330,12 @@ const ProductsPage = () => {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] pt-6 pb-16">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#e2e9f3] to-transparent opacity-70" />
+    <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] pt-3 pb-16 sm:pt-4">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#e2e9f3] to-transparent opacity-70" />
       <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-multiply" />
 
       <div className="relative z-10 container mx-auto max-w-7xl px-4">
-        <div className="rounded-[36px] bg-[#0d2340] px-6 py-14 text-center text-white shadow-[0_24px_60px_rgba(11,31,58,0.25)] sm:px-10">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">The Global Product Library</p>
-          <h1 className="mt-4 font-serif text-4xl font-bold text-[#f5f8fc] [text-shadow:0_4px_24px_rgba(0,0,0,0.35)] sm:text-6xl">
-            Shop our curated collection
-          </h1>
-          <p className="mx-auto mt-5 max-w-3xl text-sm leading-7 text-[#edf1f8] sm:text-base">
-            Explore premium products across textiles, food, technology, industrial equipment, and more — with refined filtering built for real shopping.
-          </p>
-        </div>
-
-        <div className="mt-10 rounded-[30px] bg-white p-4 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:p-6">
+        <div className="rounded-[30px] bg-white p-4 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:p-6">
           <div className="hidden flex-col gap-6 lg:flex lg:flex-row lg:items-end lg:justify-between">
             <div className="relative w-full lg:max-w-md">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
