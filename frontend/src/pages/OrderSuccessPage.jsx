@@ -40,7 +40,7 @@ const OrderSuccessPage = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (order) {
+    if (order && order.isPaid) {
       return;
     }
 
@@ -48,6 +48,9 @@ const OrderSuccessPage = () => {
       navigate(`/login?redirect=${pathname}`);
       return;
     }
+
+    let isMounted = true;
+    let pollTimer = null;
 
     const fetchOrder = async () => {
       try {
@@ -57,17 +60,36 @@ const OrderSuccessPage = () => {
           },
         });
 
-        setOrder(data);
+        if (isMounted) {
+          setOrder(data);
+          setLoading(false);
+          
+          // Poll again in 2.5 seconds if still pending verification
+          if (!data.isPaid) {
+            pollTimer = setTimeout(fetchOrder, 2500);
+          }
+        }
       } catch (fetchError) {
         console.error(fetchError);
-        setError(fetchError.response?.data?.message || fetchError.message);
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setError(fetchError.response?.data?.message || fetchError.message);
+          setLoading(false);
+        }
       }
     };
 
-    fetchOrder();
-  }, [id, navigate, order, pathname, userInfo]);
+    if (order) {
+      // Give the backend webhook 1.5 seconds to write to the DB before fetching
+      pollTimer = setTimeout(fetchOrder, 1500);
+    } else {
+      fetchOrder();
+    }
+
+    return () => {
+      isMounted = false;
+      if (pollTimer) clearTimeout(pollTimer);
+    };
+  }, [id, navigate, pathname, userInfo]);
 
   const isConfirmation = pathname.includes('confirm');
 
