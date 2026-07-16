@@ -11,10 +11,17 @@ const createInitialForm = (userInfo) => ({
   message: '',
 });
 
+const REQUIRED_FIELD_MESSAGE = 'This field is required';
+const requiredFields = ['name', 'email', 'subject', 'message'];
+const fieldErrorClass = 'mt-2 text-xs font-medium text-red-600';
+
+const getRequiredError = (value) => (value.trim() ? '' : REQUIRED_FIELD_MESSAGE);
+
 const ContactPage = () => {
   const { userInfo } = useAuth();
 
   const [formData, setFormData] = useState(() => createInitialForm(userInfo));
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -49,10 +56,38 @@ const ContactPage = () => {
       ...currentForm,
       [name]: value,
     }));
+    setFieldErrors((currentErrors) => {
+      if (!currentErrors[name]) {
+        return currentErrors;
+      }
+
+      const nextError = getRequiredError(value);
+      if (nextError) {
+        return { ...currentErrors, [name]: nextError };
+      }
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[name];
+      return nextErrors;
+    });
   };
 
   const submitHandler = async (event) => {
     event.preventDefault();
+
+    const nextFieldErrors = requiredFields.reduce((errors, fieldName) => {
+      const fieldError = getRequiredError(formData[fieldName]);
+      return fieldError ? { ...errors, [fieldName]: fieldError } : errors;
+    }, {});
+
+    setFieldErrors(nextFieldErrors);
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setError('');
+      setSuccessMessage('');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccessMessage('');
@@ -68,6 +103,7 @@ const ContactPage = () => {
         data.message || 'Thank you for reaching out. Our team will reply shortly.'
       );
       setFormData(createInitialForm(userInfo));
+      setFieldErrors({});
     } catch (submitError) {
       console.error(submitError);
       setError(
@@ -139,7 +175,7 @@ const ContactPage = () => {
               </div>
             )}
 
-            <form className="mt-6 space-y-5" onSubmit={submitHandler}>
+            <form className="mt-6 space-y-5" onSubmit={submitHandler} noValidate>
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
                   <label htmlFor="contact-name" className="mb-2 block text-sm font-semibold text-brand-dark">Your Name</label>
@@ -150,8 +186,17 @@ const ContactPage = () => {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                    className={`w-full rounded-xl border bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent ${
+                      fieldErrors.name ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    aria-invalid={fieldErrors.name ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.name ? 'contact-name-error' : undefined}
                   />
+                  {fieldErrors.name && (
+                    <p id="contact-name-error" className={fieldErrorClass}>
+                      {fieldErrors.name}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="contact-email" className="mb-2 block text-sm font-semibold text-brand-dark">Email Address</label>
@@ -162,8 +207,17 @@ const ContactPage = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                    className={`w-full rounded-xl border bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent ${
+                      fieldErrors.email ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.email ? 'contact-email-error' : undefined}
                   />
+                  {fieldErrors.email && (
+                    <p id="contact-email-error" className={fieldErrorClass}>
+                      {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -189,9 +243,18 @@ const ContactPage = () => {
                     required
                     value={formData.subject}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                    className={`w-full rounded-xl border bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent ${
+                      fieldErrors.subject ? 'border-red-300' : 'border-gray-200'
+                    }`}
                     placeholder="Order support, wholesale, gifting, product question..."
+                    aria-invalid={fieldErrors.subject ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.subject ? 'contact-subject-error' : undefined}
                   />
+                  {fieldErrors.subject && (
+                    <p id="contact-subject-error" className={fieldErrorClass}>
+                      {fieldErrors.subject}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -204,9 +267,18 @@ const ContactPage = () => {
                   rows="7"
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm leading-7 text-brand-dark outline-none transition focus:border-brand-accent"
+                  className={`w-full rounded-xl border bg-[#f7f9fc] px-4 py-3 text-sm leading-7 text-brand-dark outline-none transition focus:border-brand-accent ${
+                    fieldErrors.message ? 'border-red-300' : 'border-gray-200'
+                  }`}
                   placeholder="Tell us about your question, order number, or what kind of help you need."
+                  aria-invalid={fieldErrors.message ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.message ? 'contact-message-error' : undefined}
                 />
+                {fieldErrors.message && (
+                  <p id="contact-message-error" className={fieldErrorClass}>
+                    {fieldErrors.message}
+                  </p>
+                )}
               </div>
 
               <div className="rounded-[24px] border border-brand-accent/15 bg-[#f5f8fc] px-5 py-4 text-sm leading-7 text-gray-600">

@@ -3,15 +3,42 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Mail, Sparkles } from 'lucide-react';
 
+const REQUIRED_FIELD_MESSAGE = 'This field is required';
+const fieldErrorClass = 'mt-2 text-xs font-medium text-red-600';
+
+const getRequiredError = (value) => (value.trim() ? '' : REQUIRED_FIELD_MESSAGE);
+
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
   const [resetUrl, setResetUrl] = useState('');
 
+  const handleEmailChange = (event) => {
+    const { value } = event.target;
+    setEmail(value);
+
+    if (fieldErrors.email && !getRequiredError(value)) {
+      setFieldErrors({});
+    }
+  };
+
   const submitHandler = async (event) => {
     event.preventDefault();
+
+    const emailError = getRequiredError(email);
+
+    if (emailError) {
+      setFieldErrors({ email: emailError });
+      setError('');
+      setSuccess('');
+      setResetUrl('');
+      return;
+    }
+
+    setFieldErrors({});
     setLoading(true);
     setError('');
     setSuccess('');
@@ -53,20 +80,30 @@ const ForgotPasswordPage = () => {
             </div>
           )}
 
-          <form onSubmit={submitHandler} className="mt-8 space-y-5">
+          <form onSubmit={submitHandler} className="mt-8 space-y-5" noValidate>
             <div>
               <label className="mb-2 block text-sm font-semibold text-brand-dark">Email Address</label>
               <div className="relative">
                 <Mail size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
+                  id="forgot-password-email"
                   type="email"
                   required
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                  onChange={handleEmailChange}
+                  className={`w-full rounded-xl border bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent ${
+                    fieldErrors.email ? 'border-red-300' : 'border-gray-200'
+                  }`}
                   placeholder="you@example.com"
+                  aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.email ? 'forgot-password-email-error' : undefined}
                 />
               </div>
+              {fieldErrors.email && (
+                <p id="forgot-password-email-error" className={fieldErrorClass}>
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <button

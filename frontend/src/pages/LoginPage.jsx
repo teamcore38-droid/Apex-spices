@@ -3,11 +3,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LockKeyhole, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const REQUIRED_FIELD_MESSAGE = 'This field is required';
+const fieldErrorClass = 'mt-2 text-xs font-medium text-red-600';
+
+const getRequiredError = (value) => (value.trim() ? '' : REQUIRED_FIELD_MESSAGE);
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
   const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -24,8 +30,44 @@ const LoginPage = () => {
     }
   }, [navigate, redirect, userInfo]);
 
+  const updateRequiredField = (fieldName, value, setter) => {
+    setter(value);
+    setFieldErrors((currentErrors) => {
+      if (!currentErrors[fieldName]) {
+        return currentErrors;
+      }
+
+      const nextError = getRequiredError(value);
+      if (nextError) {
+        return { ...currentErrors, [fieldName]: nextError };
+      }
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[fieldName];
+      return nextErrors;
+    });
+  };
+
   const submitHandler = async (event) => {
     event.preventDefault();
+
+    const nextFieldErrors = twoFactorChallenge
+      ? { twoFactorCode: getRequiredError(twoFactorCode) }
+      : {
+          email: getRequiredError(email),
+          password: getRequiredError(password),
+        };
+    const visibleFieldErrors = Object.fromEntries(
+      Object.entries(nextFieldErrors).filter(([, message]) => message)
+    );
+
+    setFieldErrors(visibleFieldErrors);
+
+    if (Object.keys(visibleFieldErrors).length > 0) {
+      setError('');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -39,6 +81,7 @@ const LoginPage = () => {
         const result = await login(email, password);
         if (result?.requiresTwoFactor) {
           setTwoFactorChallenge(result);
+          setFieldErrors({});
           setLoading(false);
           return;
         }
@@ -67,7 +110,7 @@ const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={submitHandler} className="mt-8 space-y-5">
+          <form onSubmit={submitHandler} className="mt-8 space-y-5" noValidate>
             {!twoFactorChallenge ? (
               <>
                 <div>
@@ -75,14 +118,24 @@ const LoginPage = () => {
                   <div className="relative">
                     <Mail size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
+                      id="login-email"
                       type="email"
                       required
                       value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-[#fcfaf7] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                      onChange={(event) => updateRequiredField('email', event.target.value, setEmail)}
+                      className={`w-full rounded-xl border bg-[#fcfaf7] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent ${
+                        fieldErrors.email ? 'border-red-300' : 'border-gray-200'
+                      }`}
                       placeholder="you@example.com"
+                      aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                      aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
                     />
                   </div>
+                  {fieldErrors.email && (
+                    <p id="login-email-error" className={fieldErrorClass}>
+                      {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -98,12 +151,17 @@ const LoginPage = () => {
                   <div className="relative">
                     <LockKeyhole size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
+                      id="login-password"
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-[#fcfaf7] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                      onChange={(event) => updateRequiredField('password', event.target.value, setPassword)}
+                      className={`w-full rounded-xl border bg-[#fcfaf7] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent ${
+                        fieldErrors.password ? 'border-red-300' : 'border-gray-200'
+                      }`}
                       placeholder="Enter your password"
+                      aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                      aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                     />
                     <button
                       type="button"
@@ -113,6 +171,11 @@ const LoginPage = () => {
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <p id="login-password-error" className={fieldErrorClass}>
+                      {fieldErrors.password}
+                    </p>
+                  )}
                 </div>
               </>
             ) : (
@@ -121,15 +184,25 @@ const LoginPage = () => {
                 <div className="relative">
                   <ShieldCheck size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
+                    id="login-two-factor-code"
                     type="text"
                     required
                     inputMode="numeric"
                     value={twoFactorCode}
-                    onChange={(event) => setTwoFactorCode(event.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-[#fcfaf7] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                    onChange={(event) => updateRequiredField('twoFactorCode', event.target.value, setTwoFactorCode)}
+                    className={`w-full rounded-xl border bg-[#fcfaf7] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent ${
+                      fieldErrors.twoFactorCode ? 'border-red-300' : 'border-gray-200'
+                    }`}
                     placeholder="6-digit code"
+                    aria-invalid={fieldErrors.twoFactorCode ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.twoFactorCode ? 'login-two-factor-code-error' : undefined}
                   />
                 </div>
+                {fieldErrors.twoFactorCode && (
+                  <p id="login-two-factor-code-error" className={fieldErrorClass}>
+                    {fieldErrors.twoFactorCode}
+                  </p>
+                )}
                 {twoFactorChallenge.developmentCode && (
                   <p className="mt-3 rounded-xl bg-brand-light px-4 py-3 text-xs font-semibold text-brand-dark">
                     Development code: {twoFactorChallenge.developmentCode}
@@ -153,6 +226,7 @@ const LoginPage = () => {
                 onClick={() => {
                   setTwoFactorChallenge(null);
                   setTwoFactorCode('');
+                  setFieldErrors({});
                 }}
                 className="w-full text-xs font-bold uppercase tracking-[0.16em] text-brand-primary"
               >
