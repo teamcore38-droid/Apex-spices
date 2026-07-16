@@ -431,7 +431,7 @@ const addOrderItems = async (req, res) => {
       }
     }
 
-    if (normalizedPaymentProvider !== 'Stripe') {
+    if (normalizedPaymentProvider !== 'Stripe' && normalizedPaymentProvider !== 'PayHere') {
       await sendOrderConfirmationEmail(populatedOrder);
     }
 
@@ -527,7 +527,9 @@ const addGuestOrderItems = async (req, res) => {
       await recordFraudSignal(req, createdOrder, 'checkout.tamper.detected', order.fraudRisk);
     }
     await syncVendorOrdersForOrder(createdOrder);
-    await sendOrderConfirmationEmail(createdOrder);
+    if (createdOrder.paymentProvider !== 'Stripe' && createdOrder.paymentProvider !== 'PayHere') {
+      await sendOrderConfirmationEmail(createdOrder);
+    }
     await notifyOrderEvent(createdOrder, 'order.created');
     await emitWebhookEvent('order.created', createdOrder.toObject(), {
       resourceType: 'Order',
