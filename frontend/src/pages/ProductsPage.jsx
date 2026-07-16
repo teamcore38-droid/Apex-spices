@@ -221,8 +221,8 @@ const ProductsPage = () => {
     }));
   };
 
-  const renderFilterControls = ({ values, onChange, includeSort = true }) => (
-    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_0.8fr_auto]">
+  const renderFilterControls = ({ values, onChange, includeSort = true, resetSlot = null }) => (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_0.8fr_0.8fr_auto] lg:items-end">
       <label className="block">
         <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
           Category
@@ -326,6 +326,8 @@ const ProductsPage = () => {
           />
         </label>
       )}
+
+      {resetSlot}
     </div>
   );
 
@@ -444,14 +446,19 @@ const ProductsPage = () => {
           </div>
 
           <div className="mt-6 hidden lg:block">
-            {renderFilterControls({ values: filters, onChange: updateFilter })}
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-4 inline-flex items-center justify-center rounded-xl border border-brand-primary/20 px-4 py-3 text-sm font-semibold text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white"
-            >
-              <RotateCcw size={16} className="mr-2" /> Reset
-            </button>
+            {renderFilterControls({
+              values: filters,
+              onChange: updateFilter,
+              resetSlot: (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-brand-primary/20 px-4 py-3 text-sm font-semibold text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white"
+                >
+                  <RotateCcw size={16} className="mr-2" /> Reset
+                </button>
+              ),
+            })}
           </div>
 
           {error ? (
