@@ -38,7 +38,7 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
         <Link to="/" className="flex items-center gap-3">
           <img
-            src="/logo.webp"
+            src="/logo.webp?v=20260716"
             alt="Apex Spices logo"
             className="h-12 w-auto object-contain sm:h-16"
           />
