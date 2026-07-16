@@ -722,7 +722,7 @@ const handlePayhereNotify = async (req, res) => {
       md5sig,
     } = req.body;
 
-    const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET || 'sandboxSecret123';
+    const merchantSecret = (process.env.PAYHERE_MERCHANT_SECRET || '').trim() || 'sandboxSecret123';
 
     const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
     const concatString = merchant_id + order_id + payhere_amount + payhere_currency + status_code + hashedSecret;
