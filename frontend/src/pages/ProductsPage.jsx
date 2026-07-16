@@ -19,7 +19,6 @@ const INITIAL_FILTERS = {
   maxPrice: '',
   stock: '',
   brand: '',
-  origin: '',
   rating: '',
   sort: '',
 };
@@ -179,13 +178,6 @@ const ProductsPage = () => {
       label: `${facet._id} (${facet.count})`,
     })),
   ];
-  const originOptions = [
-    { value: '', label: 'All Origins' },
-    ...(facets.origins || []).filter((facet) => facet._id).map((facet) => ({
-      value: facet._id,
-      label: `${facet._id} (${facet.count})`,
-    })),
-  ];
   const activeFilterCount = Object.entries(filters).filter(
     ([key, value]) => key !== 'keyword' && key !== 'sort' && value
   ).length;
@@ -222,7 +214,7 @@ const ProductsPage = () => {
   };
 
   const renderFilterControls = ({ values, onChange, includeSort = true, resetSlot = null }) => (
-    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_0.8fr_0.8fr_auto] lg:items-end">
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_0.9fr_0.8fr_0.8fr_auto] lg:items-end">
       <label className="block">
         <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
           Category
@@ -273,17 +265,6 @@ const ProductsPage = () => {
           value={values.brand}
           onChange={(nextValue) => onChange('brand', nextValue)}
           options={brandOptions}
-        />
-      </label>
-
-      <label className="block">
-        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-          Origin
-        </span>
-        <CustomSelect
-          value={values.origin}
-          onChange={(nextValue) => onChange('origin', nextValue)}
-          options={originOptions}
         />
       </label>
 
@@ -346,7 +327,7 @@ const ProductsPage = () => {
               <Search className="pointer-events-none absolute left-4 top-[3.2rem] -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search products, brands, origin, or SKU..."
+                placeholder="Search products, brands, or SKU..."
                 className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-gray-600 shadow-sm outline-none transition focus:border-brand-accent"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
@@ -421,7 +402,7 @@ const ProductsPage = () => {
                   <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
-                    placeholder="Search products, brands, origin, or SKU..."
+                    placeholder="Search products, brands, or SKU..."
                     className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                     value={searchInput}
                     onChange={(event) => setSearchInput(event.target.value)}
