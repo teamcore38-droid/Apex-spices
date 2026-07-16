@@ -32,7 +32,7 @@ import OrderTimeline from '../components/OrderTimeline';
 const OrderSuccessPage = () => {
   const { id } = useParams();
   const { state, pathname } = useLocation();
-  const { userInfo } = useAuth();
+  const { userInfo, logout } = useAuth();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState(state?.order || null);
@@ -71,6 +71,11 @@ const OrderSuccessPage = () => {
         }
       } catch (fetchError) {
         console.error(fetchError);
+        if (fetchError.response?.status === 401) {
+          logout();
+          navigate(`/login?redirect=${pathname}`);
+          return;
+        }
         if (isMounted) {
           setError(fetchError.response?.data?.message || fetchError.message);
           setLoading(false);
