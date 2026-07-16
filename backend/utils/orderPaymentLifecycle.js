@@ -125,7 +125,7 @@ const applySuccessfulPaymentToOrder = async ({
   order.paidAt = paymentIntent.created
     ? new Date(paymentIntent.created * 1000)
     : order.paidAt || new Date();
-  order.paymentProvider = 'Stripe';
+  order.paymentProvider = paymentIntent.provider || order.paymentProvider || 'Stripe';
   order.paymentMethod = order.paymentMethod || 'Card';
   order.paymentIntentId = paymentIntent.id || order.paymentIntentId || '';
   order.paymentStatus = 'Paid';

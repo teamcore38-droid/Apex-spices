@@ -747,23 +747,33 @@ const handlePayhereNotify = async (req, res) => {
 
     if (status_code === '2') {
       if (!order.isPaid) {
-        await applySuccessfulPaymentToOrder(order, {
-          id: payment_id,
-          status: 'success',
-          amountReceived: Number(payhere_amount),
-          currency: payhere_currency,
-          paymentMethodType: 'PayHere Card/Wallet',
-          receiptEmail: order.shippingAddress?.email || '',
-          created: new Date(),
-        }, actor);
+        await applySuccessfulPaymentToOrder({
+          order,
+          paymentIntent: {
+            id: payment_id,
+            status: 'success',
+            amount_received: Number(payhere_amount) * 100,
+            currency: payhere_currency,
+            payment_method_types: ['PayHere Card/Wallet'],
+            receipt_email: order.shippingAddress?.email || '',
+            created: Math.floor(Date.now() / 1000),
+            provider: 'PayHere',
+          },
+          actor,
+        });
         console.log(`[paymentController:payhereNotify] Order ${order_id} successfully marked as PAID`);
       }
     } else if (status_code === '-2') {
-      await applyFailedPaymentToOrder(order, {
-        message: 'PayHere payment failed',
-      }, actor);
+      await applyFailedPaymentToOrder({
+        order,
+        error: { message: 'PayHere payment failed' },
+        actor,
+      });
     } else if (status_code === '-1') {
-      await applyCancelledPaymentToOrder(order, {}, actor);
+      await applyCancelledPaymentToOrder({
+        order,
+        actor,
+      });
     }
 
     res.status(200).json({ received: true });
