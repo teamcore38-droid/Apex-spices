@@ -266,12 +266,15 @@ const buildInvoicePayload = (order) => ({
 
 const getOrderRecipient = (order) => order?.shippingAddress?.email || order?.user?.email || '';
 
-const isOrderOwnerOrAdmin = (order, user) =>
-  Boolean(
-    user?.isAdmin ||
-      hasPermission(user, 'orders:read') ||
-      order.user?.toString?.() === user?._id?.toString?.()
-  );
+const isOrderOwnerOrAdmin = (order, user) => {
+  if (!order || !user) return false;
+  if (user.isAdmin || hasPermission(user, 'orders:read')) return true;
+
+  const orderUserId = order.user?._id ? order.user._id.toString() : order.user?.toString();
+  const userId = user._id?.toString();
+
+  return Boolean(orderUserId && userId && orderUserId === userId);
+};
 
 const isGuestOrderAccessor = (order, payload = {}) => {
   const email = String(payload.email || payload.guestEmail || '').trim().toLowerCase();
@@ -353,12 +356,15 @@ const addOrderItems = async (req, res) => {
     }
 
     const normalizedPaymentProvider =
-      paymentProvider === 'Stripe' && isStripeConfigured() ? 'Stripe' : 'Manual';
+      paymentProvider === 'PayHere' && process.env.PAYHERE_MERCHANT_ID
+        ? 'PayHere'
+        : paymentProvider === 'Stripe' && isStripeConfigured()
+        ? 'Stripe'
+        : 'Manual';
     const normalizedPaymentMethod = String(
-      paymentMethod || (normalizedPaymentProvider === 'Stripe' ? 'Card' : 'Development Placeholder')
+      paymentMethod || (normalizedPaymentProvider === 'Manual' ? 'Development Placeholder' : 'Card')
     ).trim();
-    const initialPaymentStatus =
-      normalizedPaymentProvider === 'Stripe' ? 'Payment Pending' : 'Payment Pending';
+    const initialPaymentStatus = 'Payment Pending';
     const pricing = await calculateOrderPricing({
       cartItems: orderItems,
       shippingAddress: normalizedShippingAddress,
@@ -455,7 +461,8 @@ const addGuestOrderItems = async (req, res) => {
   const {
     orderItems,
     shippingAddress,
-    paymentMethod = 'Development Placeholder',
+    paymentMethod,
+    paymentProvider = 'Manual',
     couponCode = '',
     giftCardCode = '',
     shippingRateId = '',
@@ -474,6 +481,16 @@ const addGuestOrderItems = async (req, res) => {
       return res.status(400).json({ message: shippingValidationError });
     }
 
+    const normalizedPaymentProvider =
+      paymentProvider === 'PayHere' && process.env.PAYHERE_MERCHANT_ID
+        ? 'PayHere'
+        : paymentProvider === 'Stripe' && isStripeConfigured()
+        ? 'Stripe'
+        : 'Manual';
+    const normalizedPaymentMethod = String(
+      paymentMethod || (normalizedPaymentProvider === 'Manual' ? 'Development Placeholder' : 'Card')
+    ).trim();
+
     const guestCustomer = buildGuestCustomer(normalizedShippingAddress);
     const pricing = await calculateOrderPricing({
       cartItems: orderItems,
@@ -491,8 +508,8 @@ const addGuestOrderItems = async (req, res) => {
       guestCheckout: true,
       guestCustomer,
       shippingAddress: normalizedShippingAddress,
-      paymentMethod,
-      paymentProvider: 'Manual',
+      paymentMethod: normalizedPaymentMethod,
+      paymentProvider: normalizedPaymentProvider,
       paymentStatus: 'Payment Pending',
       currency: pricing.currency,
       exchangeRate: pricing.exchangeRate,
