@@ -1,8 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Trash2, ArrowLeft } from 'lucide-react';
+import { Trash2, ArrowLeft, Minus, Plus } from 'lucide-react';
 import { formatCurrency } from '../utils/productUi';
-import CustomSelect from '../components/CustomSelect';
 
 const CartPage = () => {
   const { cartItems, addToCart, removeFromCart } = useCart();
@@ -52,17 +51,29 @@ const CartPage = () => {
                       {formatCurrency(item.price)}
                     </div>
                     <div className="flex justify-center w-full md:w-auto">
-                      <CustomSelect
-                        value={item.qty}
-                        onChange={(nextValue) => addToCart(item, Number(nextValue))}
-                        className="w-[92px]"
-                        buttonClassName="py-1.5 pl-3 pr-8"
-                        options={[...Array(item.countInStock).keys()].map((x) => ({
-                          value: x + 1,
-                          label: String(x + 1),
-                        }))}
-                        ariaLabel={`Quantity for ${item.name}`}
-                      />
+                      <div className="inline-flex items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-0.5">
+                        <button
+                          type="button"
+                          disabled={item.qty <= 1}
+                          onClick={() => addToCart(item, item.qty - 1)}
+                          className="rounded-full p-2 text-brand-dark transition-colors duration-200 hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label={`Decrease quantity for ${item.name}`}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="min-w-[36px] text-center text-sm font-semibold text-brand-dark select-none">
+                          {item.qty}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={item.qty >= item.countInStock}
+                          onClick={() => addToCart(item, item.qty + 1)}
+                          className="rounded-full p-2 text-brand-dark transition-colors duration-200 hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label={`Increase quantity for ${item.name}`}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex justify-between md:justify-end items-center w-full md:w-auto w-full font-bold">
                       <span className="md:hidden">Total: </span>
