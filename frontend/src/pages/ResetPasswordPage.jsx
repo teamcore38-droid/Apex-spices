@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { LockKeyhole } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
 
 const ResetPasswordPage = () => {
   const { token } = useParams();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -70,13 +72,21 @@ const ResetPasswordPage = () => {
               <div className="relative">
                 <LockKeyhole size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  type="password"
+                  type={showNewPassword ? 'text' : 'password'}
                   required
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                   placeholder="At least 6 characters"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword((current) => !current)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-brand-primary focus:outline-none"
+                  aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                >
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
@@ -85,13 +95,21 @@ const ResetPasswordPage = () => {
               <div className="relative">
                 <LockKeyhole size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                   placeholder="Repeat your new password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-brand-primary focus:outline-none"
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 

@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowRight,
+  Eye,
+  EyeOff,
   Heart,
   Home,
   Loader2,
@@ -140,6 +142,33 @@ const AddressFormFields = ({ form, onChange }) => (
     </label>
   </div>
 );
+
+const PasswordField = ({ label, name, value, onChange }) => {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-brand-dark">{label}</label>
+      <div className="relative">
+        <input
+          name={name}
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 pr-12 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((current) => !current)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-brand-primary focus:outline-none"
+          aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        >
+          {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -1140,37 +1169,25 @@ const ProfilePage = () => {
                 )}
 
                 <form className="mt-6 space-y-5" onSubmit={submitPasswordChange}>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-brand-dark">Current Password</label>
-                    <input
-                      name="currentPassword"
-                      type="password"
-                      value={passwordForm.currentPassword}
-                      onChange={handlePasswordChange}
-                      className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                    />
-                  </div>
+                  <PasswordField
+                    label="Current Password"
+                    name="currentPassword"
+                    value={passwordForm.currentPassword}
+                    onChange={handlePasswordChange}
+                  />
                   <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-brand-dark">New Password</label>
-                      <input
-                        name="newPassword"
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={handlePasswordChange}
-                        className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-brand-dark">Confirm New Password</label>
-                      <input
-                        name="confirmPassword"
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={handlePasswordChange}
-                        className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                      />
-                    </div>
+                    <PasswordField
+                      label="New Password"
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                    />
+                    <PasswordField
+                      label="Confirm New Password"
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordChange}
+                    />
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
                     <button

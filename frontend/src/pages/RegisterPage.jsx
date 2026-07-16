@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LockKeyhole, Mail, Phone, User } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole, Mail, Phone, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const RegisterPage = () => {
@@ -9,6 +9,8 @@ const RegisterPage = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -114,13 +116,21 @@ const RegisterPage = () => {
                 <div className="relative">
                   <LockKeyhole size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                     placeholder="At least 6 characters"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-brand-primary focus:outline-none"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
 
@@ -129,13 +139,21 @@ const RegisterPage = () => {
                 <div className="relative">
                   <LockKeyhole size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     required
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] py-3 pl-12 pr-12 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
                     placeholder="Repeat your password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-brand-primary focus:outline-none"
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
             </div>

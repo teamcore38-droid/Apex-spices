@@ -6,6 +6,8 @@ import {
   ArrowLeft,
   BarChart3,
   Database,
+  Eye,
+  EyeOff,
   FileText,
   Image,
   Loader2,
@@ -120,26 +122,45 @@ const Section = ({ children, icon: Icon, title }) => (
   </section>
 );
 
-const Field = ({ label, value, onChange, type = 'text', textarea = false }) => (
-  <label className="block">
-    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-500">{label}</span>
-    {textarea ? (
-      <textarea
-        rows={4}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-brand-accent"
-      />
-    ) : (
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(type === 'number' ? Number(event.target.value) : event.target.value)}
-        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-brand-accent"
-      />
-    )}
-  </label>
-);
+const Field = ({ label, value, onChange, type = 'text', textarea = false }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-500">{label}</span>
+      {textarea ? (
+        <textarea
+          rows={4}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-brand-accent"
+        />
+      ) : (
+        <span className="relative block">
+          <input
+            type={isPassword && showPassword ? 'text' : type}
+            value={value}
+            onChange={(event) => onChange(type === 'number' ? Number(event.target.value) : event.target.value)}
+            className={`w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-brand-accent ${
+              isPassword ? 'pr-12' : ''
+            }`}
+          />
+          {isPassword && (
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-brand-primary focus:outline-none"
+              aria-label={showPassword ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          )}
+        </span>
+      )}
+    </label>
+  );
+};
 
 const AdminProfessionalPage = () => {
   const { userInfo } = useAuth();
