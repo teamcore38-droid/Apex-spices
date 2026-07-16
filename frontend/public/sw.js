@@ -1,12 +1,11 @@
-const CACHE_NAME = 'apex-link-v1';
+const CACHE_NAME = 'apex-link-v2';
 const APP_SHELL = [
   '/',
   '/products',
   '/track-order',
   '/offline.html',
   '/manifest.webmanifest',
-  '/favicon.svg',
-  '/Apex Logo.jpg'
+  '/logo.webp?v=20260716'
 ];
 
 self.addEventListener('install', (event) => {
@@ -75,8 +74,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Apex Link Group';
   const options = {
     body: data.body || 'You have a new marketplace update.',
-    icon: '/Apex Logo.jpg',
-    badge: '/favicon.svg',
+    icon: '/logo.webp?v=20260716',
+    badge: '/logo.webp?v=20260716',
     data: {
       url: data.url || '/'
     }
