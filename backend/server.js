@@ -48,6 +48,8 @@ const configuredOrigins = [
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
+  'https://apexspices.lk',
+  'https://www.apexspices.lk',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:4173',
