@@ -97,7 +97,7 @@ const OrderSuccessPage = () => {
       isMounted = false;
       if (pollTimer) clearTimeout(pollTimer);
     };
-  }, [id, navigate, pathname, userInfo]);
+  }, [id, navigate, pathname, userInfo, logout, order]);
 
   const isConfirmation = pathname.includes('confirm');
 

@@ -14,17 +14,12 @@ import {
   UserRound,
   RotateCcw,
 } from 'lucide-react';
-import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 import { formatCurrency } from '../utils/productUi';
 import { normalizeShippingAddress } from '../utils/orderUi';
 import { getMarketingSessionId, trackEvent } from '../utils/analytics';
-
-const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
-const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 
 const createInitialCheckoutForm = (shippingAddress = {}, userInfo = null) => {
   const normalized = normalizeShippingAddress(shippingAddress, {
@@ -73,21 +68,7 @@ const validateCheckoutForm = (form) => {
   return '';
 };
 
-const cardElementOptions = {
-  style: {
-    base: {
-      color: '#0b1f3a',
-      fontFamily: 'Georgia, serif',
-      fontSize: '16px',
-      '::placeholder': {
-        color: '#7b8aa1',
-      },
-    },
-    invalid: {
-      color: '#b91c1c',
-    },
-  },
-};
+
 
 const CheckoutInner = ({ payhereEnabled }) => {
   const { cartItems, shippingAddress, saveShippingAddress, clearCart } = useCart();
