@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { CreditCard, Loader2, MapPin, Phone, Search, Truck, UserRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -21,12 +21,16 @@ import OrderTimeline from '../components/OrderTimeline';
 
 const TrackOrderPage = () => {
   const { userInfo } = useAuth();
+  const location = useLocation();
 
   const [recentOrders, setRecentOrders] = useState([]);
-  const [form, setForm] = useState({
-    orderId: '',
-    email: userInfo?.email || '',
-    phone: userInfo?.phone || '',
+  const [form, setForm] = useState(() => {
+    const params = new URLSearchParams(location?.search || '');
+    return {
+      orderId: params.get('orderId') || '',
+      email: userInfo?.email || '',
+      phone: userInfo?.phone || '',
+    };
   });
   const [loadingRecent, setLoadingRecent] = useState(false);
   const [loading, setLoading] = useState(false);

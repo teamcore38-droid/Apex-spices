@@ -72,9 +72,12 @@ const OrderSuccessPage = () => {
       } catch (fetchError) {
         console.error(fetchError);
         if (fetchError.response?.status === 401) {
-          logout();
-          navigate(`/login?redirect=${pathname}`);
-          return;
+          const msg = fetchError.response?.data?.message || '';
+          if (msg.toLowerCase().includes('token')) {
+            logout();
+            navigate(`/login?redirect=${pathname}`);
+            return;
+          }
         }
         if (isMounted) {
           setError(fetchError.response?.data?.message || fetchError.message);
@@ -119,19 +122,35 @@ const OrderSuccessPage = () => {
   }
 
   if (error || !order) {
+    const isAuthError = error === 'Not authorized to view this order';
     return (
       <div className="container mx-auto max-w-lg px-4 py-16 text-center">
         <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 shadow-sm">
-          <h2 className="text-2xl font-serif font-bold text-brand-dark">Unable to Load Order</h2>
-          <p className="mt-4 text-gray-600">
-            {error || 'The order confirmation details could not be found.'}
+          <h2 className="text-2xl font-serif font-bold text-brand-dark">
+            {isAuthError ? 'Access Restricted' : 'Unable to Load Order'}
+          </h2>
+          <p className="mt-4 text-sm leading-7 text-gray-600">
+            {isAuthError
+              ? 'You are not authorized to view this order. If this was a guest checkout, please use the Track Order page with your email to view it.'
+              : error || 'The order confirmation details could not be found.'}
           </p>
-          <Link
-            to="/"
-            className="mt-6 inline-flex items-center rounded-md bg-brand-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-brand-dark"
-          >
-            Go to Homepage
-          </Link>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            {isAuthError ? (
+              <Link
+                to={`/track-order?orderId=${id}`}
+                className="inline-flex items-center justify-center rounded-md bg-brand-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-brand-dark"
+              >
+                Go to Track Order
+              </Link>
+            ) : (
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center rounded-md bg-brand-primary px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-brand-dark"
+              >
+                Go to Homepage
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );
