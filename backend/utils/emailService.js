@@ -149,7 +149,7 @@ const buildOrderHtml = ({ heading, copy, order, ctaLabel, ctaUrl }) => {
       <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">${copy}</p>
       <table style="width:100%;border-collapse:collapse;margin:24px 0;">
         ${summaryRow('Order ID', orderId)}
-        ${summaryRow('Total', `$${Number(order?.totalPrice || 0).toFixed(2)}`)}
+        ${summaryRow('Total', `${order?.currency || 'USD'} ${Number(order?.totalPrice || 0).toFixed(2)}`)}
         ${summaryRow('Order Status', order?.orderStatus || 'Processing')}
         ${summaryRow('Payment', getPaymentLabel(order))}
         ${summaryRow('Tracking', trackingNumber)}
@@ -357,7 +357,7 @@ const sendInvoiceEmail = async (order) =>
           Your invoice for order <strong>${order?._id?.toString?.() || ''}</strong> is ready.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Total', `$${Number(order?.totalPrice || 0).toFixed(2)}`)}
+          ${summaryRow('Total', `${order?.currency || 'USD'} ${Number(order?.totalPrice || 0).toFixed(2)}`)}
           ${summaryRow('Payment', getPaymentLabel(order))}
           ${summaryRow('Order Status', order?.orderStatus || 'Processing')}
         </table>
@@ -383,9 +383,9 @@ const sendRefundConfirmationEmail = async (order, refund = {}) =>
           We processed a refund update for order <strong>${order?._id?.toString?.() || ''}</strong>.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Refund Amount', `$${Number(refund?.amount || 0).toFixed(2)}`)}
+          ${summaryRow('Refund Amount', `${order?.currency || 'USD'} ${Number(refund?.amount || 0).toFixed(2)}`)}
           ${summaryRow('Refund Status', refund?.status || order?.refundStatus || 'Updated')}
-          ${summaryRow('Total Refunded', `$${Number(order?.refundedAmount || 0).toFixed(2)}`)}
+          ${summaryRow('Total Refunded', `${order?.currency || 'USD'} ${Number(order?.refundedAmount || 0).toFixed(2)}`)}
           ${summaryRow('Payment Status', getPaymentLabel(order))}
         </table>
         <a href="${buildOrderUrl(order?._id?.toString?.() || '')}" style="display:inline-block;margin-top:10px;padding:14px 22px;border-radius:12px;background:#16365f;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">View Order</a>

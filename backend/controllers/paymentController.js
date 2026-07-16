@@ -729,7 +729,8 @@ const handlePayhereNotify = async (req, res) => {
     const localSig = crypto.createHash('md5').update(concatString).digest('hex').toUpperCase();
 
     if (localSig !== md5sig) {
-      console.warn('[paymentController:payhereNotify] Signature verification failed');
+      console.warn(`[paymentController:payhereNotify] Signature mismatch. Received: ${md5sig}, Expected: ${localSig}`);
+      console.warn(`[paymentController:payhereNotify] Concat string: ${merchant_id} + ${order_id} + ${payhere_amount} + ${payhere_currency} + ${status_code} + [MD5(merchantSecret)]`);
       return res.status(400).json({ message: 'Invalid signature' });
     }
 
