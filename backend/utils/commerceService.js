@@ -4,36 +4,22 @@ import ShippingRate from '../models/shippingRateModel.js';
 import TaxRule from '../models/taxRuleModel.js';
 import Vendor from '../models/vendorModel.js';
 import { Coupon, GiftCard } from '../models/promotionModel.js';
+import {
+  BASE_CURRENCY,
+  getCurrencyQuote,
+  roundMoney,
+} from './currencyService.js';
 
-const DEFAULT_CURRENCY = (process.env.DEFAULT_CURRENCY || 'LKR').toUpperCase();
+const DEFAULT_CURRENCY = (process.env.DEFAULT_CURRENCY || BASE_CURRENCY).toUpperCase();
 const FALLBACK_SHIPPING_THRESHOLD = Number(process.env.FREE_SHIPPING_THRESHOLD || 50);
 const FALLBACK_SHIPPING_PRICE = Number(process.env.DEFAULT_SHIPPING_PRICE || 10);
 const FALLBACK_TAX_RATE = Number(process.env.DEFAULT_TAX_RATE || 0.15);
 
-const roundMoney = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
-
 const normalizeCode = (value = '') => String(value || '').trim().toUpperCase();
 
-const getExchangeRates = () => {
-  try {
-    const parsed = JSON.parse(process.env.CURRENCY_RATES || '{}');
-    return Object.fromEntries(
-      Object.entries(parsed).map(([currency, rate]) => [currency.toUpperCase(), Number(rate)])
-    );
-  } catch {
-    return {};
-  }
-};
-
-const getCurrencyRate = (currency = DEFAULT_CURRENCY) => {
-  const normalizedCurrency = String(currency || DEFAULT_CURRENCY).toUpperCase();
-
-  if (normalizedCurrency === DEFAULT_CURRENCY) {
-    return 1;
-  }
-
-  const rates = getExchangeRates();
-  return Number(rates[normalizedCurrency] || 0) > 0 ? Number(rates[normalizedCurrency]) : 1;
+const getCurrencyRate = async (currency = DEFAULT_CURRENCY) => {
+  const quote = await getCurrencyQuote({ currency });
+  return quote.rate;
 };
 
 const toDisplayMoney = (value, exchangeRate) => roundMoney(Number(value || 0) * Number(exchangeRate || 1));
@@ -126,7 +112,7 @@ const normalizeCartItems = async (cartItems = []) => {
 };
 
 const getShippingOptions = async ({ shippingAddress = {}, subtotal = 0, currency = DEFAULT_CURRENCY }) => {
-  const exchangeRate = getCurrencyRate(currency);
+  const exchangeRate = await getCurrencyRate(currency);
   const country = getCountryCode(shippingAddress);
   const state = getStateCode(shippingAddress);
   const query = {
@@ -257,7 +243,9 @@ const calculateOrderPricing = async ({
   currency = DEFAULT_CURRENCY,
 }) => {
   const normalizedCurrency = String(currency || DEFAULT_CURRENCY).toUpperCase();
-  const exchangeRate = getCurrencyRate(normalizedCurrency);
+  const currencyQuote = await getCurrencyQuote({ currency: normalizedCurrency });
+  const pricingCurrency = currencyQuote.currency;
+  const exchangeRate = currencyQuote.rate;
   const normalizedItems = await normalizeCartItems(cartItems);
   const baseItemsPrice = roundMoney(
     normalizedItems.reduce((total, item) => total + Number(item.price || 0) * Number(item.qty || 0), 0)
@@ -266,7 +254,7 @@ const calculateOrderPricing = async ({
   const shippingOptions = await getShippingOptions({
     shippingAddress,
     subtotal: baseItemsPrice,
-    currency: normalizedCurrency,
+    currency: pricingCurrency,
   });
   const selectedShipping =
     shippingOptions.find((option) => option.id === String(shippingRateId || '')) || shippingOptions[0];
@@ -286,7 +274,7 @@ const calculateOrderPricing = async ({
   const giftCardResult = await calculateGiftCardAmount({
     giftCardCode,
     balanceDue: preGiftTotal,
-    currency: normalizedCurrency,
+    currency: pricingCurrency,
   });
   const totalPrice = roundMoney(Math.max(preGiftTotal - giftCardResult.giftCardAmount, 0));
 
@@ -303,8 +291,9 @@ const calculateOrderPricing = async ({
     discountPrice,
     giftCardAmount: giftCardResult.giftCardAmount,
     totalPrice,
-    currency: normalizedCurrency,
+    currency: pricingCurrency,
     exchangeRate,
+    currencyFallback: currencyQuote.fallback,
     couponCode: couponResult.coupon?.code || '',
     giftCardCode: giftCardResult.giftCard?.code || '',
     shippingRate: selectedShipping

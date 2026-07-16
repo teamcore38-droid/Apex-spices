@@ -46,12 +46,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async ({ name, email, password, confirmPassword, phone = '' }) => {
+  const register = async ({
+    name,
+    email,
+    password,
+    confirmPassword,
+    phone = '',
+    countryCode = 'LK',
+    countryName = 'Sri Lanka',
+  }) => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } };
       const { data } = await axios.post(
         '/api/users',
-        { name, email, password, confirmPassword, phone },
+        { name, email, password, confirmPassword, phone, countryCode, countryName },
         config
       );
       setUserInfo(data);

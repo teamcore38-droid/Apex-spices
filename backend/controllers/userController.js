@@ -11,6 +11,7 @@ import {
   saveAddressToUser,
 } from '../utils/addressBook.js';
 import { sendPasswordResetEmail } from '../utils/emailService.js';
+import { getSupportedCurrencyForCountry, resolveSupportedCurrency } from '../utils/currencyService.js';
 import {
   adminRequiresTwoFactor,
   clearRefreshCookie,
@@ -37,6 +38,9 @@ const serializeUser = (user) => ({
   name: user.name,
   email: user.email,
   phone: user.phone || '',
+  countryCode: user.countryCode || 'LK',
+  countryName: user.countryName || 'Sri Lanka',
+  preferredCurrency: resolveSupportedCurrency(user.preferredCurrency || getSupportedCurrencyForCountry(user.countryCode || 'LK')),
   isAdmin: user.isAdmin,
   isStaff: Boolean(user.isStaff),
   role: user.role || (user.isAdmin ? 'admin' : 'customer'),
@@ -74,11 +78,16 @@ const registerUser = async (req, res) => {
     password = '',
     confirmPassword = '',
     phone = '',
+    countryCode = 'LK',
+    countryName = 'Sri Lanka',
   } = req.body;
 
   try {
     const trimmedName = String(name).trim();
     const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedCountryCode = String(countryCode || 'LK').trim().toUpperCase().slice(0, 2) || 'LK';
+    const normalizedCountryName = String(countryName || '').trim() || 'Sri Lanka';
+    const preferredCurrency = getSupportedCurrencyForCountry(normalizedCountryCode);
 
     if (!trimmedName) {
       return res.status(400).json({ message: 'Name is required' });
@@ -108,6 +117,9 @@ const registerUser = async (req, res) => {
       name: trimmedName,
       email: normalizedEmail,
       phone: sanitizePhone(phone),
+      countryCode: normalizedCountryCode,
+      countryName: normalizedCountryName,
+      preferredCurrency,
       password,
     });
 
@@ -312,6 +324,8 @@ const updateUserProfile = async (req, res) => {
     const nextName = String(req.body.name ?? user.name).trim();
     const nextEmail = String(req.body.email ?? user.email).trim().toLowerCase();
     const nextPhone = sanitizePhone(req.body.phone ?? user.phone);
+    const nextCountryCode = String(req.body.countryCode ?? user.countryCode ?? 'LK').trim().toUpperCase().slice(0, 2) || 'LK';
+    const nextCountryName = String(req.body.countryName ?? user.countryName ?? 'Sri Lanka').trim() || 'Sri Lanka';
 
     if (!nextName) {
       return res.status(400).json({ message: 'Name is required' });
@@ -332,6 +346,9 @@ const updateUserProfile = async (req, res) => {
     user.name = nextName;
     user.email = nextEmail;
     user.phone = nextPhone;
+    user.countryCode = nextCountryCode;
+    user.countryName = nextCountryName;
+    user.preferredCurrency = getSupportedCurrencyForCountry(nextCountryCode);
 
     const updatedUser = await user.save();
     res.json(serializeUser(updatedUser));

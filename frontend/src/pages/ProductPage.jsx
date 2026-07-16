@@ -16,16 +16,12 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import Product from '../components/Product';
 import { slugifyCategoryName } from '../utils/categoryUi';
 import { trackEvent } from '../utils/analytics';
 import { applySeo, buildProductStructuredData } from '../utils/seo';
-import {
-  formatCurrency,
-  getProductImages,
-  getStockPresentation,
-  normalizeProductPayload,
-} from '../utils/productUi';
+import { getProductImages, getStockPresentation, normalizeProductPayload } from '../utils/productUi';
 
 const TRUST_POINTS = [
   ['Verified Authentic', 'Every product checked against strict quality standards.'],
@@ -52,6 +48,7 @@ const ProductPage = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { userInfo } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -388,11 +385,11 @@ const ProductPage = () => {
             <div className="mt-6 flex flex-wrap items-end gap-4">
               {product.compareAtPrice > product.price && (
                 <p className="text-xl text-gray-400 line-through">
-                  {formatCurrency(product.compareAtPrice)}
+                  {formatPrice(product.compareAtPrice)}
                 </p>
               )}
               <p className="font-serif text-4xl font-bold text-brand-dark">
-                {formatCurrency(effectivePrice)}
+                {formatPrice(effectivePrice)}
               </p>
               {product.weight && (
                 <span className="rounded-full bg-[#eef2f8] px-3 py-1 text-sm font-semibold text-[#2c4a73]">
@@ -441,7 +438,7 @@ const ProductPage = () => {
                         </span>
                         {variant.priceAdjustment !== 0 && (
                           <span className="mt-1 block text-xs font-semibold text-brand-primary">
-                            {variant.priceAdjustment > 0 ? '+' : ''}{formatCurrency(variant.priceAdjustment)}
+                            {variant.priceAdjustment > 0 ? '+' : ''}{formatPrice(variant.priceAdjustment)}
                           </span>
                         )}
                       </button>

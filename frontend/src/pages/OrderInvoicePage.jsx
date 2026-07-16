@@ -86,6 +86,7 @@ const OrderInvoicePage = () => {
         (invoice.refund.status && invoice.refund.status !== 'Not Refunded') ||
         invoice.refund.history?.length)
   );
+  const invoiceCurrency = invoice?.currency || invoice?.totals?.currency || 'LKR';
 
   if (loading) {
     return (
@@ -286,8 +287,8 @@ const OrderInvoicePage = () => {
                     <tr key={`${item.name}-${item.product}`}>
                       <td className="px-3 py-2.5 font-semibold">{item.name}</td>
                       <td className="px-3 py-2.5 text-center">{item.qty}</td>
-                      <td className="px-3 py-2.5 text-right">{formatCurrency(item.price)}</td>
-                      <td className="px-3 py-2.5 text-right font-bold">{formatCurrency(item.lineTotal)}</td>
+                      <td className="px-3 py-2.5 text-right">{formatCurrency(item.price, invoiceCurrency)}</td>
+                      <td className="px-3 py-2.5 text-right font-bold">{formatCurrency(item.lineTotal, invoiceCurrency)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -309,7 +310,7 @@ const OrderInvoicePage = () => {
                         {invoice.refund?.status || 'Not Refunded'}
                       </span>
                       <span className="font-semibold text-brand-dark">
-                        {formatCurrency(invoice.refund?.refundedAmount || 0)}
+                        {formatCurrency(invoice.refund?.refundedAmount || 0, invoiceCurrency)}
                       </span>
                     </div>
                   </div>
@@ -321,31 +322,31 @@ const OrderInvoicePage = () => {
                 <div className="mt-3 space-y-2 text-sm text-gray-600">
                   <div className="flex justify-between gap-4">
                     <span>Items subtotal</span>
-                    <span className="font-semibold text-brand-dark">{formatCurrency(invoice.totals?.subtotal || 0)}</span>
+                    <span className="font-semibold text-brand-dark">{formatCurrency(invoice.totals?.subtotal || 0, invoiceCurrency)}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span>Shipping</span>
-                    <span className="font-semibold text-brand-dark">{formatCurrency(invoice.totals?.shipping || 0)}</span>
+                    <span className="font-semibold text-brand-dark">{formatCurrency(invoice.totals?.shipping || 0, invoiceCurrency)}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span>Tax</span>
-                    <span className="font-semibold text-brand-dark">{formatCurrency(invoice.totals?.tax || 0)}</span>
+                    <span className="font-semibold text-brand-dark">{formatCurrency(invoice.totals?.tax || 0, invoiceCurrency)}</span>
                   </div>
                   {Number(invoice.totals?.discount || 0) > 0 && (
                     <div className="flex justify-between gap-4">
                       <span>Discount</span>
-                      <span className="font-semibold text-brand-dark">-{formatCurrency(invoice.totals.discount)}</span>
+                      <span className="font-semibold text-brand-dark">-{formatCurrency(invoice.totals.discount, invoiceCurrency)}</span>
                     </div>
                   )}
                   {Number(invoice.totals?.giftCard || 0) > 0 && (
                     <div className="flex justify-between gap-4">
                       <span>Gift card</span>
-                      <span className="font-semibold text-brand-dark">-{formatCurrency(invoice.totals.giftCard)}</span>
+                      <span className="font-semibold text-brand-dark">-{formatCurrency(invoice.totals.giftCard, invoiceCurrency)}</span>
                     </div>
                   )}
                   <div className="flex justify-between gap-4 border-t border-dashed border-gray-300 pt-3 font-serif text-xl font-bold text-brand-dark">
                     <span>Total</span>
-                    <span>{formatCurrency(invoice.totals?.total || 0)}</span>
+                    <span>{formatCurrency(invoice.totals?.total || 0, invoiceCurrency)}</span>
                   </div>
                 </div>
               </section>

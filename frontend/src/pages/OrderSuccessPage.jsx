@@ -111,6 +111,7 @@ const OrderSuccessPage = () => {
     [order, userInfo]
   );
   const timeline = useMemo(() => buildOrderTimeline(order || {}), [order]);
+  const orderCurrency = order?.currency || 'LKR';
 
   if (loading) {
     return (
@@ -243,12 +244,12 @@ const OrderSuccessPage = () => {
                         <div>
                           <h3 className="font-serif text-xl font-bold text-brand-dark">{item.name}</h3>
                           <p className="text-sm text-gray-500">
-                            Qty: {item.qty} • {formatCurrency(item.price)} each
+                            Qty: {item.qty} • {formatCurrency(item.price, orderCurrency)} each
                           </p>
                         </div>
                       </div>
                       <p className="font-serif text-xl font-bold text-brand-primary">
-                        {formatCurrency(item.qty * item.price)}
+                        {formatCurrency(item.qty * item.price, orderCurrency)}
                       </p>
                     </article>
                   ))}
@@ -359,19 +360,19 @@ const OrderSuccessPage = () => {
                 <div className="mt-5 space-y-3 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Items subtotal</span>
-                    <span className="font-semibold text-brand-dark">{formatCurrency(order.itemsPrice || 0)}</span>
+                    <span className="font-semibold text-brand-dark">{formatCurrency(order.itemsPrice || 0, orderCurrency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span className="font-semibold text-brand-dark">{formatCurrency(order.shippingPrice || 0)}</span>
+                    <span className="font-semibold text-brand-dark">{formatCurrency(order.shippingPrice || 0, orderCurrency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span className="font-semibold text-brand-dark">{formatCurrency(order.taxPrice || 0)}</span>
+                    <span className="font-semibold text-brand-dark">{formatCurrency(order.taxPrice || 0, orderCurrency)}</span>
                   </div>
                   <div className="flex justify-between border-t border-dashed pt-4 font-serif text-xl font-bold text-brand-dark">
                     <span>Total</span>
-                    <span className="text-brand-primary">{formatCurrency(order.totalPrice || 0)}</span>
+                    <span className="text-brand-primary">{formatCurrency(order.totalPrice || 0, orderCurrency)}</span>
                   </div>
                 </div>
 

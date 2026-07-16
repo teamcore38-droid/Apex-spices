@@ -21,6 +21,7 @@ import {
   commitPromotionsForOrder,
   getShippingOptions,
 } from '../utils/commerceService.js';
+import { resolveSupportedCurrency } from '../utils/currencyService.js';
 import {
   applyReservation,
   deductReservedInventory,
@@ -59,7 +60,6 @@ const VALID_PAYMENT_STATUSES = [
 ];
 
 const VALID_SORT_OPTIONS = ['newest', 'oldest', 'total-high', 'total-low'];
-
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const sanitizePhone = (value = '') => value.toString().replace(/\s+/g, '');
 
@@ -104,6 +104,14 @@ const buildNormalizedShippingAddress = (payload = {}, fallbackUser = null) => {
     postalCode: normalized.postalCode,
     country: normalized.country,
   };
+};
+
+const resolvePaymentCurrency = (currency = '', paymentProvider = 'Manual') => {
+  if (paymentProvider !== 'PayHere') {
+    return resolveSupportedCurrency(currency || 'LKR');
+  }
+
+  return resolveSupportedCurrency(currency || 'USD');
 };
 
 const buildGuestCustomer = (shippingAddress = {}) => ({
@@ -222,6 +230,7 @@ const buildInvoicePayload = (order) => ({
   orderId: order._id,
   createdAt: order.createdAt,
   paidAt: order.paidAt || null,
+  currency: order.currency || 'LKR',
   customer: {
     id: order.user?._id || order.user,
     name: order.user?.name || order.shippingAddress?.fullName || 'Valued Customer',
@@ -385,6 +394,8 @@ const addOrderItems = async (req, res) => {
     const normalizedPaymentMethod = String(
       paymentMethod || (normalizedPaymentProvider === 'Manual' ? 'Development Placeholder' : 'Card')
     ).trim();
+    const requestedCurrency = currency || req.user?.preferredCurrency || '';
+    const paymentCurrency = resolvePaymentCurrency(requestedCurrency, normalizedPaymentProvider);
     const initialPaymentStatus = 'Payment Pending';
     const pricing = await calculateOrderPricing({
       cartItems: orderItems,
@@ -392,7 +403,7 @@ const addOrderItems = async (req, res) => {
       couponCode,
       giftCardCode,
       shippingRateId,
-      currency,
+      currency: paymentCurrency,
     });
     const checkoutIntegrity = buildCheckoutIntegrity(pricing, req.body);
 
@@ -513,6 +524,8 @@ const addGuestOrderItems = async (req, res) => {
     const normalizedPaymentMethod = String(
       paymentMethod || (normalizedPaymentProvider === 'Manual' ? 'Development Placeholder' : 'Card')
     ).trim();
+    const requestedCurrency = currency || req.user?.preferredCurrency || '';
+    const paymentCurrency = resolvePaymentCurrency(requestedCurrency, normalizedPaymentProvider);
 
     const guestCustomer = buildGuestCustomer(normalizedShippingAddress);
     const pricing = await calculateOrderPricing({
@@ -521,7 +534,7 @@ const addGuestOrderItems = async (req, res) => {
       couponCode,
       giftCardCode,
       shippingRateId,
-      currency,
+      currency: paymentCurrency,
     });
     const checkoutIntegrity = buildCheckoutIntegrity(pricing, req.body);
 
@@ -1266,7 +1279,7 @@ const quoteOrder = async (req, res) => {
       couponCode,
       giftCardCode,
       shippingRateId,
-      currency,
+      currency: currency || req.user?.preferredCurrency || '',
     });
 
     res.json(quote);
@@ -1287,7 +1300,7 @@ const getOrderShippingRates = async (req, res) => {
     const quote = await calculateOrderPricing({
       cartItems: orderItems,
       shippingAddress: normalizedShippingAddress,
-      currency,
+      currency: currency || req.user?.preferredCurrency || '',
     });
     const rates = await getShippingOptions({
       shippingAddress: normalizedShippingAddress,

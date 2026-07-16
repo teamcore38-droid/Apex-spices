@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Mail, Menu, ShoppingBag, User, LogOut, MapPinned } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const PRIMARY_NAV_LINKS = [
   ['HOME', '/'],
@@ -13,9 +14,31 @@ const PRIMARY_NAV_LINKS = [
   ['CONTACT', '/contact'],
 ];
 
+const CurrencySelect = ({ currency, changeCurrency, supportedCurrencies, mobile = false }) => (
+  <label className={mobile ? 'block' : 'hidden sm:block'}>
+    <span className="sr-only">Currency</span>
+    <select
+      value={currency}
+      onChange={(event) => changeCurrency(event.target.value)}
+      className={
+        mobile
+          ? 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-brand-light outline-none focus:border-brand-accent'
+          : 'rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-brand-accent outline-none transition hover:border-brand-accent focus:border-brand-accent'
+      }
+    >
+      {supportedCurrencies.map((option) => (
+        <option key={option.code} value={option.code} className="bg-white text-brand-dark">
+          {option.label}
+        </option>
+      ))}
+    </select>
+  </label>
+);
+
 const Header = () => {
   const { cartItems } = useCart();
   const { userInfo, logout } = useAuth();
+  const { currency, changeCurrency, supportedCurrencies } = useCurrency();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -81,6 +104,12 @@ const Header = () => {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-5">
+          <CurrencySelect
+            currency={currency}
+            changeCurrency={changeCurrency}
+            supportedCurrencies={supportedCurrencies}
+          />
+
           <Link to="/cart" className="relative inline-flex items-center transition-colors hover:text-brand-accent">
             <div className="relative">
               <ShoppingBag size={22} className="text-brand-accent" />
@@ -245,6 +274,13 @@ const Header = () => {
         <div className="border-t border-white/10 bg-[#060f1d] px-4 py-4 lg:hidden">
           <div className="container mx-auto space-y-3">
             <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
+              <CurrencySelect
+                mobile
+                currency={currency}
+                changeCurrency={changeCurrency}
+                supportedCurrencies={supportedCurrencies}
+              />
+
               {PRIMARY_NAV_LINKS.map(([label, path]) => (
                 <Link
                   key={`mobile-nav-${path}`}

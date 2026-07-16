@@ -19,6 +19,7 @@ import {
   User,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/productUi';
 import { ACCOUNT_TABS, createInitialAddressForm, formatAddressLines } from '../utils/accountUi';
 import {
@@ -172,6 +173,7 @@ const PasswordField = ({ label, name, value, onChange }) => {
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
   const { userInfo, logout, syncUserInfo } = useAuth();
 
@@ -766,7 +768,7 @@ const ProfilePage = () => {
                               </span>
                             </div>
                             <p className="mt-4 font-serif text-2xl font-bold text-brand-dark">
-                              {formatCurrency(order.totalPrice)}
+                              {formatCurrency(order.totalPrice, order.currency || 'LKR')}
                             </p>
                             <p className="mt-2 text-sm text-gray-500">
                               {new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -1012,7 +1014,7 @@ const ProfilePage = () => {
                             <div>
                               <p className="font-mono text-xs font-bold text-brand-primary">{order._id}</p>
                               <p className="mt-2 font-serif text-2xl font-bold text-brand-dark">
-                                {formatCurrency(order.totalPrice)}
+                                {formatCurrency(order.totalPrice, order.currency || 'LKR')}
                               </p>
                               <p className="mt-1 text-sm text-gray-500">
                                 {new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -1090,7 +1092,7 @@ const ProfilePage = () => {
                         <img src={item.product?.image} alt={item.product?.name} className="h-24 w-24 rounded-2xl object-cover" />
                         <div className="min-w-0 flex-1">
                           <h3 className="font-serif text-xl font-bold text-brand-dark">{item.product?.name}</h3>
-                          <p className="mt-1 text-sm font-semibold text-brand-primary">{formatCurrency(item.product?.price || 0)}</p>
+                          <p className="mt-1 text-sm font-semibold text-brand-primary">{formatPrice(item.product?.price || 0)}</p>
                           <div className="mt-4 flex flex-wrap gap-2">
                             <Link
                               to={`/product/${item.product?._id}`}

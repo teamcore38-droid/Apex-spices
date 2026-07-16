@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import CustomSelect from '../components/CustomSelect';
 import { formatCurrency } from '../utils/productUi';
 import { normalizeShippingAddress } from '../utils/orderUi';
@@ -73,6 +74,8 @@ const wait = (milliseconds) =>
     window.setTimeout(resolve, milliseconds);
   });
 
+const PAYHERE_SUPPORTED_CURRENCIES = ['LKR', 'USD', 'EUR', 'GBP', 'AUD'];
+
 const waitForVerifiedPayment = async ({ orderId, token }) => {
   for (let attempt = 0; attempt < 15; attempt += 1) {
     if (attempt > 0) {
@@ -102,6 +105,7 @@ const waitForVerifiedPayment = async ({ orderId, token }) => {
 const CheckoutInner = ({ payhereEnabled }) => {
   const { cartItems, shippingAddress, saveShippingAddress, clearCart } = useCart();
   const { userInfo } = useAuth();
+  const { currency, exchangeRate, formatPrice } = useCurrency();
   const navigate = useNavigate();
 
   const [addresses, setAddresses] = useState([]);
@@ -116,7 +120,6 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [pendingOrderId, setPendingOrderId] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [giftCardCode, setGiftCardCode] = useState('');
-  const [currency, setCurrency] = useState('LKR');
   const [shippingRateId, setShippingRateId] = useState('');
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -194,13 +197,22 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const shippingPrice = itemsPrice > 50 ? 0 : 10;
   const taxPrice = Number((itemsPrice * 0.15).toFixed(2));
   const totalPrice = itemsPrice + shippingPrice + taxPrice;
-  const displayItemsPrice = quote?.itemsPrice ?? itemsPrice;
-  const displayShippingPrice = quote?.shippingPrice ?? shippingPrice;
-  const displayTaxPrice = quote?.taxPrice ?? taxPrice;
-  const displayDiscountPrice = quote?.discountPrice ?? 0;
-  const displayGiftCardAmount = quote?.giftCardAmount ?? 0;
-  const displayTotalPrice = quote?.totalPrice ?? totalPrice;
-  const displayCurrency = quote?.currency || currency;
+  const checkoutCurrency =
+    payhereEnabled && !PAYHERE_SUPPORTED_CURRENCIES.includes(currency) ? 'USD' : currency;
+  const convertLocalEstimate = (value) =>
+    Math.round((Number(value || 0) * Number(exchangeRate || 1) + Number.EPSILON) * 100) / 100;
+  const activeQuote = quote?.requestedCurrency === checkoutCurrency ? quote : null;
+  const displayItemsPrice = activeQuote?.itemsPrice ?? convertLocalEstimate(itemsPrice);
+  const displayShippingPrice = activeQuote?.shippingPrice ?? convertLocalEstimate(shippingPrice);
+  const displayTaxPrice = activeQuote?.taxPrice ?? convertLocalEstimate(taxPrice);
+  const displayDiscountPrice = activeQuote?.discountPrice ?? 0;
+  const displayGiftCardAmount = activeQuote?.giftCardAmount ?? 0;
+  const displayTotalPrice = activeQuote?.totalPrice ?? convertLocalEstimate(totalPrice);
+  const displayCurrency = activeQuote?.currency || checkoutCurrency;
+  const formatCheckoutBasePrice = (baseValue) =>
+    activeQuote?.exchangeRate
+      ? formatCurrency(Number(baseValue || 0) * Number(activeQuote.exchangeRate || 1), displayCurrency)
+      : formatPrice(baseValue);
 
   const requestQuote = async (nextShippingAddress = form) => {
     if (cartItems.length === 0) {
@@ -222,7 +234,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
           couponCode,
           giftCardCode,
           shippingRateId,
-          currency,
+          currency: checkoutCurrency,
         },
         {
           headers: {
@@ -232,12 +244,12 @@ const CheckoutInner = ({ payhereEnabled }) => {
         }
       );
 
-      setQuote(data);
+      setQuote({ ...data, requestedCurrency: checkoutCurrency });
       trackEvent(
         'checkout_quote',
         {
           value: data.totalPrice,
-          currency: data.currency || currency,
+          currency: data.currency || checkoutCurrency,
           itemCount: cartItems.reduce((total, item) => total + Number(item.qty || 0), 0),
         },
         { token: userInfo?.token }
@@ -305,7 +317,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
         couponCode,
         giftCardCode,
         shippingRateId,
-        currency,
+        currency: checkoutCurrency,
         saveAddress: Boolean(userInfo && saveAddressToBook),
         setDefaultAddress: Boolean(userInfo && saveAddressToBook && setDefaultAddress),
       },
@@ -328,9 +340,14 @@ const CheckoutInner = ({ payhereEnabled }) => {
           sessionId: getMarketingSessionId(),
           email: nextShippingAddress.email,
           name: nextShippingAddress.fullName,
-          items: cartItems,
-          subtotal: cartItems.reduce((total, item) => total + Number(item.price || 0) * Number(item.qty || 0), 0),
-          currency,
+          items: cartItems.map((item) => ({
+            ...item,
+            price: activeQuote?.exchangeRate
+              ? Number(item.price || 0) * Number(activeQuote.exchangeRate || 1)
+              : Number(item.price || 0) * Number(exchangeRate || 1),
+          })),
+          subtotal: displayItemsPrice,
+          currency: displayCurrency,
           checkoutUrl: `${window.location.origin}/checkout`,
         },
         {
@@ -351,7 +368,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
       {
         orderId: order._id,
         value: order.totalPrice,
-        currency: order.currency || currency,
+        currency: order.currency || checkoutCurrency,
         itemCount: order.orderItems?.reduce((total, item) => total + Number(item.qty || 0), 0) || 0,
       },
       { token: userInfo?.token }
@@ -603,7 +620,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                       </div>
                     </div>
                     <span className="text-sm font-semibold text-brand-dark">
-                      {formatCurrency(item.qty * item.price)}
+                      {formatCheckoutBasePrice(item.qty * item.price)}
                     </span>
                   </div>
                 ))}
@@ -634,9 +651,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     <span className="font-semibold">-{formatCurrency(displayGiftCardAmount, displayCurrency)}</span>
                   </div>
                 )}
-                {quote?.shippingRate?.service && (
+                {activeQuote?.shippingRate?.service && (
                   <div className="text-xs text-gray-500">
-                    {quote.shippingRate.carrier} - {quote.shippingRate.service}
+                    {activeQuote.shippingRate.carrier} - {activeQuote.shippingRate.service}
                   </div>
                 )}
                 <div className="flex justify-between border-t border-dashed pt-4 font-serif text-xl font-bold text-brand-dark">
@@ -765,19 +782,15 @@ const CheckoutInner = ({ payhereEnabled }) => {
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-brand-dark">Currency</label>
-                  <CustomSelect
-                    value={currency}
-                    onChange={(nextValue) => {
-                      setCurrency(nextValue);
-                      setQuote(null);
-                    }}
-                    options={[
-                      { value: 'LKR', label: 'LKR' },
-                      { value: 'USD', label: 'USD' },
-                      { value: 'EUR', label: 'EUR' },
-                      { value: 'GBP', label: 'GBP' },
-                    ]}
-                  />
+                  <div className="rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm font-semibold text-brand-dark">
+                    {displayCurrency}
+                    {checkoutCurrency !== currency && (
+                      <span className="ml-2 text-xs font-medium text-gray-500">PayHere checkout currency</span>
+                    )}
+                    {activeQuote?.currencyFallback && (
+                      <span className="ml-2 text-xs font-medium text-gray-500">fallback applied</span>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-brand-dark">Shipping Service</label>
@@ -789,9 +802,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     }}
                     options={[
                       { value: '', label: 'Best available rate' },
-                      ...(quote?.shippingOptions || []).map((option) => ({
+                      ...(activeQuote?.shippingOptions || []).map((option) => ({
                         value: option.id,
-                        label: `${option.carrier} - ${option.service} (${formatCurrency(option.price, quote.currency)})`,
+                        label: `${option.carrier} - ${option.service} (${formatCurrency(option.price, activeQuote.currency)})`,
                       })),
                     ]}
                   />
@@ -1058,7 +1071,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                       </div>
                     </div>
                     <span className="text-sm font-semibold text-brand-dark">
-                      {formatCurrency(item.qty * item.price)}
+                      {formatCheckoutBasePrice(item.qty * item.price)}
                     </span>
                   </div>
                 ))}
@@ -1089,9 +1102,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     <span className="font-semibold">-{formatCurrency(displayGiftCardAmount, displayCurrency)}</span>
                   </div>
                 )}
-                {quote?.shippingRate?.service && (
+                {activeQuote?.shippingRate?.service && (
                   <div className="text-xs text-gray-500">
-                    {quote.shippingRate.carrier} - {quote.shippingRate.service}
+                    {activeQuote.shippingRate.carrier} - {activeQuote.shippingRate.service}
                   </div>
                 )}
                 <div className="flex justify-between border-t border-dashed pt-4 font-serif text-xl font-bold text-brand-dark">

@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { Trash2, ArrowLeft, Minus, Plus } from 'lucide-react';
-import { formatCurrency } from '../utils/productUi';
 
 const CartPage = () => {
   const { cartItems, addToCart, removeFromCart } = useCart();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
+  const subtotal = cartItems.reduce((acc, item) => acc + item.qty * item.price, 0);
 
   const checkoutHandler = () => {
     navigate('/login?redirect=/checkout');
@@ -48,7 +50,7 @@ const CartPage = () => {
                       </Link>
                     </div>
                     <div className="text-center w-full md:w-auto font-medium">
-                      {formatCurrency(item.price)}
+                      {formatPrice(item.price)}
                     </div>
                     <div className="flex justify-center w-full md:w-auto">
                       <div className="inline-flex items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-0.5">
@@ -77,7 +79,7 @@ const CartPage = () => {
                     </div>
                     <div className="flex justify-between md:justify-end items-center w-full md:w-auto w-full font-bold">
                       <span className="md:hidden">Total: </span>
-                      {formatCurrency(item.price * item.qty)}
+                      {formatPrice(item.price * item.qty)}
                       <button 
                         onClick={() => removeFromCart(item.product)}
                         className="ml-4 text-red-500 hover:text-red-700 transition-colors"
@@ -104,7 +106,7 @@ const CartPage = () => {
               
               <div className="flex justify-between mb-4 text-gray-600">
                 <span>Items ({cartItems.reduce((acc, item) => acc + item.qty, 0)})</span>
-                <span>{formatCurrency(cartItems.reduce((acc, item) => acc + item.qty * item.price, 0))}</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               
               <div className="flex justify-between mb-6 text-gray-600">
@@ -114,7 +116,7 @@ const CartPage = () => {
               
               <div className="flex justify-between mb-8 pb-6 border-b border-gray-100 text-xl font-bold">
                 <span>Subtotal</span>
-                <span>{formatCurrency(cartItems.reduce((acc, item) => acc + item.qty * item.price, 0))}</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               
               <button 

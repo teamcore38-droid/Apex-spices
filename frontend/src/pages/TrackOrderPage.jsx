@@ -96,6 +96,7 @@ const TrackOrderPage = () => {
     [result]
   );
   const timeline = useMemo(() => buildOrderTimeline(result || {}), [result]);
+  const resultCurrency = result?.currency || 'LKR';
 
   const submitHandler = async (event) => {
     event.preventDefault();
@@ -234,7 +235,9 @@ const TrackOrderPage = () => {
                             })}
                           </p>
                         </div>
-                        <span className="text-sm font-semibold text-brand-dark">{formatCurrency(order.totalPrice)}</span>
+                        <span className="text-sm font-semibold text-brand-dark">
+                          {formatCurrency(order.totalPrice, order.currency || 'LKR')}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -262,7 +265,7 @@ const TrackOrderPage = () => {
                     <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Order {result._id}</h2>
                   </div>
                   <p className="rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-dark">
-                    Total {formatCurrency(result.totalPrice)}
+                    Total {formatCurrency(result.totalPrice, resultCurrency)}
                   </p>
                 </div>
 
@@ -415,7 +418,7 @@ const TrackOrderPage = () => {
                             <p className="text-sm text-gray-500">Qty: {item.qty}</p>
                           </div>
                         </div>
-                        <p className="text-sm font-semibold text-brand-dark">{formatCurrency(item.price)}</p>
+                        <p className="text-sm font-semibold text-brand-dark">{formatCurrency(item.price, resultCurrency)}</p>
                       </article>
                     ))}
                   </div>
@@ -435,15 +438,15 @@ const TrackOrderPage = () => {
                   <div className="mt-5 space-y-3 text-sm text-gray-600">
                     <div className="flex justify-between">
                       <span>Items subtotal</span>
-                      <span className="font-semibold text-brand-dark">{formatCurrency(result.itemsPrice || 0)}</span>
+                      <span className="font-semibold text-brand-dark">{formatCurrency(result.itemsPrice || 0, resultCurrency)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Shipping</span>
-                      <span className="font-semibold text-brand-dark">{formatCurrency(result.shippingPrice || 0)}</span>
+                      <span className="font-semibold text-brand-dark">{formatCurrency(result.shippingPrice || 0, resultCurrency)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Tax</span>
-                      <span className="font-semibold text-brand-dark">{formatCurrency(result.taxPrice || 0)}</span>
+                      <span className="font-semibold text-brand-dark">{formatCurrency(result.taxPrice || 0, resultCurrency)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Payment Provider</span>
@@ -455,7 +458,7 @@ const TrackOrderPage = () => {
                     </div>
                     <div className="flex justify-between border-t border-dashed pt-4 font-serif text-xl font-bold text-brand-dark">
                       <span>Total</span>
-                      <span className="text-brand-primary">{formatCurrency(result.totalPrice || 0)}</span>
+                      <span className="text-brand-primary">{formatCurrency(result.totalPrice || 0, resultCurrency)}</span>
                     </div>
                   </div>
                 </div>

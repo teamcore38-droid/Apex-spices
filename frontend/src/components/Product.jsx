@@ -1,14 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Lock, ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 import {
-  formatCurrency,
   getProductStatusBadge,
   getStockPresentation,
 } from '../utils/productUi';
 
 const Product = ({ product }) => {
   const { addToCart } = useCart();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const statusBadge = getProductStatusBadge(product);
   const stockBadge = getStockPresentation(product.countInStock);
@@ -96,11 +97,11 @@ const Product = ({ product }) => {
           <div>
             {product.compareAtPrice > product.price && (
               <p className="text-sm text-gray-400 line-through">
-                {formatCurrency(product.compareAtPrice)}
+                {formatPrice(product.compareAtPrice)}
               </p>
             )}
             <p className="font-serif text-3xl font-bold text-[#081729]">
-              {formatCurrency(product.price)}
+              {formatPrice(product.price)}
             </p>
           </div>
 

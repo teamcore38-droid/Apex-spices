@@ -84,10 +84,11 @@ export const normalizeProductPayload = (data) => {
 export const formatCurrency = (value = 0, currency = 'LKR') => {
   const parsedValue = Number(value) || 0;
   try {
-    return new Intl.NumberFormat('en-LK', {
+    const formatted = new Intl.NumberFormat('en-LK', {
       style: 'currency',
       currency,
     }).format(parsedValue);
+    return formatted.includes(currency) ? formatted : `${formatted} ${currency}`;
   } catch {
     return `${currency} ${parsedValue.toFixed(2)}`;
   }

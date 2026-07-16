@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { formatMoney } from './currencyService.js';
 
 /*
   Production email delivery expects these environment variables:
@@ -149,7 +150,7 @@ const buildOrderHtml = ({ heading, copy, order, ctaLabel, ctaUrl }) => {
       <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">${copy}</p>
       <table style="width:100%;border-collapse:collapse;margin:24px 0;">
         ${summaryRow('Order ID', orderId)}
-        ${summaryRow('Total', `${order?.currency || 'USD'} ${Number(order?.totalPrice || 0).toFixed(2)}`)}
+        ${summaryRow('Total', formatMoney(order?.totalPrice || 0, order?.currency || 'LKR'))}
         ${summaryRow('Order Status', order?.orderStatus || 'Processing')}
         ${summaryRow('Payment', getPaymentLabel(order))}
         ${summaryRow('Tracking', trackingNumber)}
@@ -357,7 +358,7 @@ const sendInvoiceEmail = async (order) =>
           Your invoice for order <strong>${order?._id?.toString?.() || ''}</strong> is ready.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Total', `${order?.currency || 'USD'} ${Number(order?.totalPrice || 0).toFixed(2)}`)}
+          ${summaryRow('Total', formatMoney(order?.totalPrice || 0, order?.currency || 'LKR'))}
           ${summaryRow('Payment', getPaymentLabel(order))}
           ${summaryRow('Order Status', order?.orderStatus || 'Processing')}
         </table>
@@ -383,9 +384,9 @@ const sendRefundConfirmationEmail = async (order, refund = {}) =>
           We processed a refund update for order <strong>${order?._id?.toString?.() || ''}</strong>.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Refund Amount', `${order?.currency || 'USD'} ${Number(refund?.amount || 0).toFixed(2)}`)}
+          ${summaryRow('Refund Amount', formatMoney(refund?.amount || 0, order?.currency || 'LKR'))}
           ${summaryRow('Refund Status', refund?.status || order?.refundStatus || 'Updated')}
-          ${summaryRow('Total Refunded', `${order?.currency || 'USD'} ${Number(order?.refundedAmount || 0).toFixed(2)}`)}
+          ${summaryRow('Total Refunded', formatMoney(order?.refundedAmount || 0, order?.currency || 'LKR'))}
           ${summaryRow('Payment Status', getPaymentLabel(order))}
         </table>
         <a href="${buildOrderUrl(order?._id?.toString?.() || '')}" style="display:inline-block;margin-top:10px;padding:14px 22px;border-radius:12px;background:#16365f;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">View Order</a>
@@ -427,7 +428,7 @@ const sendAbandonedCartEmail = async (cart) => {
       (item) => `
         <tr>
           <td style="padding:10px 0;color:#3a4a63;">${item.name || 'Product'} x ${item.qty || 1}</td>
-          <td style="padding:10px 0;text-align:right;font-weight:700;color:#0b1f3a;">${cart.currency || 'LKR'} ${Number((item.price || 0) * (item.qty || 1)).toFixed(2)}</td>
+          <td style="padding:10px 0;text-align:right;font-weight:700;color:#0b1f3a;">${formatMoney((item.price || 0) * (item.qty || 1), cart.currency || 'LKR')}</td>
         </tr>
       `
     )
@@ -445,7 +446,7 @@ const sendAbandonedCartEmail = async (cart) => {
           You left a few products in your cart. Return to checkout whenever you are ready.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:20px 0;">${rows}</table>
-        ${summaryRow('Cart subtotal', `${cart.currency || 'LKR'} ${Number(cart.subtotal || 0).toFixed(2)}`)}
+        ${summaryRow('Cart subtotal', formatMoney(cart.subtotal || 0, cart.currency || 'LKR'))}
         <a href="${cart.checkoutUrl || `${getFrontendUrl()}/checkout`}" style="display:inline-block;margin-top:18px;padding:14px 22px;border-radius:12px;background:#16365f;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">Return to Cart</a>
       `,
     }),

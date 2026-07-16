@@ -73,6 +73,23 @@ const userSchema = mongoose.Schema(
       default: '',
       trim: true,
     },
+    countryCode: {
+      type: String,
+      default: 'LK',
+      trim: true,
+      uppercase: true,
+    },
+    countryName: {
+      type: String,
+      default: 'Sri Lanka',
+      trim: true,
+    },
+    preferredCurrency: {
+      type: String,
+      default: 'LKR',
+      trim: true,
+      uppercase: true,
+    },
     password: {
       type: String,
       required: true,

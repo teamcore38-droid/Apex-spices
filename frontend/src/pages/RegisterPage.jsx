@@ -106,6 +106,8 @@ const RegisterPage = () => {
         name,
         email,
         phone: formatInternationalPhone(selectedCountry, phone),
+        countryCode: selectedCountry.iso2,
+        countryName: selectedCountry.name,
         password,
         confirmPassword,
       });
