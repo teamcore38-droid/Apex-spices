@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
@@ -45,6 +45,11 @@ const OrderInvoicePage = lazy(() => import('./pages/OrderInvoicePage'))
 const AdminOrderDetailPage = lazy(() => import('./pages/AdminOrderDetailPage'))
 const AdminPackingSlipPage = lazy(() => import('./pages/AdminPackingSlipPage'))
 
+const ShopRedirect = () => {
+  const { search } = useLocation()
+  return <Navigate to={`/products${search}`} replace />
+}
+
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -53,6 +58,7 @@ function App() {
         <Suspense fallback={<RouteLoadingScreen />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/shop/*" element={<ShopRedirect />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/category/:slug" element={<CategoryPage />} />
