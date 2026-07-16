@@ -22,6 +22,10 @@ Required:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_CURRENCY`
+- `PAYHERE_MERCHANT_ID`
+- `PAYHERE_MERCHANT_SECRET`
+- `PAYHERE_MODE` (`sandbox` or `live`)
+- `PAYHERE_NOTIFY_URL` (public URL ending in `/api/payments/payhere/notify`)
 - `EMAIL_HOST`
 - `EMAIL_PORT`
 - `EMAIL_USER`
@@ -46,7 +50,7 @@ Recommended:
 
 Security rules:
 
-- Stripe secret and webhook secret must never be exposed in frontend env.
+- Stripe secrets and the PayHere merchant secret must never be exposed in frontend env.
 - Stripe publishable key must never be stored in backend-only env stores.
 
 ## 3. CORS + Cross-Domain Setup

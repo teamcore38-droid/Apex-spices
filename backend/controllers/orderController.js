@@ -402,6 +402,8 @@ const addOrderItems = async (req, res) => {
           note:
             normalizedPaymentProvider === 'Stripe'
               ? 'Order created and awaiting Stripe payment confirmation.'
+              : normalizedPaymentProvider === 'PayHere'
+              ? 'Order created and awaiting PayHere payment confirmation.'
               : 'Order created in development/manual payment mode.',
           user: req.user,
         }),

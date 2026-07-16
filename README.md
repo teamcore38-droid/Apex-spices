@@ -86,6 +86,10 @@ Required:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_CURRENCY`
+- `PAYHERE_MERCHANT_ID`
+- `PAYHERE_MERCHANT_SECRET`
+- `PAYHERE_MODE` (`sandbox` or `live`)
+- `PAYHERE_NOTIFY_URL` (public backend notification endpoint)
 - `EMAIL_HOST`
 - `EMAIL_PORT`
 - `EMAIL_USER`
@@ -110,7 +114,7 @@ Optional:
 
 Security:
 
-- Never place Stripe secret keys in frontend env.
+- Never place Stripe secret keys or the PayHere merchant secret in frontend env.
 - Never commit real secrets to the repository.
 
 ## API Health and Hardening
@@ -147,6 +151,14 @@ stripe listen --forward-to localhost:5000/api/payments/webhook
    - `refund.created`
    - `refund.updated`
    - `refund.failed`
+
+## PayHere Sandbox Verification
+
+1. Set `PAYHERE_MERCHANT_ID`, `PAYHERE_MERCHANT_SECRET`, and `PAYHERE_MODE=sandbox` on the backend.
+2. Set `PAYHERE_NOTIFY_URL` to a publicly reachable HTTPS URL ending in `/api/payments/payhere/notify`.
+3. Complete a sandbox payment and confirm the order changes from `Payment Pending` to `Paid` only after the signed server notification arrives.
+
+PayHere cannot deliver notifications to localhost. Use the deployed backend or a secure tunnel when testing locally.
 
 ## Email Behavior
 

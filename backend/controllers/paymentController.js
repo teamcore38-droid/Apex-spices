@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import Order from '../models/orderModel.js';
 import StripeEvent from '../models/stripeEventModel.js';
 import {
@@ -33,6 +32,13 @@ import {
   recordFraudSignal,
   shouldBlockPayment,
 } from '../utils/fraudService.js';
+import {
+  buildPayhereCheckoutHash,
+  formatPayhereAmount,
+  isPublicPayhereNotifyUrl,
+  validatePayhereNotification,
+  validatePayhereOrderMatch,
+} from '../utils/payhereService.js';
 
 const REFUND_REASON_VALUES = ['duplicate', 'fraudulent', 'requested_by_customer'];
 
@@ -680,29 +686,59 @@ const generatePayhereHash = async (req, res) => {
       return res.status(400).json({ message: 'Order ID is required' });
     }
 
+    const merchantId = String(process.env.PAYHERE_MERCHANT_ID || '').trim();
+    const merchantSecret = String(process.env.PAYHERE_MERCHANT_SECRET || '').trim();
+
+    if (!merchantId || !merchantSecret) {
+      return res.status(503).json({ message: 'PayHere is not configured for this environment' });
+    }
+
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    const merchantId = process.env.PAYHERE_MERCHANT_ID || '1211149';
-    const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET || 'sandboxSecret123';
-    const currency = (order.currency || 'USD').toUpperCase();
-    const formattedAmount = Number(order.totalPrice || 0).toFixed(2);
+    const ownsOrder = String(order.user || '') === String(req.user?._id || '');
+    if (!ownsOrder && !req.user?.isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to initiate payment for this order' });
+    }
 
-    const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
-    const concatString = merchantId + orderId + formattedAmount + currency + hashedSecret;
-    const hash = crypto.createHash('md5').update(concatString).digest('hex').toUpperCase();
+    if (order.paymentProvider !== 'PayHere') {
+      return res.status(400).json({ message: 'This order is not configured for PayHere payment' });
+    }
 
+    if (order.isPaid) {
+      return res.status(400).json({ message: 'This order has already been paid' });
+    }
+
+    const currency = (order.currency || 'LKR').toUpperCase();
+    const amount = formatPayhereAmount(order.totalPrice);
+    const hash = buildPayhereCheckoutHash({
+      merchantId,
+      merchantSecret,
+      orderId: order._id.toString(),
+      amount,
+      currency,
+    });
+
+    const configuredNotifyUrl = String(process.env.PAYHERE_NOTIFY_URL || '').trim();
     const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-    const host = req.headers.host;
-    const notifyUrl = `${protocol}://${host}/api/payments/payhere/notify`;
+    const notifyUrl =
+      configuredNotifyUrl || `${protocol}://${req.get('host')}/api/payments/payhere/notify`;
+
+    if (!isPublicPayhereNotifyUrl(notifyUrl)) {
+      return res.status(503).json({
+        message: 'PAYHERE_NOTIFY_URL must be a public HTTPS PayHere notification endpoint',
+      });
+    }
 
     res.json({
       hash,
       merchantId,
       notifyUrl,
-      sandbox: process.env.NODE_ENV !== 'production' || process.env.PAYHERE_MODE === 'sandbox' || !process.env.PAYHERE_MERCHANT_ID,
+      amount,
+      currency,
+      sandbox: String(process.env.PAYHERE_MODE || 'sandbox').trim().toLowerCase() !== 'live',
     });
   } catch (error) {
     console.error('[paymentController:generatePayhereHash]', error);
@@ -712,37 +748,30 @@ const generatePayhereHash = async (req, res) => {
 
 const handlePayhereNotify = async (req, res) => {
   try {
-    const {
-      merchant_id,
-      order_id,
-      payment_id,
-      payhere_amount,
-      payhere_currency,
-      status_code,
-      md5sig,
-    } = req.body;
+    const validation = validatePayhereNotification({
+      payload: req.body,
+      merchantId: process.env.PAYHERE_MERCHANT_ID,
+      merchantSecret: process.env.PAYHERE_MERCHANT_SECRET,
+    });
 
-    const merchantSecret = (process.env.PAYHERE_MERCHANT_SECRET || '').trim() || 'sandboxSecret123';
-
-    const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
-    const concatString = merchant_id + order_id + payhere_amount + payhere_currency + status_code + hashedSecret;
-    const localSig = crypto.createHash('md5').update(concatString).digest('hex').toUpperCase();
-
-    if (localSig !== md5sig) {
-      console.warn(`[paymentController:payhereNotify] Signature mismatch. Received: ${md5sig}, Expected: ${localSig}`);
-      console.warn(`[paymentController:payhereNotify] Concat string: ${merchant_id} + ${order_id} + ${payhere_amount} + ${payhere_currency} + ${status_code} + [MD5(merchantSecret)]`);
-      
-      const isSandbox = process.env.PAYHERE_MODE === 'sandbox' || process.env.NODE_ENV !== 'production';
-      if (!isSandbox) {
-        return res.status(400).json({ message: 'Invalid signature' });
-      }
-      console.warn('[paymentController:payhereNotify] Sandbox mode active: Proceeding with payment despite signature mismatch.');
+    if (!validation.valid) {
+      console.warn(`[paymentController:payhereNotify] Rejected notification: ${validation.reason}`);
+      return res.status(400).json({ message: 'Invalid PayHere notification' });
     }
 
-    const order = await Order.findById(order_id);
+    const notification = validation.notification;
+    const order = await Order.findById(notification.orderId);
     if (!order) {
-      console.warn(`[paymentController:payhereNotify] Order ${order_id} not found`);
+      console.warn(`[paymentController:payhereNotify] Order ${notification.orderId} not found`);
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const orderMatch = validatePayhereOrderMatch({ order, notification });
+    if (!orderMatch.valid) {
+      console.warn(
+        `[paymentController:payhereNotify] Rejected order ${notification.orderId}: ${orderMatch.reason}`
+      );
+      return res.status(400).json({ message: 'Payment does not match this order' });
     }
 
     const actor = {
@@ -750,35 +779,92 @@ const handlePayhereNotify = async (req, res) => {
       email: 'payhere-webhook@system',
     };
 
-    if (status_code === '2') {
-      if (!order.isPaid) {
-        await applySuccessfulPaymentToOrder({
-          order,
-          paymentIntent: {
-            id: payment_id,
-            status: 'success',
-            amount_received: Number(payhere_amount) * 100,
-            currency: payhere_currency,
-            payment_method_types: ['PayHere Card/Wallet'],
-            receipt_email: order.shippingAddress?.email || '',
-            created: Math.floor(Date.now() / 1000),
-            provider: 'PayHere',
-          },
-          actor,
-        });
-        console.log(`[paymentController:payhereNotify] Order ${order_id} successfully marked as PAID`);
+    if (notification.statusCode === '2') {
+      if (!notification.paymentId) {
+        return res.status(400).json({ message: 'PayHere payment ID is required' });
       }
-    } else if (status_code === '-2') {
+
+      if (order.isPaid) {
+        return res.status(200).json({ received: true, alreadyProcessed: true });
+      }
+
+      const paymentIdOrder = await Order.findOne({
+        paymentIntentId: notification.paymentId,
+        _id: { $ne: order._id },
+      });
+      if (paymentIdOrder) {
+        return res.status(409).json({ message: 'PayHere payment has already been applied' });
+      }
+
+      await applySuccessfulPaymentToOrder({
+        order,
+        paymentIntent: {
+          id: notification.paymentId,
+          status: 'succeeded',
+          amount_received: Number(notification.amount) * 100,
+          currency: notification.currency,
+          payment_method_types: [notification.method || 'PayHere'],
+          receipt_email: order.shippingAddress?.email || '',
+          created: Math.floor(Date.now() / 1000),
+          provider: 'PayHere',
+        },
+        actor,
+        source: 'webhook',
+      });
+      await deductReservedInventory({ order, actor });
+      await commitPromotionsForOrder(order);
+      await awardOrderLoyaltyPoints(order, actor);
+
+      const updatedOrder = await order.save();
+      await syncVendorOrdersForOrder(updatedOrder);
+      await notifyOrderEvent(updatedOrder, 'order.paid');
+      await emitWebhookEvent('order.paid', updatedOrder.toObject(), {
+        resourceType: 'Order',
+        resourceId: updatedOrder._id.toString(),
+      });
+      console.log(
+        `[paymentController:payhereNotify] Order ${notification.orderId} successfully marked as paid`
+      );
+    } else if (notification.statusCode === '-2' && !order.isPaid) {
       await applyFailedPaymentToOrder({
         order,
-        error: { message: 'PayHere payment failed' },
+        paymentIntent: {
+          id: notification.paymentId,
+          status: 'failed',
+          currency: notification.currency,
+          payment_method_types: [notification.method || 'PayHere'],
+          provider: 'PayHere',
+        },
         actor,
+        source: 'webhook',
+        note: notification.statusMessage || 'PayHere reported that the payment failed.',
       });
-    } else if (status_code === '-1') {
-      await applyCancelledPaymentToOrder({
+      await releaseReservedInventory({
         order,
         actor,
+        note: 'Released reservation after PayHere reported payment failure.',
       });
+      await order.save();
+      await syncVendorOrdersForOrder(order);
+    } else if (notification.statusCode === '-1' && !order.isPaid) {
+      await applyCancelledPaymentToOrder({
+        order,
+        paymentIntent: {
+          id: notification.paymentId,
+          status: 'canceled',
+          currency: notification.currency,
+          provider: 'PayHere',
+        },
+        actor,
+        source: 'webhook',
+      });
+      await releaseReservedInventory({
+        order,
+        actor,
+        note: 'Released reservation after PayHere reported payment cancellation.',
+      });
+      await order.save();
+      await syncVendorOrdersForOrder(order);
     }
 
     res.status(200).json({ received: true });

@@ -120,12 +120,13 @@ const applySuccessfulPaymentToOrder = async ({
   source = 'system',
 }) => {
   const alreadyPaid = Boolean(order.isPaid);
+  const provider = paymentIntent.provider || order.paymentProvider || 'Stripe';
 
   order.isPaid = true;
   order.paidAt = paymentIntent.created
     ? new Date(paymentIntent.created * 1000)
     : order.paidAt || new Date();
-  order.paymentProvider = paymentIntent.provider || order.paymentProvider || 'Stripe';
+  order.paymentProvider = provider;
   order.paymentMethod = order.paymentMethod || 'Card';
   order.paymentIntentId = paymentIntent.id || order.paymentIntentId || '';
   order.paymentStatus = 'Paid';
@@ -159,11 +160,11 @@ const applySuccessfulPaymentToOrder = async ({
   pushStatusHistoryIfMeaningful(order, {
     status: order.orderStatus,
     note: alreadyPaid
-      ? `Stripe payment success confirmed again via ${source}.`
-      : `Payment succeeded via Stripe ${source === 'webhook' ? 'webhook' : 'confirmation'}.`,
+      ? `${provider} payment success confirmed again via ${source}.`
+      : `Payment succeeded via ${provider} ${source === 'webhook' ? 'webhook' : 'confirmation'}.`,
     updatedAt: new Date(),
     updatedBy: actor._id,
-    updatedByName: actor.name || actor.email || 'Stripe',
+    updatedByName: actor.name || actor.email || provider,
   });
 
   await maybeSendOrderConfirmation(order);
@@ -177,9 +178,11 @@ const applyFailedPaymentToOrder = async ({
   source = 'webhook',
   note,
 }) => {
+  const provider = paymentIntent?.provider || order.paymentProvider || 'Stripe';
+
   order.isPaid = false;
   order.paidAt = undefined;
-  order.paymentProvider = order.paymentProvider || 'Stripe';
+  order.paymentProvider = provider;
   order.paymentIntentId = paymentIntent?.id || order.paymentIntentId || '';
   order.paymentStatus = 'Payment Failed';
   order.paymentResult = {
@@ -207,10 +210,10 @@ const applyFailedPaymentToOrder = async ({
     status: order.orderStatus,
     note:
       note ||
-      `Payment failed via Stripe ${source === 'webhook' ? 'webhook' : 'confirmation'} and the order remains unpaid.`,
+      `Payment failed via ${provider} ${source === 'webhook' ? 'webhook' : 'confirmation'} and the order remains unpaid.`,
     updatedAt: new Date(),
     updatedBy: actor._id,
-    updatedByName: actor.name || actor.email || 'Stripe',
+    updatedByName: actor.name || actor.email || provider,
   });
 };
 
@@ -220,9 +223,11 @@ const applyCancelledPaymentToOrder = async ({
   actor = {},
   source = 'webhook',
 }) => {
+  const provider = paymentIntent?.provider || order.paymentProvider || 'Stripe';
+
   order.isPaid = false;
   order.paidAt = undefined;
-  order.paymentProvider = order.paymentProvider || 'Stripe';
+  order.paymentProvider = provider;
   order.paymentIntentId = paymentIntent?.id || order.paymentIntentId || '';
   order.paymentStatus = 'Cancelled';
   order.paymentResult = {
@@ -239,10 +244,10 @@ const applyCancelledPaymentToOrder = async ({
 
   pushStatusHistoryIfMeaningful(order, {
     status: order.orderStatus,
-    note: `Payment was cancelled via Stripe ${source}.`,
+    note: `Payment was cancelled via ${provider} ${source}.`,
     updatedAt: new Date(),
     updatedBy: actor._id,
-    updatedByName: actor.name || actor.email || 'Stripe',
+    updatedByName: actor.name || actor.email || provider,
   });
 };
 

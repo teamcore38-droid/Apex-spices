@@ -68,6 +68,35 @@ const validateCheckoutForm = (form) => {
   return '';
 };
 
+const wait = (milliseconds) =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+
+const waitForVerifiedPayment = async ({ orderId, token }) => {
+  for (let attempt = 0; attempt < 15; attempt += 1) {
+    if (attempt > 0) {
+      await wait(1500);
+    }
+
+    const { data: order } = await axios.get(`/api/orders/${orderId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (order.isPaid && order.paymentStatus === 'Paid') {
+      return order;
+    }
+
+    if (['Payment Failed', 'Cancelled'].includes(order.paymentStatus)) {
+      throw new Error(`PayHere reported the payment as ${order.paymentStatus.toLowerCase()}.`);
+    }
+  }
+
+  throw new Error(
+    'Payment was completed, but secure confirmation is still pending. Please retry shortly; you will not be charged again for an already-paid order.'
+  );
+};
+
 
 
 const CheckoutInner = ({ payhereEnabled }) => {
@@ -417,8 +446,21 @@ const CheckoutInner = ({ payhereEnabled }) => {
         throw new Error('PayHere payment gateway is currently unavailable.');
       }
 
-      window.payhere.onCompleted = function onCompleted() {
-        finalizeSuccess(order);
+      window.payhere.onCompleted = async function onCompleted() {
+        setLoading(true);
+        setError('');
+
+        try {
+          const verifiedOrder = await waitForVerifiedPayment({
+            orderId: order._id,
+            token: userInfo.token,
+          });
+          finalizeSuccess(verifiedOrder);
+        } catch (verificationError) {
+          setError(verificationError.message || 'Unable to verify the payment right now.');
+        } finally {
+          setLoading(false);
+        }
       };
 
       window.payhere.onDismissed = function onDismissed() {
@@ -439,8 +481,8 @@ const CheckoutInner = ({ payhereEnabled }) => {
         notify_url: payhereData.notifyUrl,
         order_id: order._id,
         items: 'Apex Spices Order',
-        amount: order.totalPrice.toFixed(2),
-        currency: order.currency || 'USD',
+        amount: payhereData.amount,
+        currency: payhereData.currency,
         first_name: form.fullName.split(' ')[0] || 'Customer',
         last_name: form.fullName.split(' ').slice(1).join(' ') || 'User',
         email: form.email,
