@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { BadgeCheck, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
+import { BadgeCheck, ChevronDown, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import Product from '../components/Product';
 import CustomSelect from '../components/CustomSelect';
 import {
@@ -32,6 +32,10 @@ const ProductsPage = () => {
   const [error, setError] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [mobileFilters, setMobileFilters] = useState(INITIAL_FILTERS);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({
     currentPage: 1,
@@ -41,6 +45,18 @@ const ProductsPage = () => {
     hasPrevPage: false,
   });
   const [facets, setFacets] = useState({ categories: [], brands: [], origins: [], availability: [], priceRange: {} });
+
+  useEffect(() => {
+    if (!mobileFilterOpen) {
+      return undefined;
+    }
+
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileFilterOpen]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -134,6 +150,10 @@ const ProductsPage = () => {
   const resetFilters = () => {
     setSearchInput('');
     setFilters(INITIAL_FILTERS);
+    setMobileFilters(INITIAL_FILTERS);
+    setMobileFilterOpen(false);
+    setMobileSearchOpen(false);
+    setMobileSortOpen(false);
     setPage(1);
     setError('');
   };
@@ -166,6 +186,148 @@ const ProductsPage = () => {
       label: `${facet._id} (${facet.count})`,
     })),
   ];
+  const activeFilterCount = Object.entries(filters).filter(
+    ([key, value]) => key !== 'keyword' && key !== 'sort' && value
+  ).length;
+
+  const openMobileFilters = () => {
+    setMobileFilters(filters);
+    setMobileFilterOpen(true);
+  };
+
+  const updateMobileFilter = (key, value) => {
+    setMobileFilters((currentFilters) => ({
+      ...currentFilters,
+      [key]: value,
+    }));
+  };
+
+  const applyMobileFilters = () => {
+    setFilters((currentFilters) => ({
+      ...mobileFilters,
+      keyword: currentFilters.keyword,
+      sort: currentFilters.sort,
+    }));
+    setMobileFilterOpen(false);
+    setPage(1);
+    setError('');
+  };
+
+  const resetMobileFilters = () => {
+    setMobileFilters((currentFilters) => ({
+      ...INITIAL_FILTERS,
+      keyword: currentFilters.keyword,
+      sort: currentFilters.sort,
+    }));
+  };
+
+  const renderFilterControls = ({ values, onChange, includeSort = true }) => (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_0.8fr_auto]">
+      <label className="block">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+          Category
+        </span>
+        <CustomSelect
+          value={values.category}
+          onChange={(nextValue) => onChange('category', nextValue)}
+          options={categoryOptions}
+        />
+      </label>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+            Min Price
+          </span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={values.minPrice}
+            onChange={(event) => onChange('minPrice', event.target.value)}
+            placeholder="0"
+            className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+            Max Price
+          </span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={values.maxPrice}
+            onChange={(event) => onChange('maxPrice', event.target.value)}
+            placeholder="50"
+            className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+          />
+        </label>
+      </div>
+
+      <label className="block">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+          Brand
+        </span>
+        <CustomSelect
+          value={values.brand}
+          onChange={(nextValue) => onChange('brand', nextValue)}
+          options={brandOptions}
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+          Origin
+        </span>
+        <CustomSelect
+          value={values.origin}
+          onChange={(nextValue) => onChange('origin', nextValue)}
+          options={originOptions}
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+          Availability
+        </span>
+        <CustomSelect
+          value={values.stock}
+          onChange={(nextValue) => onChange('stock', nextValue)}
+          options={SHOP_STOCK_FILTER_OPTIONS}
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+          Minimum Rating
+        </span>
+        <CustomSelect
+          value={values.rating}
+          onChange={(nextValue) => onChange('rating', nextValue)}
+          options={[
+            { value: '', label: 'Any Rating' },
+            { value: '4', label: '4+ Stars' },
+            { value: '3', label: '3+ Stars' },
+          ]}
+        />
+      </label>
+
+      {includeSort && (
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+            Sort
+          </span>
+          <CustomSelect
+            value={values.sort}
+            onChange={(nextValue) => onChange('sort', nextValue)}
+            options={PRODUCT_PRICE_SORT_OPTIONS}
+            leftIcon={<SlidersHorizontal size={18} />}
+          />
+        </label>
+      )}
+    </div>
+  );
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] pt-6 pb-16">
@@ -183,8 +345,8 @@ const ProductsPage = () => {
           </p>
         </div>
 
-        <div className="mt-10 rounded-[30px] bg-white p-6 shadow-[0_20px_60px_rgba(11,31,58,0.08)]">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mt-10 rounded-[30px] bg-white p-4 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:p-6">
+          <div className="hidden flex-col gap-6 lg:flex lg:flex-row lg:items-end lg:justify-between">
             <div className="relative w-full lg:max-w-md">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
                 Search Products
@@ -204,113 +366,99 @@ const ProductsPage = () => {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_0.8fr_auto]">
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Category
-              </span>
-              <CustomSelect
-                value={filters.category}
-                onChange={(nextValue) => updateFilter('category', nextValue)}
-                options={categoryOptions}
-              />
-            </label>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                  Min Price
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={filters.minPrice}
-                  onChange={(event) => updateFilter('minPrice', event.target.value)}
-                  placeholder="0"
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                  Max Price
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={filters.maxPrice}
-                  onChange={(event) => updateFilter('maxPrice', event.target.value)}
-                  placeholder="50"
-                  className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                />
-              </label>
+          <div className="lg:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Shop Controls</p>
+                <p className="mt-1 text-sm font-semibold text-brand-dark">{meta.totalProducts} products found</p>
+              </div>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-brand-primary transition hover:bg-brand-light"
+                aria-label="Reset filters"
+              >
+                <RotateCcw size={16} />
+              </button>
             </div>
 
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Brand
-              </span>
-              <CustomSelect
-                value={filters.brand}
-                onChange={(nextValue) => updateFilter('brand', nextValue)}
-                options={brandOptions}
-              />
-            </label>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((current) => !current)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                  mobileSearchOpen || filters.keyword
+                    ? 'border-brand-primary bg-brand-primary text-white'
+                    : 'border-gray-200 bg-[#f7f9fc] text-brand-dark'
+                }`}
+              >
+                <Search size={15} /> Search
+              </button>
+              <button
+                type="button"
+                onClick={openMobileFilters}
+                className={`relative inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                  activeFilterCount
+                    ? 'border-brand-primary bg-brand-primary text-white'
+                    : 'border-gray-200 bg-[#f7f9fc] text-brand-dark'
+                }`}
+              >
+                <SlidersHorizontal size={15} /> Filter
+                {activeFilterCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] font-bold text-brand-dark">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileSortOpen((current) => !current)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                  mobileSortOpen || filters.sort
+                    ? 'border-brand-primary bg-brand-primary text-white'
+                    : 'border-gray-200 bg-[#f7f9fc] text-brand-dark'
+                }`}
+              >
+                Sort <ChevronDown size={15} className={mobileSortOpen ? 'rotate-180 transition' : 'transition'} />
+              </button>
+            </div>
 
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Origin
-              </span>
-              <CustomSelect
-                value={filters.origin}
-                onChange={(nextValue) => updateFilter('origin', nextValue)}
-                options={originOptions}
-              />
-            </label>
+            {mobileSearchOpen && (
+              <div className="mt-4 rounded-2xl border border-gray-100 bg-[#f7f9fc] p-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Search products, brands, origin, or SKU..."
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-gray-700 outline-none transition focus:border-brand-accent"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                  />
+                </div>
+              </div>
+            )}
 
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Availability
-              </span>
-              <CustomSelect
-                value={filters.stock}
-                onChange={(nextValue) => updateFilter('stock', nextValue)}
-                options={SHOP_STOCK_FILTER_OPTIONS}
-              />
-            </label>
+            {mobileSortOpen && (
+              <div className="mt-4 rounded-2xl border border-gray-100 bg-[#f7f9fc] p-3">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+                  Sort Products
+                </span>
+                <CustomSelect
+                  value={filters.sort}
+                  onChange={(nextValue) => updateFilter('sort', nextValue)}
+                  options={PRODUCT_PRICE_SORT_OPTIONS}
+                  leftIcon={<SlidersHorizontal size={18} />}
+                />
+              </div>
+            )}
+          </div>
 
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Minimum Rating
-              </span>
-              <CustomSelect
-                value={filters.rating}
-                onChange={(nextValue) => updateFilter('rating', nextValue)}
-                options={[
-                  { value: '', label: 'Any Rating' },
-                  { value: '4', label: '4+ Stars' },
-                  { value: '3', label: '3+ Stars' },
-                ]}
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Sort
-              </span>
-              <CustomSelect
-                value={filters.sort}
-                onChange={(nextValue) => updateFilter('sort', nextValue)}
-                options={PRODUCT_PRICE_SORT_OPTIONS}
-                leftIcon={<SlidersHorizontal size={18} />}
-              />
-            </label>
-
+          <div className="mt-6 hidden lg:block">
+            {renderFilterControls({ values: filters, onChange: updateFilter })}
             <button
               type="button"
               onClick={resetFilters}
-              className="mt-auto inline-flex items-center justify-center rounded-xl border border-brand-primary/20 px-4 py-3 text-sm font-semibold text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white"
+              className="mt-4 inline-flex items-center justify-center rounded-xl border border-brand-primary/20 px-4 py-3 text-sm font-semibold text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white"
             >
               <RotateCcw size={16} className="mr-2" /> Reset
             </button>
@@ -385,6 +533,59 @@ const ProductsPage = () => {
           )}
         </div>
       </div>
+
+      {mobileFilterOpen && (
+        <div className="fixed inset-0 z-[80] lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-brand-dark/45 backdrop-blur-[2px]"
+            onClick={() => setMobileFilterOpen(false)}
+            aria-label="Close filters"
+          />
+          <div className="absolute inset-x-0 bottom-0 max-h-[86vh] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(11,31,58,0.22)]">
+            <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-200" />
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Filter Products</p>
+                <p className="mt-1 text-sm text-gray-500">Refine the shop without leaving the list.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#f7f9fc] text-brand-dark"
+                aria-label="Close filters"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="max-h-[calc(86vh-154px)] overflow-y-auto px-5 py-5">
+              {renderFilterControls({
+                values: mobileFilters,
+                onChange: updateMobileFilter,
+                includeSort: false,
+              })}
+            </div>
+
+            <div className="grid grid-cols-[0.8fr_1.2fr] gap-3 border-t border-gray-100 bg-white px-5 py-4">
+              <button
+                type="button"
+                onClick={resetMobileFilters}
+                className="rounded-xl border border-brand-primary/20 px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-brand-primary"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={applyMobileFilters}
+                className="rounded-xl bg-brand-primary px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white shadow-sm"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto mt-20 max-w-6xl px-4">
         <div className="grid gap-6 border-t border-gray-300/50 pt-10 sm:grid-cols-2 xl:grid-cols-4">
