@@ -187,13 +187,34 @@ const mapStatusHistory = (statusHistory = []) =>
     updatedByName: entry.updatedByName || '',
   }));
 
+const OFFICIAL_BUSINESS_INFO = {
+  name: 'APEX LINK GROUP',
+  email: 'apexlinkimportandexport@gmail.com',
+  phone: '+94 76 566 9961',
+  address: '580/12, Moque Lane, Nawala, Rajagiriya, Sri Lanka',
+};
+
+const PLACEHOLDER_BUSINESS_VALUES = [
+  'support@apexlinkgroup.com',
+  '+1 (555) 123-4567',
+  'One Apex Plaza, Suite 400, Global Trade District, San Francisco, CA 94110',
+];
+
+const resolveBusinessValue = (value, fallback) => {
+  const normalizedValue = String(value || '').trim();
+
+  if (!normalizedValue || PLACEHOLDER_BUSINESS_VALUES.includes(normalizedValue)) {
+    return fallback;
+  }
+
+  return normalizedValue;
+};
+
 const getBusinessInfoForDocuments = () => ({
-  name: process.env.BUSINESS_NAME || 'APEX LINK GROUP',
-  email: process.env.BUSINESS_EMAIL || 'apexlinkimportandexport@gmail.com',
-  phone: process.env.BUSINESS_PHONE || '+94 76 566 9961',
-  address:
-    process.env.BUSINESS_ADDRESS ||
-    '580/12, Moque Lane, Nawala, Rajagiriya, Sri Lanka',
+  name: resolveBusinessValue(process.env.BUSINESS_NAME, OFFICIAL_BUSINESS_INFO.name),
+  email: resolveBusinessValue(process.env.BUSINESS_EMAIL, OFFICIAL_BUSINESS_INFO.email),
+  phone: resolveBusinessValue(process.env.BUSINESS_PHONE, OFFICIAL_BUSINESS_INFO.phone),
+  address: resolveBusinessValue(process.env.BUSINESS_ADDRESS, OFFICIAL_BUSINESS_INFO.address),
   website: process.env.BUSINESS_WEBSITE || process.env.FRONTEND_URL || 'http://localhost:5173',
 });
 
