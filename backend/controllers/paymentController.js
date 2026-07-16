@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import Order from '../models/orderModel.js';
 import StripeEvent from '../models/stripeEventModel.js';
 import {
@@ -671,4 +672,111 @@ const handleStripeWebhook = async (req, res) => {
   }
 };
 
-export { createPaymentIntent, createRefund, handleStripeWebhook, getOrderPaymentEvents };
+const generatePayhereHash = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ message: 'Order ID is required' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const merchantId = process.env.PAYHERE_MERCHANT_ID || '1211149';
+    const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET || 'sandboxSecret123';
+    const currency = (order.currency || 'USD').toUpperCase();
+    const formattedAmount = Number(order.totalPrice || 0).toFixed(2);
+
+    const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
+    const concatString = merchantId + orderId + formattedAmount + currency + hashedSecret;
+    const hash = crypto.createHash('md5').update(concatString).digest('hex').toUpperCase();
+
+    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    const host = req.headers.host;
+    const notifyUrl = `${protocol}://${host}/api/payments/payhere/notify`;
+
+    res.json({
+      hash,
+      merchantId,
+      notifyUrl,
+      sandbox: process.env.NODE_ENV !== 'production' || process.env.PAYHERE_MODE === 'sandbox' || !process.env.PAYHERE_MERCHANT_ID,
+    });
+  } catch (error) {
+    console.error('[paymentController:generatePayhereHash]', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+const handlePayhereNotify = async (req, res) => {
+  try {
+    const {
+      merchant_id,
+      order_id,
+      payment_id,
+      payhere_amount,
+      payhere_currency,
+      status_code,
+      md5sig,
+    } = req.body;
+
+    const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET || 'sandboxSecret123';
+
+    const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
+    const concatString = merchant_id + order_id + payhere_amount + payhere_currency + status_code + hashedSecret;
+    const localSig = crypto.createHash('md5').update(concatString).digest('hex').toUpperCase();
+
+    if (localSig !== md5sig) {
+      console.warn('[paymentController:payhereNotify] Signature verification failed');
+      return res.status(400).json({ message: 'Invalid signature' });
+    }
+
+    const order = await Order.findById(order_id);
+    if (!order) {
+      console.warn(`[paymentController:payhereNotify] Order ${order_id} not found`);
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const actor = {
+      name: 'PayHere Webhook',
+      email: 'payhere-webhook@system',
+    };
+
+    if (status_code === '2') {
+      if (!order.isPaid) {
+        await applySuccessfulPaymentToOrder(order, {
+          id: payment_id,
+          status: 'success',
+          amountReceived: Number(payhere_amount),
+          currency: payhere_currency,
+          paymentMethodType: 'PayHere Card/Wallet',
+          receiptEmail: order.shippingAddress?.email || '',
+          created: new Date(),
+        }, actor);
+        console.log(`[paymentController:payhereNotify] Order ${order_id} successfully marked as PAID`);
+      }
+    } else if (status_code === '-2') {
+      await applyFailedPaymentToOrder(order, {
+        message: 'PayHere payment failed',
+      }, actor);
+    } else if (status_code === '-1') {
+      await applyCancelledPaymentToOrder(order, {}, actor);
+    }
+
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('[paymentController:payhereNotify]', error);
+    res.status(500).json({ message: 'Webhook processing failed' });
+  }
+};
+
+export {
+  createPaymentIntent,
+  createRefund,
+  handleStripeWebhook,
+  getOrderPaymentEvents,
+  generatePayhereHash,
+  handlePayhereNotify,
+};
