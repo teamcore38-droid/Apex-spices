@@ -189,11 +189,11 @@ const mapStatusHistory = (statusHistory = []) =>
 
 const getBusinessInfoForDocuments = () => ({
   name: process.env.BUSINESS_NAME || 'APEX LINK GROUP',
-  email: process.env.BUSINESS_EMAIL || 'support@apexlinkgroup.com',
-  phone: process.env.BUSINESS_PHONE || '+1 (555) 123-4567',
+  email: process.env.BUSINESS_EMAIL || 'apexlinkimportandexport@gmail.com',
+  phone: process.env.BUSINESS_PHONE || '+94 76 566 9961',
   address:
     process.env.BUSINESS_ADDRESS ||
-    'One Apex Plaza, Suite 400, Global Trade District, San Francisco, CA 94110',
+    '580/12, Moque Lane, Nawala, Rajagiriya, Sri Lanka',
   website: process.env.BUSINESS_WEBSITE || process.env.FRONTEND_URL || 'http://localhost:5173',
 });
 

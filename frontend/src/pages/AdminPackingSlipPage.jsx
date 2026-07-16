@@ -164,6 +164,14 @@ const AdminPackingSlipPage = () => {
               </div>
             </div>
 
+            <div className="rounded-3xl bg-brand-light p-5 text-sm text-gray-700">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-accent">Business Information</p>
+              <p className="mt-3 font-semibold text-brand-dark">{packingSlip.business?.name || 'APEX LINK GROUP'}</p>
+              <p>{packingSlip.business?.address}</p>
+              <p>{packingSlip.business?.email}</p>
+              <p>{packingSlip.business?.phone}</p>
+            </div>
+
             <div className="overflow-hidden rounded-3xl border border-gray-100">
               <table className="w-full border-collapse">
                 <thead>

@@ -24,17 +24,17 @@ const ContactPage = () => {
       {
         icon: MapPin,
         title: 'Studio & Dispatch',
-        body: 'One Apex Plaza, Suite 400\nGlobal Trade District\nSan Francisco, CA 94110',
+        body: '580/12, Moque Lane\nNawala, Rajagiriya\nSri Lanka',
       },
       {
         icon: Phone,
         title: 'Customer Care',
-        body: '+1 (555) 123-4567\nMonday to Friday\n9:00 AM - 6:00 PM PST',
+        body: '+94 76 566 9961\nMonday to Friday\n9:00 AM - 6:00 PM',
       },
       {
         icon: Mail,
         title: 'Email Support',
-        body: 'hello@apexspices.com\nwholesale@apexspices.com',
+        body: 'apexlinkimportandexport@gmail.com',
       },
     ],
     []
