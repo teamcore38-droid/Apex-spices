@@ -4,6 +4,7 @@ import {
   createSupportTicket,
   getAdvancedSearch,
   getAdminSupportTickets,
+  getHomePageData,
   getLoyalty,
   getNotificationPreferences,
   getRecentlyViewed,
@@ -18,6 +19,7 @@ import { PERMISSIONS } from '../utils/permissions.js';
 
 const router = express.Router();
 
+router.route('/home').get(getHomePageData);
 router.route('/search').get(getAdvancedSearch);
 router.route('/recently-viewed').get(protectOptional, getRecentlyViewed).post(protectOptional, recordRecentlyViewed);
 router.route('/recommendations').get(protectOptional, getRecommendations);

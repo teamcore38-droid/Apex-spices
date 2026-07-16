@@ -5,7 +5,6 @@ import FeaturedProductCarousel from '../components/FeaturedProductCarousel';
 import { Link } from 'react-router-dom';
 import { Truck, ShieldCheck, Globe, Award, ChevronRight, ChevronLeft } from 'lucide-react';
 import { getCategoryImageCandidates } from '../utils/categoryUi';
-import { normalizeProductPayload } from '../utils/productUi';
 
 const fallbackCategories = [
   {
@@ -33,6 +32,33 @@ const fallbackCategories = [
       'https://images.pexels.com/photos/6157053/pexels-photo-6157053.jpeg?auto=compress&cs=tinysrgb&w=1400',
   },
 ];
+
+const HOME_DATA_CACHE_MS = 60 * 1000;
+let cachedHomeData = null;
+let homeDataRequest = null;
+
+const fetchHomeData = async () => {
+  if (cachedHomeData && Date.now() - cachedHomeData.cachedAt < HOME_DATA_CACHE_MS) {
+    return cachedHomeData.data;
+  }
+
+  if (!homeDataRequest) {
+    homeDataRequest = axios
+      .get('/api/customer/home')
+      .then(({ data }) => {
+        cachedHomeData = {
+          cachedAt: Date.now(),
+          data,
+        };
+        return data;
+      })
+      .finally(() => {
+        homeDataRequest = null;
+      });
+  }
+
+  return homeDataRequest;
+};
 
 const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -132,42 +158,21 @@ const HomePage = () => {
   };
 
   useEffect(() => {
-    const fetchHomeData = async () => {
+    let isMounted = true;
+
+    const loadHomeData = async () => {
       try {
-        const [featuredResult, bestSellersResult, categoriesResult] = await Promise.allSettled([
-          axios.get('/api/products', {
-            params: {
-              featured: true,
-              limit: 8,
-            },
-          }),
-          axios.get('/api/products', {
-            params: {
-              bestSeller: true,
-              limit: 4,
-            },
-          }),
-          axios.get('/api/categories'),
-        ]);
+        const homeData = await fetchHomeData();
 
-        let nextFeaturedProducts = [];
-        let nextBestSellers = [];
-        let nextCategories = [];
-        if (featuredResult.status === 'fulfilled') {
-          const featuredPayload = normalizeProductPayload(featuredResult.value.data);
-          nextFeaturedProducts = featuredPayload.products;
-        } else {
-          setError('Unable to load featured collection right now.');
+        if (!isMounted) {
+          return;
         }
 
-        if (bestSellersResult.status === 'fulfilled') {
-          const bestSellerPayload = normalizeProductPayload(bestSellersResult.value.data);
-          nextBestSellers = bestSellerPayload.products;
-        }
-
-        if (categoriesResult.status === 'fulfilled' && Array.isArray(categoriesResult.value.data)) {
-          nextCategories = categoriesResult.value.data;
-        }
+        const nextFeaturedProducts = Array.isArray(homeData.featuredProducts)
+          ? homeData.featuredProducts
+          : [];
+        const nextBestSellers = Array.isArray(homeData.bestSellers) ? homeData.bestSellers : [];
+        let nextCategories = Array.isArray(homeData.categories) ? homeData.categories : [];
 
         if (nextCategories.length === 0) {
           nextCategories = fallbackCategories;
@@ -176,19 +181,27 @@ const HomePage = () => {
         setFeaturedProducts(nextFeaturedProducts);
         setBestSellers(nextBestSellers);
         setCategories(nextCategories);
-        if (featuredResult.status === 'fulfilled') {
-          setError(null);
-        }
+        setError(null);
         setLoading(false);
       } catch (err) {
-        console.error(err);
-        setError('Unable to load featured collection right now.');
+        console.error('[home] Unable to load home data', err);
+        if (!isMounted) {
+          return;
+        }
+
+        setFeaturedProducts([]);
+        setBestSellers([]);
         setCategories(fallbackCategories);
+        setError(null);
         setLoading(false);
       }
     };
 
-    fetchHomeData();
+    loadHomeData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
