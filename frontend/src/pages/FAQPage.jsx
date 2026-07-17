@@ -53,7 +53,7 @@ const FAQPage = () => {
       ]}
       relatedLinks={[
         { to: '/shipping', label: 'Shipping Policy' },
-        { to: '/returns', label: 'Returns & Refunds' },
+        { to: '/pages/refund-policy', label: 'Refund Policy' },
         { to: '/contact', label: 'Contact Support' },
       ]}
       cta={{

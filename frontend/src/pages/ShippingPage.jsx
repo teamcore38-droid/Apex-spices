@@ -63,8 +63,8 @@ const ShippingPage = () => {
         },
       ]}
       relatedLinks={[
-        { to: '/returns', label: 'Returns & Refunds' },
-        { to: '/privacy', label: 'Privacy Policy' },
+        { to: '/pages/refund-policy', label: 'Refund Policy' },
+        { to: '/pages/privacy-policy', label: 'Privacy Policy' },
         { to: '/faq', label: 'FAQ' },
       ]}
       cta={{

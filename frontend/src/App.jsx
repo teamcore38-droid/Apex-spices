@@ -104,6 +104,9 @@ function App() {
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/privacy-center" element={<PrivacyCenterPage />} />
               <Route path="/returns" element={<ReturnsPage />} />
+              <Route path="/pages/refund-policy" element={<ReturnsPage />} />
+              <Route path="/pages/privacy-policy" element={<PrivacyPage />} />
+              <Route path="/pages/terms-and-conditions" element={<TermsPage />} />
               <Route path="/shipping" element={<ShippingPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/categories" element={<AdminCategoriesPage />} />

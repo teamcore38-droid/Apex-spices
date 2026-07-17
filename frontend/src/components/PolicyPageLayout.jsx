@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { applySeo } from '../utils/seo';
 
 const PolicyPageLayout = ({
   eyebrow,
@@ -9,7 +11,16 @@ const PolicyPageLayout = ({
   sections = [],
   relatedLinks = [],
   cta,
+  seo = null,
 }) => {
+  useEffect(() => {
+    if (!seo) {
+      return;
+    }
+
+    applySeo(seo);
+  }, [seo]);
+
   return (
     <div className="bg-[#f7f9fc] py-16">
       <div className="container mx-auto max-w-6xl px-4">
@@ -65,17 +76,23 @@ const PolicyPageLayout = ({
                   {section.body && (
                     <p className="mt-4 text-sm leading-7 text-gray-600 sm:text-base">{section.body}</p>
                   )}
-                  {section.points?.length > 0 && (
-                    <div className="mt-4 space-y-3">
-                      {section.points.map((point) => (
-                        <div
-                          key={point}
-                          className="rounded-2xl border border-gray-100 bg-[#fafbfd] px-4 py-3 text-sm leading-7 text-gray-600"
-                        >
-                          {point}
-                        </div>
+                  {section.paragraphs?.length > 0 && (
+                    <div className="mt-4 space-y-4">
+                      {section.paragraphs.map((paragraph) => (
+                        <p key={paragraph} className="text-sm leading-7 text-gray-600 sm:text-base">
+                          {paragraph}
+                        </p>
                       ))}
                     </div>
+                  )}
+                  {section.points?.length > 0 && (
+                    <ul className="mt-4 list-disc space-y-3 pl-5 text-sm leading-7 text-gray-600 sm:text-base">
+                      {section.points.map((point) => (
+                        <li key={point} className="pl-1 marker:text-brand-accent">
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </article>
               ))}
