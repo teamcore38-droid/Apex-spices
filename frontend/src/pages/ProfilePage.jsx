@@ -726,7 +726,7 @@ const ProfilePage = () => {
           <section className="space-y-8">
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                <div className="grid gap-6 md:grid-cols-3">
+                <div className="hidden gap-6 md:grid md:grid-cols-3">
                   <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand-primary">
                       <User size={20} />

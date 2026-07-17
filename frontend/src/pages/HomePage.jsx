@@ -281,8 +281,8 @@ const HomePage = () => {
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <Truck size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">Free Shipping</h4>
-              <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">On orders over $75</p>
+              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">100% Sri Lankan</h4>
+              <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Proudly local, always.</p>
             </div>
             <div className="group rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-4 text-center shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-[1.5px] transition hover:bg-white/[0.08] md:px-4 md:py-5">
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
@@ -295,15 +295,15 @@ const HomePage = () => {
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <ShieldCheck size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">Quality Assured</h4>
-              <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Rigorous lab testing</p>
+              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">No Artificial Additives</h4>
+              <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Pure and natural.</p>
             </div>
             <div className="group rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-4 text-center shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-[1.5px] transition hover:bg-white/[0.08] md:px-4 md:py-5">
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <Award size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">Award Winning</h4>
-              <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Selected flavor profiles</p>
+              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">Supporting Local Farmers</h4>
+              <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Better for farmers, better for you.</p>
             </div>
           </div>
         </div>
