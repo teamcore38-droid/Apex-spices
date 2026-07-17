@@ -268,6 +268,15 @@ const ProfilePage = () => {
     () => orders.reduce((total, order) => total + (order.totalPrice || 0), 0),
     [orders]
   );
+  const totalSpentParts = useMemo(() => {
+    const formatted = formatCurrency(totalSpent);
+    const [currencyPrefix, ...amountParts] = formatted.split(' ');
+
+    return {
+      currency: amountParts.length > 0 ? currencyPrefix : '',
+      amount: amountParts.length > 0 ? amountParts.join(' ') : formatted,
+    };
+  }, [totalSpent]);
 
   const updateTab = (nextTab) => {
     setSearchParams({ tab: nextTab });
@@ -573,19 +582,28 @@ const ProfilePage = () => {
               </p>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+            <div className="w-full rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur lg:max-w-md">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">Account Summary</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div>
-                  <p className="text-2xl font-serif font-bold">{orders.length}</p>
+              <div className="mt-4 grid grid-cols-3 items-start gap-2 text-center sm:gap-3">
+                <div className="min-w-0 px-1">
+                  <p className="truncate font-serif text-2xl font-bold">{orders.length}</p>
                   <p className="text-xs uppercase tracking-[0.15em] text-white/65">Orders</p>
                 </div>
-                <div>
-                  <p className="text-2xl font-serif font-bold">{formatCurrency(totalSpent)}</p>
+                <div className="min-w-0 px-1">
+                  <p className="flex min-w-0 items-baseline justify-center gap-1 font-serif font-bold leading-tight">
+                    {totalSpentParts.currency && (
+                      <span className="shrink-0 text-xs uppercase tracking-[0.1em] text-white/70 sm:text-sm">
+                        {totalSpentParts.currency}
+                      </span>
+                    )}
+                    <span className="min-w-0 truncate text-[clamp(1rem,4.8vw,1.5rem)]">
+                      {totalSpentParts.amount}
+                    </span>
+                  </p>
                   <p className="text-xs uppercase tracking-[0.15em] text-white/65">Spent</p>
                 </div>
-                <div>
-                  <p className="text-2xl font-serif font-bold">{profile.addresses?.length || 0}</p>
+                <div className="min-w-0 px-1">
+                  <p className="truncate font-serif text-2xl font-bold">{profile.addresses?.length || 0}</p>
                   <p className="text-xs uppercase tracking-[0.15em] text-white/65">Addresses</p>
                 </div>
               </div>

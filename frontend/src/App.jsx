@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
@@ -50,9 +50,24 @@ const ShopRedirect = () => {
   return <Navigate to={`/products${search}`} replace />
 }
 
+const ScrollToTop = () => {
+  const { hash, pathname, search } = useLocation()
+
+  useEffect(() => {
+    if (hash) {
+      return
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [hash, pathname, search])
+
+  return null
+}
+
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
+      <ScrollToTop />
       <Header />
       <main className="flex-grow">
         <Suspense fallback={<RouteLoadingScreen />}>
