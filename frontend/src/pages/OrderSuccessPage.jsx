@@ -9,16 +9,13 @@ import {
   MapPin,
   Package,
   ShoppingBag,
-  Truck,
   UserRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/productUi';
 import {
   getCustomerContactDetails,
-  getEstimatedDeliveryLabel,
   getShippingAddressLines,
-  buildOrderTimeline,
 } from '../utils/orderUi';
 import {
   getDeliveryBadgeClass,
@@ -27,7 +24,6 @@ import {
   getPaymentBadgeClass,
   getPaymentLabel,
 } from '../utils/orderStatus';
-import OrderTimeline from '../components/OrderTimeline';
 
 const OrderSuccessPage = () => {
   const { id: routeOrderId } = useParams();
@@ -117,7 +113,6 @@ const OrderSuccessPage = () => {
     () => getCustomerContactDetails(order || {}, userInfo || {}),
     [order, userInfo]
   );
-  const timeline = useMemo(() => buildOrderTimeline(order || {}), [order]);
   const orderCurrency = order?.currency || 'LKR';
 
   if (loading) {
@@ -315,47 +310,6 @@ const OrderSuccessPage = () => {
               <section className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="rounded-2xl bg-brand-light p-3 text-brand-primary">
-                    <Truck size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-accent">Fulfillment</p>
-                    <h2 className="font-serif text-2xl font-bold text-brand-dark">Shipping progress</h2>
-                  </div>
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  <div className="rounded-2xl bg-brand-light p-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Tracking Number</p>
-                    <p className="mt-2 break-all font-semibold text-brand-dark">
-                      {order.trackingNumber || 'Pending assignment'}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-brand-light p-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Delivery Note</p>
-                    <p className="mt-2 text-sm leading-7 text-gray-600">
-                      {order.deliveryNote || 'No delivery note has been added yet.'}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-brand-light p-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">
-                      Estimated Delivery
-                    </p>
-                    <p className="mt-2 font-semibold text-brand-dark">
-                      {order.isDelivered
-                        ? `Delivered on ${new Date(order.deliveredAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}`
-                        : getEstimatedDeliveryLabel(order.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-brand-light p-3 text-brand-primary">
                     <CreditCard size={20} />
                   </div>
                   <div>
@@ -405,8 +359,6 @@ const OrderSuccessPage = () => {
                   </div>
                 </div>
               </section>
-
-              <OrderTimeline timeline={timeline} title="Order journey" />
             </div>
           </div>
         </div>
