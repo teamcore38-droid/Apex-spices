@@ -32,6 +32,7 @@ const AdminDashboard = lazyWithChunkRecovery(() => import('./pages/AdminDashboar
 const AdminCategoriesPage = lazyWithChunkRecovery(() => import('./pages/AdminCategoriesPage'))
 const AdminMessagesPage = lazyWithChunkRecovery(() => import('./pages/AdminMessagesPage'))
 const AdminCommercePage = lazyWithChunkRecovery(() => import('./pages/AdminCommercePage'))
+const AdminShippingPage = lazyWithChunkRecovery(() => import('./pages/AdminShippingPage'))
 const AdminVendorsPage = lazyWithChunkRecovery(() => import('./pages/AdminVendorsPage'))
 const AdminProfessionalPage = lazyWithChunkRecovery(() => import('./pages/AdminProfessionalPage'))
 const AdminMobilePage = lazyWithChunkRecovery(() => import('./pages/AdminMobilePage'))
@@ -108,6 +109,7 @@ function App() {
               <Route path="/admin/categories" element={<AdminCategoriesPage />} />
               <Route path="/admin/messages" element={<AdminMessagesPage />} />
               <Route path="/admin/commerce" element={<AdminCommercePage />} />
+              <Route path="/admin/shipping" element={<AdminShippingPage />} />
               <Route path="/admin/vendors" element={<AdminVendorsPage />} />
               <Route path="/admin/professional" element={<AdminProfessionalPage />} />
               <Route path="/admin/mobile" element={<AdminMobilePage />} />

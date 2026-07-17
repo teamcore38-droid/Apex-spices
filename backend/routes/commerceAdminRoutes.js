@@ -6,6 +6,8 @@ import {
   listGiftCards,
   listShippingRates,
   listTaxRules,
+  deleteShippingRate,
+  toggleShippingRate,
   upsertCoupon,
   upsertGiftCard,
   upsertShippingRate,
@@ -22,5 +24,6 @@ router.route('/coupons').get(protect, requirePermission(PERMISSIONS.COMMERCE_MAN
 router.route('/gift-cards').get(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), listGiftCards).post(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), upsertGiftCard);
 router.route('/tax-rules').get(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), listTaxRules).post(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), upsertTaxRule);
 router.route('/shipping-rates').get(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), listShippingRates).post(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), upsertShippingRate);
+router.route('/shipping-rates/:id').patch(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), toggleShippingRate).delete(protect, requirePermission(PERMISSIONS.COMMERCE_MANAGE), deleteShippingRate);
 
 export default router;

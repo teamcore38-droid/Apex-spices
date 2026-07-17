@@ -9,6 +9,13 @@ import {
   getCurrencyQuote,
   roundMoney,
 } from './currencyService.js';
+import {
+  SRI_LANKA_COUNTRY_CODE,
+  normalizeLocationCode,
+  resolveCountryCode,
+  resolveCountryName,
+  resolveShippingDestination,
+} from './shippingLocations.js';
 
 const DEFAULT_CURRENCY = (process.env.DEFAULT_CURRENCY || BASE_CURRENCY).toUpperCase();
 const FALLBACK_SHIPPING_THRESHOLD = Number(process.env.FREE_SHIPPING_THRESHOLD || 50);
@@ -24,11 +31,10 @@ const getCurrencyRate = async (currency = DEFAULT_CURRENCY) => {
 
 const toDisplayMoney = (value, exchangeRate) => roundMoney(Number(value || 0) * Number(exchangeRate || 1));
 
-const getCountryCode = (shippingAddress = {}) =>
-  String(shippingAddress.country || '').trim().slice(0, 2).toUpperCase();
+const getCountryCode = (shippingAddress = {}) => resolveCountryCode(shippingAddress);
 
 const getStateCode = (shippingAddress = {}) =>
-  String(shippingAddress.state || '').trim().toUpperCase();
+  normalizeLocationCode(shippingAddress.state || '');
 
 const getVariant = (product, variantId) => {
   if (!variantId) {
@@ -113,16 +119,43 @@ const normalizeCartItems = async (cartItems = []) => {
 
 const getShippingOptions = async ({ shippingAddress = {}, subtotal = 0, currency = DEFAULT_CURRENCY }) => {
   const exchangeRate = await getCurrencyRate(currency);
-  const country = getCountryCode(shippingAddress);
-  const state = getStateCode(shippingAddress);
-  const query = {
-    isActive: true,
-    $or: [
-      { country: country || '' },
-      { country: '' },
-      ...(state ? [{ country, state }] : []),
-    ],
-  };
+  const destination = resolveShippingDestination(shippingAddress);
+  const legacyCountry = destination.countryCode || getCountryCode(shippingAddress);
+  const legacyState = getStateCode(shippingAddress);
+  const domesticDistrict = destination.district;
+  const query =
+    destination.countryCode === SRI_LANKA_COUNTRY_CODE
+      ? {
+          isActive: true,
+          $or: [
+            {
+              locationType: 'domestic',
+              countryCode: SRI_LANKA_COUNTRY_CODE,
+              district: domesticDistrict,
+            },
+            {
+              country: SRI_LANKA_COUNTRY_CODE,
+              state: domesticDistrict,
+            },
+          ],
+        }
+      : {
+          isActive: true,
+          $or: [
+            {
+              locationType: 'international',
+              countryCode: destination.countryCode,
+            },
+            {
+              country: destination.countryCode,
+              state: '',
+            },
+          ],
+        };
+
+  if (!destination.countryCode) {
+    query.$or.push({ country: legacyCountry, state: legacyState });
+  }
 
   const configuredRates = await ShippingRate.find(query).sort({ basePrice: 1, carrier: 1 }).lean();
   const sourceRates =
@@ -132,7 +165,14 @@ const getShippingOptions = async ({ shippingAddress = {}, subtotal = 0, currency
           {
             _id: 'standard',
             carrier: 'Apex Logistics',
-            service: 'Standard Delivery',
+            service:
+              destination.countryCode === SRI_LANKA_COUNTRY_CODE
+                ? 'Standard District Delivery'
+                : 'International Shipping',
+            locationType: destination.locationType,
+            countryCode: destination.countryCode,
+            countryName: destination.countryName,
+            district: destination.district,
             basePrice: FALLBACK_SHIPPING_PRICE,
             freeShippingThreshold: FALLBACK_SHIPPING_THRESHOLD,
             estimatedDaysMin: 3,
@@ -151,6 +191,12 @@ const getShippingOptions = async ({ shippingAddress = {}, subtotal = 0, currency
       service: rate.service,
       price: toDisplayMoney(price, exchangeRate),
       basePrice: roundMoney(price),
+      locationType: rate.locationType || destination.locationType,
+      countryCode: rate.countryCode || rate.country || destination.countryCode,
+      countryName:
+        rate.countryName ||
+        resolveCountryName({ country: shippingAddress.country, countryCode: rate.countryCode || rate.country }),
+      district: rate.district || rate.state || destination.district,
       estimatedDaysMin: Number(rate.estimatedDaysMin || 0),
       estimatedDaysMax: Number(rate.estimatedDaysMax || 0),
     };
@@ -300,6 +346,11 @@ const calculateOrderPricing = async ({
       ? {
           carrier: selectedShipping.carrier,
           service: selectedShipping.service,
+          locationType: selectedShipping.locationType,
+          countryCode: selectedShipping.countryCode,
+          countryName: selectedShipping.countryName,
+          district: selectedShipping.district,
+          appliedPrice: selectedShipping.price,
           estimatedDaysMin: selectedShipping.estimatedDaysMin,
           estimatedDaysMax: selectedShipping.estimatedDaysMax,
         }

@@ -335,6 +335,15 @@ const Header = () => {
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Mobile Admin
                     </Link>
                   )}
+                  {canAccessAdmin && (
+                    <Link
+                      to="/admin/shipping"
+                      onClick={() => setAccountMenuOpen(false)}
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
+                    >
+                      <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Shipping Rates
+                    </Link>
+                  )}
                   {userInfo.isAdmin && (
                     <Link
                       to="/admin/messages"
@@ -467,6 +476,11 @@ const Header = () => {
                 {canAccessAdmin && (
                   <Link to="/admin/mobile" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Mobile Admin
+                  </Link>
+                )}
+                {canAccessAdmin && (
+                  <Link to="/admin/shipping" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
+                    Shipping Rates
                   </Link>
                 )}
                 {userInfo.isAdmin && (

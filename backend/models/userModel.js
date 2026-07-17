@@ -34,6 +34,11 @@ const addressSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    district: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     postalCode: {
       type: String,
       required: true,
@@ -43,6 +48,12 @@ const addressSchema = mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    countryCode: {
+      type: String,
+      default: '',
+      trim: true,
+      uppercase: true,
     },
     isDefault: {
       type: Boolean,

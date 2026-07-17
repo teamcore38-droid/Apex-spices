@@ -6,8 +6,10 @@ const normalizeAddressPayload = (payload = {}) => ({
   addressLine2: String(payload.addressLine2 || '').trim(),
   city: String(payload.city || '').trim(),
   state: String(payload.state || '').trim(),
+  district: String(payload.district || payload.state || '').trim(),
   postalCode: String(payload.postalCode || '').trim(),
   country: String(payload.country || '').trim(),
+  countryCode: String(payload.countryCode || '').trim().toUpperCase().slice(0, 2),
   isDefault: Boolean(payload.isDefault),
 });
 
@@ -51,8 +53,10 @@ const isSameAddress = (left = {}, right = {}) =>
     'addressLine2',
     'city',
     'state',
+    'district',
     'postalCode',
     'country',
+    'countryCode',
   ].every((field) => String(left[field] || '').trim() === String(right[field] || '').trim());
 
 const markDefaultAddress = (addresses, addressId) => {

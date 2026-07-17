@@ -38,7 +38,6 @@ const AdminCommercePage = () => {
   const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percent', discountValue: 10, minSubtotal: 0, isActive: true });
   const [giftCardForm, setGiftCardForm] = useState({ code: '', balance: 100, currency: 'LKR', isActive: true });
   const [taxForm, setTaxForm] = useState({ country: 'LK', state: '', label: 'Sales Tax', rate: 0.15, isActive: true });
-  const [shippingForm, setShippingForm] = useState({ carrier: 'Apex Logistics', service: 'Standard Delivery', country: '', state: '', basePrice: 10, freeShippingThreshold: 50, estimatedDaysMin: 3, estimatedDaysMax: 5, isActive: true });
 
   const config = userInfo?.token
     ? {
@@ -231,15 +230,15 @@ const AdminCommercePage = () => {
 
           <section className="rounded-[28px] bg-white p-6 shadow-sm">
             <h2 className="font-serif text-2xl font-bold text-brand-dark">Shipping Rates</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Field label="Carrier" value={shippingForm.carrier} onChange={(value) => setShippingForm((form) => ({ ...form, carrier: value }))} />
-              <Field label="Service" value={shippingForm.service} onChange={(value) => setShippingForm((form) => ({ ...form, service: value }))} />
-              <Field label="Base Price" type="number" value={shippingForm.basePrice} onChange={(value) => setShippingForm((form) => ({ ...form, basePrice: value }))} />
-              <Field label="Free Threshold" type="number" value={shippingForm.freeShippingThreshold} onChange={(value) => setShippingForm((form) => ({ ...form, freeShippingThreshold: value }))} />
-              <button onClick={() => submitForm('/api/admin/commerce/shipping-rates', shippingForm, 'Shipping rate')} className="mt-auto inline-flex items-center justify-center rounded-xl bg-brand-primary px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white">
-                <Save size={15} className="mr-2" /> Save Shipping
-              </button>
-            </div>
+            <p className="mt-3 text-sm leading-7 text-gray-600">
+              Manage Sri Lanka district fees and international country fees from the dedicated shipping page.
+            </p>
+            <Link
+              to="/admin/shipping"
+              className="mt-5 inline-flex items-center justify-center rounded-xl bg-brand-primary px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:bg-brand-dark"
+            >
+              Open Shipping Management
+            </Link>
             <p className="mt-4 text-sm text-gray-500">{shippingRates.length} shipping rates configured.</p>
           </section>
 

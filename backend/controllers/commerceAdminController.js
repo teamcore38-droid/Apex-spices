@@ -3,6 +3,103 @@ import Product from '../models/productModel.js';
 import ShippingRate from '../models/shippingRateModel.js';
 import TaxRule from '../models/taxRuleModel.js';
 import { Coupon, GiftCard } from '../models/promotionModel.js';
+import {
+  SRI_LANKA_COUNTRY_CODE,
+  SRI_LANKA_COUNTRY_NAME,
+  normalizeLocationCode,
+  resolveCountryCode,
+  resolveCountryName,
+} from '../utils/shippingLocations.js';
+
+const toMoneyNumber = (value, label) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number < 0) {
+    throw new Error(`${label} must be a valid amount`);
+  }
+
+  return number;
+};
+
+const titleCaseLocation = (value = '') =>
+  String(value || '')
+    .toLowerCase()
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const buildShippingRatePayload = (body = {}) => {
+  const locationType = body.locationType === 'domestic' ? 'domestic' : 'international';
+  const carrier = String(body.carrier || 'Apex Logistics').trim();
+  const basePrice = toMoneyNumber(body.basePrice, 'Shipping fee');
+  const freeShippingThreshold = Number(body.freeShippingThreshold || 0);
+  const estimatedDaysMin = Number(body.estimatedDaysMin ?? 3);
+  const estimatedDaysMax = Number(body.estimatedDaysMax ?? 5);
+
+  if (!Number.isFinite(freeShippingThreshold) || freeShippingThreshold < 0) {
+    throw new Error('Free shipping threshold must be a valid amount');
+  }
+
+  if (!Number.isFinite(estimatedDaysMin) || !Number.isFinite(estimatedDaysMax)) {
+    throw new Error('Estimated delivery days must be valid numbers');
+  }
+
+  const countryCode =
+    locationType === 'domestic'
+      ? SRI_LANKA_COUNTRY_CODE
+      : resolveCountryCode({
+          country: body.countryName || body.country,
+          countryCode: body.countryCode,
+        }) || String(body.countryCode || '').trim().toUpperCase().slice(0, 2);
+  const countryName =
+    locationType === 'domestic'
+      ? SRI_LANKA_COUNTRY_NAME
+      : String(
+          body.countryName ||
+            resolveCountryName({ country: body.country || body.countryName, countryCode }) ||
+            ''
+        ).trim();
+  const district =
+    locationType === 'domestic'
+      ? normalizeLocationCode(body.district || body.state)
+      : '';
+  const districtLabel = titleCaseLocation(district);
+  const service = String(
+    body.service ||
+      (locationType === 'domestic'
+        ? `${districtLabel} District Delivery`
+        : `${countryName} International Shipping`)
+  ).trim();
+
+  if (!carrier || !service) {
+    throw new Error('Carrier and service are required');
+  }
+
+  if (locationType === 'domestic' && !district) {
+    throw new Error('District is required for Sri Lanka shipping rates');
+  }
+
+  if (locationType === 'international' && (!countryCode || !countryName)) {
+    throw new Error('Country is required for international shipping rates');
+  }
+
+  return {
+    locationType,
+    carrier,
+    service,
+    country: countryCode,
+    countryCode,
+    countryName,
+    state: locationType === 'domestic' ? district : '',
+    district,
+    basePrice,
+    freeShippingThreshold,
+    estimatedDaysMin: Math.max(0, estimatedDaysMin),
+    estimatedDaysMax: Math.max(estimatedDaysMin, estimatedDaysMax),
+    isActive: body.isActive !== false,
+  };
+};
 
 const getInventoryEvents = async (req, res) => {
   try {
@@ -109,27 +206,66 @@ const upsertTaxRule = async (req, res) => {
 };
 
 const listShippingRates = async (_req, res) => {
-  const rates = await ShippingRate.find({}).sort({ country: 1, state: 1, basePrice: 1 });
+  const rates = await ShippingRate.find({}).sort({
+    locationType: 1,
+    countryName: 1,
+    district: 1,
+    basePrice: 1,
+  });
   res.json(rates);
 };
 
 const upsertShippingRate = async (req, res) => {
-  const carrier = String(req.body.carrier || '').trim();
-  const service = String(req.body.service || '').trim();
-  const country = String(req.body.country || '').trim().toUpperCase();
-  const state = String(req.body.state || '').trim().toUpperCase();
+  try {
+    const payload = buildShippingRatePayload(req.body);
+    const rate = req.body._id
+      ? await ShippingRate.findByIdAndUpdate(req.body._id, payload, {
+          new: true,
+          runValidators: true,
+        })
+      : await ShippingRate.findOneAndUpdate(
+          {
+            locationType: payload.locationType,
+            countryCode: payload.countryCode,
+            district: payload.district,
+          },
+          payload,
+          { new: true, upsert: true, runValidators: true }
+        );
 
-  if (!carrier || !service) {
-    return res.status(400).json({ message: 'Carrier and service are required' });
+    if (!rate) {
+      return res.status(404).json({ message: 'Shipping rate not found' });
+    }
+
+    res.status(201).json(rate);
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'Unable to save shipping rate' });
   }
+};
 
-  const rate = await ShippingRate.findOneAndUpdate(
-    { carrier, service, country, state },
-    { ...req.body, carrier, service, country, state },
-    { new: true, upsert: true, runValidators: true }
+const toggleShippingRate = async (req, res) => {
+  const isActive = req.body.isActive !== false;
+  const rate = await ShippingRate.findByIdAndUpdate(
+    req.params.id,
+    { isActive },
+    { new: true, runValidators: true }
   );
 
-  res.status(201).json(rate);
+  if (!rate) {
+    return res.status(404).json({ message: 'Shipping rate not found' });
+  }
+
+  res.json(rate);
+};
+
+const deleteShippingRate = async (req, res) => {
+  const rate = await ShippingRate.findByIdAndDelete(req.params.id);
+
+  if (!rate) {
+    return res.status(404).json({ message: 'Shipping rate not found' });
+  }
+
+  res.json({ message: 'Shipping rate deleted' });
 };
 
 export {
@@ -142,5 +278,7 @@ export {
   listTaxRules,
   upsertTaxRule,
   listShippingRates,
+  toggleShippingRate,
+  deleteShippingRate,
   upsertShippingRate,
 };

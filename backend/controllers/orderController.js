@@ -22,6 +22,7 @@ import {
   getShippingOptions,
 } from '../utils/commerceService.js';
 import { resolveSupportedCurrency } from '../utils/currencyService.js';
+import { resolveCountryCode } from '../utils/shippingLocations.js';
 import {
   applyReservation,
   deductReservedInventory,
@@ -101,8 +102,12 @@ const buildNormalizedShippingAddress = (payload = {}, fallbackUser = null) => {
     addressLine2: normalized.addressLine2,
     city: normalized.city,
     state: normalized.state,
+    district: normalized.district || normalized.state,
     postalCode: normalized.postalCode,
     country: normalized.country,
+    countryCode:
+      normalized.countryCode ||
+      resolveCountryCode({ country: normalized.country, countryCode: payload.countryCode }),
   };
 };
 
@@ -245,8 +250,10 @@ const buildInvoicePayload = (order) => ({
     addressLine2: order.shippingAddress?.addressLine2 || '',
     city: order.shippingAddress?.city || '',
     state: order.shippingAddress?.state || '',
+    district: order.shippingAddress?.district || order.shippingAddress?.state || '',
     postalCode: order.shippingAddress?.postalCode || '',
     country: order.shippingAddress?.country || '',
+    countryCode: order.shippingAddress?.countryCode || resolveCountryCode(order.shippingAddress || {}),
   },
   items: (order.orderItems || []).map((item) => ({
     name: item.name,
@@ -1148,8 +1155,10 @@ const trackOrder = async (req, res) => {
         addressLine2: order.shippingAddress?.addressLine2 || '',
         city: order.shippingAddress?.city || '',
         state: order.shippingAddress?.state || '',
+        district: order.shippingAddress?.district || order.shippingAddress?.state || '',
         postalCode: order.shippingAddress?.postalCode || '',
         country: order.shippingAddress?.country || '',
+        countryCode: order.shippingAddress?.countryCode || resolveCountryCode(order.shippingAddress || {}),
       },
       estimatedDelivery,
       createdAt: order.createdAt,

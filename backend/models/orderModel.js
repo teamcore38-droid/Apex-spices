@@ -81,8 +81,10 @@ const orderSchema = mongoose.Schema(
       addressLine2: { type: String, default: '' },
       city: { type: String, default: '' },
       state: { type: String, default: '' },
+      district: { type: String, default: '' },
       postalCode: { type: String, default: '' },
       country: { type: String, default: '' },
+      countryCode: { type: String, default: '', uppercase: true, trim: true },
     },
     paymentMethod: {
       type: String,
@@ -221,6 +223,11 @@ const orderSchema = mongoose.Schema(
     shippingRate: {
       carrier: { type: String, default: '' },
       service: { type: String, default: '' },
+      locationType: { type: String, default: '' },
+      countryCode: { type: String, default: '', uppercase: true, trim: true },
+      countryName: { type: String, default: '' },
+      district: { type: String, default: '', uppercase: true, trim: true },
+      appliedPrice: { type: Number, default: 0 },
       estimatedDaysMin: { type: Number, default: 0 },
       estimatedDaysMax: { type: Number, default: 0 },
     },

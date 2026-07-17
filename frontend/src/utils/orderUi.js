@@ -6,8 +6,10 @@ export const normalizeShippingAddress = (shippingAddress = {}, fallbackCustomer 
   addressLine2: shippingAddress.addressLine2 || '',
   city: shippingAddress.city || '',
   state: shippingAddress.state || '',
+  district: shippingAddress.district || shippingAddress.state || '',
   postalCode: shippingAddress.postalCode || '',
   country: shippingAddress.country || '',
+  countryCode: shippingAddress.countryCode || '',
 });
 
 export const getCustomerContactDetails = (order = {}, fallbackCustomer = {}) => {

@@ -447,8 +447,41 @@ const ProductPage = () => {
                 </div>
               )}
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
+              <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-end">
+                <div className="order-2 lg:order-2 lg:flex lg:min-w-0 lg:flex-col lg:gap-3">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch lg:justify-end">
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      disabled={effectiveStock === 0}
+                      className={`inline-flex w-full items-center justify-center rounded-xl px-6 py-4 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 lg:min-w-[210px] lg:flex-1 ${
+                        effectiveStock === 0
+                          ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                          : 'bg-brand-primary text-white hover:bg-brand-dark'
+                      }`}
+                    >
+                      {effectiveStock === 0 ? 'Currently Out of Stock' : 'Add to Cart'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addToWishlist}
+                      disabled={wishlistSaving}
+                      className="inline-flex w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:min-w-[150px]"
+                    >
+                      {wishlistSaving ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Heart size={16} className="mr-2" />}
+                      Save
+                    </button>
+                  </div>
+
+                  <Link
+                    to="/products"
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:w-auto lg:self-end"
+                  >
+                    Continue Shopping
+                  </Link>
+                </div>
+
+                <div className="order-1 lg:order-1">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
                   <div className="mt-3 inline-flex items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-1">
                     <button
@@ -468,37 +501,6 @@ const ProductPage = () => {
                       <Plus size={16} />
                     </button>
                   </div>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-3 sm:items-end">
-                  <button
-                    type="button"
-                    onClick={handleAddToCart}
-                    disabled={effectiveStock === 0}
-                    className={`inline-flex w-full items-center justify-center rounded-xl px-6 py-4 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 sm:w-auto ${
-                      effectiveStock === 0
-                        ? 'cursor-not-allowed bg-gray-200 text-gray-500'
-                        : 'bg-brand-primary text-white hover:bg-brand-dark'
-                    }`}
-                  >
-                    {effectiveStock === 0 ? 'Currently Out of Stock' : 'Add to Cart'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={addToWishlist}
-                    disabled={wishlistSaving}
-                    className="inline-flex items-center justify-center rounded-xl border border-brand-primary/20 px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                  >
-                    {wishlistSaving ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Heart size={16} className="mr-2" />}
-                    Save
-                  </button>
-
-                  <Link
-                    to="/products"
-                    className="inline-flex items-center justify-center rounded-xl border border-brand-primary/20 px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white"
-                  >
-                    Continue Shopping
-                  </Link>
                 </div>
               </div>
 

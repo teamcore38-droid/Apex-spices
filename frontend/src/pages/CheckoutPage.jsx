@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -20,6 +20,14 @@ import { useCurrency } from '../context/CurrencyContext';
 import CustomSelect from '../components/CustomSelect';
 import { formatCurrency } from '../utils/productUi';
 import { normalizeShippingAddress } from '../utils/orderUi';
+import {
+  COUNTRY_OPTIONS,
+  SRI_LANKA_COUNTRY_CODE,
+  SRI_LANKA_DISTRICTS,
+  getCountryOptionByCode,
+  isSriLankaCountry,
+  resolveCountryOption,
+} from '../utils/shippingLocations';
 import { getMarketingSessionId, trackEvent } from '../utils/analytics';
 
 const createInitialCheckoutForm = (shippingAddress = {}, userInfo = null) => {
@@ -29,6 +37,12 @@ const createInitialCheckoutForm = (shippingAddress = {}, userInfo = null) => {
     phone: userInfo?.phone || '',
   });
 
+  const countryOption =
+    resolveCountryOption({
+      country: normalized.country || userInfo?.countryName,
+      countryCode: normalized.countryCode || userInfo?.countryCode,
+    }) || getCountryOptionByCode(SRI_LANKA_COUNTRY_CODE);
+
   return {
     fullName: normalized.fullName,
     phone: normalized.phone,
@@ -36,22 +50,25 @@ const createInitialCheckoutForm = (shippingAddress = {}, userInfo = null) => {
     addressLine1: normalized.addressLine1,
     addressLine2: normalized.addressLine2,
     city: normalized.city,
-    state: normalized.state,
+    state: normalized.state || normalized.district,
+    district: normalized.district || normalized.state,
     postalCode: normalized.postalCode,
-    country: normalized.country,
+    country: countryOption?.name || normalized.country || 'Sri Lanka',
+    countryCode: countryOption?.iso2 || normalized.countryCode || SRI_LANKA_COUNTRY_CODE,
   };
 };
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 
 const validateCheckoutForm = (form) => {
+  const isSriLankaDelivery = isSriLankaCountry(form.country, form.countryCode);
   const requiredFields = [
     ['fullName', 'Full name'],
     ['phone', 'Phone number'],
     ['email', 'Email address'],
     ['addressLine1', 'Address line 1'],
     ['city', 'City'],
-    ['state', 'State / Province'],
+    ['state', isSriLankaDelivery ? 'District' : 'State / Province'],
     ['postalCode', 'Postal code'],
     ['country', 'Country'],
   ];
@@ -108,6 +125,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const { userInfo } = useAuth();
   const { currency, exchangeRate, formatPrice } = useCurrency();
   const navigate = useNavigate();
+  const authToken = userInfo?.token;
 
   const [addresses, setAddresses] = useState([]);
   const [addressesLoading, setAddressesLoading] = useState(false);
@@ -211,6 +229,8 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const displayGiftCardAmount = activeQuote?.giftCardAmount ?? 0;
   const displayTotalPrice = activeQuote?.totalPrice ?? convertLocalEstimate(totalPrice);
   const displayCurrency = activeQuote?.currency || checkoutCurrency;
+  const isSriLankaDelivery = isSriLankaCountry(form.country, form.countryCode);
+  const isInternationalDelivery = Boolean(form.country) && !isSriLankaDelivery;
   const payhereOrderDescription = pendingOrderId
     ? `${PAYHERE_BRAND_DESCRIPTION} #${pendingOrderId.slice(-8).toUpperCase()}`
     : PAYHERE_BRAND_DESCRIPTION;
@@ -231,7 +251,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
       ? formatCurrency(Number(baseValue || 0) * Number(activeQuote.exchangeRate || 1), displayCurrency)
       : formatPrice(baseValue);
 
-  const requestQuote = async (nextShippingAddress = form) => {
+  const requestQuote = useCallback(async (nextShippingAddress = form) => {
     if (cartItems.length === 0) {
       return null;
     }
@@ -247,6 +267,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
           shippingAddress: {
             ...nextShippingAddress,
             address: nextShippingAddress.addressLine1,
+            district: nextShippingAddress.district || nextShippingAddress.state,
           },
           couponCode,
           giftCardCode,
@@ -256,7 +277,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
         {
           headers: {
             'Content-Type': 'application/json',
-            ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
           },
         }
       );
@@ -269,7 +290,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
           currency: data.currency || checkoutCurrency,
           itemCount: cartItems.reduce((total, item) => total + Number(item.qty || 0), 0),
         },
-        { token: userInfo?.token }
+        { token: authToken }
       );
 
       if (!shippingRateId && data.shippingOptions?.[0]?.id) {
@@ -285,21 +306,69 @@ const CheckoutInner = ({ payhereEnabled }) => {
     } finally {
       setQuoteLoading(false);
     }
-  };
+  }, [authToken, cartItems, checkoutCurrency, couponCode, form, giftCardCode, shippingRateId]);
+
+  useEffect(() => {
+    if (cartItems.length === 0 || validateCheckoutForm(form)) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      requestQuote(form);
+    }, 450);
+
+    return () => window.clearTimeout(timeout);
+  }, [cartItems.length, form, requestQuote]);
 
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
 
     setError('');
+    if (['country', 'countryCode', 'state', 'district', 'city', 'postalCode'].includes(name)) {
+      setShippingRateId('');
+      setQuote(null);
+    }
     setForm((currentForm) => ({
       ...currentForm,
       [name]: value,
     }));
   };
 
+  const handleCountryChange = (countryCode) => {
+    const country = getCountryOptionByCode(countryCode);
+
+    if (!country) {
+      return;
+    }
+
+    setError('');
+    setShippingRateId('');
+    setQuote(null);
+    setForm((currentForm) => ({
+      ...currentForm,
+      country: country.name,
+      countryCode: country.iso2,
+      state: country.iso2 === SRI_LANKA_COUNTRY_CODE ? '' : currentForm.state,
+      district: country.iso2 === SRI_LANKA_COUNTRY_CODE ? '' : '',
+    }));
+  };
+
+  const handleDistrictChange = (district) => {
+    setError('');
+    setShippingRateId('');
+    setQuote(null);
+    setForm((currentForm) => ({
+      ...currentForm,
+      state: district,
+      district,
+    }));
+  };
+
   const handleSelectSavedAddress = (addressId) => {
     setSelectedAddressId(addressId);
     setError('');
+    setShippingRateId('');
+    setQuote(null);
 
     if (!addressId) {
       setForm(createInitialCheckoutForm(shippingAddress, userInfo));
@@ -686,6 +755,13 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     {activeQuote.shippingRate.carrier} - {activeQuote.shippingRate.service}
                   </div>
                 )}
+                {isInternationalDelivery && (
+                  <div className="rounded-2xl border border-brand-accent/25 bg-[#fff8e8] px-4 py-3 text-xs leading-5 text-brand-dark">
+                    <span className="font-bold">International Shipping Notice</span>
+                    <br />
+                    Your delivery address is outside Sri Lanka. An international shipping charge will be applied based on your destination country.
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-dashed pt-4 font-serif text-xl font-bold text-brand-dark">
                   <span>Total</span>
                   <span className="text-brand-primary">{formatCurrency(displayTotalPrice, displayCurrency)}</span>
@@ -841,6 +917,14 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     ]}
                   />
                 </div>
+                {isInternationalDelivery && (
+                  <div className="md:col-span-2 rounded-2xl border border-brand-accent/25 bg-[#fff8e8] px-4 py-3 text-sm leading-6 text-brand-dark">
+                    <p className="font-serif text-lg font-bold">International Shipping Notice</p>
+                    <p className="mt-1 text-gray-700">
+                      Your delivery address is outside Sri Lanka. An international shipping charge will be applied based on your destination country.
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-brand-dark">Coupon Code</label>
                   <input
@@ -972,17 +1056,6 @@ const CheckoutInner = ({ payhereEnabled }) => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="checkout-state" className="mb-2 block text-sm font-semibold text-brand-dark">State / Province</label>
-                  <input
-                    id="checkout-state"
-                    name="state"
-                    type="text"
-                    value={form.state}
-                    onChange={handleFieldChange}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                  />
-                </div>
-                <div>
                   <label htmlFor="checkout-postal-code" className="mb-2 block text-sm font-semibold text-brand-dark">Postal Code</label>
                   <input
                     id="checkout-postal-code"
@@ -995,14 +1068,39 @@ const CheckoutInner = ({ payhereEnabled }) => {
                 </div>
                 <div>
                   <label htmlFor="checkout-country" className="mb-2 block text-sm font-semibold text-brand-dark">Country</label>
-                  <input
+                  <CustomSelect
                     id="checkout-country"
-                    name="country"
-                    type="text"
-                    value={form.country}
-                    onChange={handleFieldChange}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                    value={form.countryCode}
+                    onChange={handleCountryChange}
+                    options={COUNTRY_OPTIONS}
+                    listClassName="max-h-72"
                   />
+                </div>
+                <div>
+                  <label htmlFor="checkout-state" className="mb-2 block text-sm font-semibold text-brand-dark">
+                    {isSriLankaDelivery ? 'District' : 'State / Province'}
+                  </label>
+                  {isSriLankaDelivery ? (
+                    <CustomSelect
+                      id="checkout-state"
+                      value={form.district || form.state}
+                      onChange={handleDistrictChange}
+                      placeholder="Select district"
+                      options={SRI_LANKA_DISTRICTS.map((district) => ({
+                        value: district,
+                        label: district,
+                      }))}
+                    />
+                  ) : (
+                    <input
+                      id="checkout-state"
+                      name="state"
+                      type="text"
+                      value={form.state}
+                      onChange={handleFieldChange}
+                      className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -1165,6 +1263,13 @@ const CheckoutInner = ({ payhereEnabled }) => {
                 {activeQuote?.shippingRate?.service && (
                   <div className="text-xs text-gray-500">
                     {activeQuote.shippingRate.carrier} - {activeQuote.shippingRate.service}
+                  </div>
+                )}
+                {isInternationalDelivery && (
+                  <div className="rounded-2xl border border-brand-accent/25 bg-[#fff8e8] px-4 py-3 text-xs leading-5 text-brand-dark">
+                    <span className="font-bold">International Shipping Notice</span>
+                    <br />
+                    Your delivery address is outside Sri Lanka. An international shipping charge will be applied based on your destination country.
                   </div>
                 )}
                 <div className="flex justify-between border-t border-dashed pt-4 font-serif text-xl font-bold text-brand-dark">

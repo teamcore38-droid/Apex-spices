@@ -578,6 +578,12 @@ const AdminDashboard = () => {
               <ShoppingBag size={20} className="mr-3" /> Commerce Ops
             </button>
             <button
+              onClick={() => navigate('/admin/shipping')}
+              className="flex items-center rounded p-3 text-left font-medium transition-colors hover:bg-gray-100"
+            >
+              <ShoppingBag size={20} className="mr-3" /> Shipping Rates
+            </button>
+            <button
               onClick={() => navigate('/admin/vendors')}
               className="flex items-center rounded p-3 text-left font-medium transition-colors hover:bg-gray-100"
             >

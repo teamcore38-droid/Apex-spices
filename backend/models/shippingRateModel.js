@@ -2,6 +2,12 @@ import mongoose from 'mongoose';
 
 const shippingRateSchema = mongoose.Schema(
   {
+    locationType: {
+      type: String,
+      enum: ['domestic', 'international'],
+      default: 'international',
+      trim: true,
+    },
     carrier: {
       type: String,
       required: true,
@@ -18,7 +24,24 @@ const shippingRateSchema = mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    countryCode: {
+      type: String,
+      default: '',
+      uppercase: true,
+      trim: true,
+    },
+    countryName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     state: {
+      type: String,
+      default: '',
+      uppercase: true,
+      trim: true,
+    },
+    district: {
       type: String,
       default: '',
       uppercase: true,
@@ -55,6 +78,7 @@ const shippingRateSchema = mongoose.Schema(
 );
 
 shippingRateSchema.index({ country: 1, state: 1, isActive: 1 });
+shippingRateSchema.index({ locationType: 1, countryCode: 1, district: 1, isActive: 1 });
 
 const ShippingRate = mongoose.model('ShippingRate', shippingRateSchema);
 
