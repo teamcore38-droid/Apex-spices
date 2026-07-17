@@ -94,7 +94,7 @@ const CurrencyDropdown = ({ currency, changeCurrency, supportedCurrencies, mobil
   };
 
   return (
-    <div ref={dropdownRef} className={`relative ${mobile ? 'w-full' : 'hidden sm:block'}`}>
+    <div ref={dropdownRef} className={`relative shrink-0 ${mobile ? 'w-full' : 'hidden sm:block'}`}>
       <button
         type="button"
         aria-haspopup="listbox"
@@ -105,8 +105,8 @@ const CurrencyDropdown = ({ currency, changeCurrency, supportedCurrencies, mobil
           setOpen((current) => !current);
         }}
         onKeyDown={handleKeyDown}
-        className={`group inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl border border-brand-accent/35 bg-[#2b150d] px-4 py-2.5 text-sm font-bold uppercase tracking-[0.14em] text-brand-accent shadow-[0_10px_28px_rgba(0,0,0,0.22)] outline-none transition duration-200 hover:border-brand-accent hover:bg-[#3a1f15] focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 ${
-          mobile ? 'w-full' : 'sm:w-[96px]'
+        className={`group inline-flex min-h-10 w-full items-center justify-between gap-2 rounded-2xl border border-brand-accent/35 bg-[#2b150d] px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-brand-accent shadow-[0_10px_28px_rgba(0,0,0,0.22)] outline-none transition duration-200 hover:border-brand-accent hover:bg-[#3a1f15] focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 xl:min-h-11 xl:gap-3 xl:px-4 xl:py-2.5 xl:text-sm xl:tracking-[0.14em] ${
+          mobile ? 'w-full' : 'sm:w-[82px] xl:w-[92px] 2xl:w-[96px]'
         } ${NAV_FONT_CLASS}`}
       >
         <span>{selectedCurrency.label}</span>
@@ -183,30 +183,30 @@ const Header = () => {
     location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-brand-dark py-3 text-brand-light shadow-md lg:py-4">
-      <div className="container mx-auto flex items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
-        <Link to="/" className="flex items-center gap-3">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-brand-dark py-3 text-brand-light shadow-md lg:py-3 xl:py-4">
+      <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-2 px-3 sm:px-4 lg:px-4 xl:gap-4 xl:px-6">
+        <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2 xl:gap-3">
           <img
             src="/logo.webp?v=20260716"
             alt="Apex Spices logo"
-            className="h-12 w-auto object-contain sm:h-16"
+            className="h-12 w-auto shrink-0 object-contain sm:h-16 lg:h-11 xl:h-12 2xl:h-16"
           />
-          <div className="flex flex-col items-start justify-center">
-            <span className="font-serif text-lg font-bold uppercase tracking-[0.14em] text-brand-accent sm:text-xl sm:tracking-[0.18em] lg:text-2xl lg:tracking-widest whitespace-nowrap leading-none">
+          <div className="flex min-w-0 flex-col items-start justify-center">
+            <span className="whitespace-nowrap font-serif text-lg font-bold uppercase leading-none tracking-[0.14em] text-brand-accent sm:text-xl sm:tracking-[0.18em] lg:text-lg lg:tracking-[0.1em] xl:text-xl xl:tracking-[0.16em] 2xl:text-2xl 2xl:tracking-widest">
               APEX SPICES
             </span>
-            <span className="mt-1 text-[9px] font-medium tracking-[0.18em] text-brand-accent/85 sm:text-[10px] whitespace-nowrap leading-none">
+            <span className="mt-1 whitespace-nowrap text-[9px] font-medium leading-none tracking-[0.18em] text-brand-accent/85 sm:text-[10px] lg:hidden xl:block">
               PREMIUM SPICES & HERBS
             </span>
           </div>
         </Link>
 
-        <nav className={`hidden items-center gap-4 text-xs font-semibold uppercase tracking-[0.15em] lg:flex xl:gap-7 xl:text-sm xl:tracking-[0.2em] ${NAV_FONT_CLASS}`}>
+        <nav className={`hidden min-w-0 flex-1 items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] lg:flex xl:gap-5 xl:text-xs xl:tracking-[0.14em] 2xl:gap-7 2xl:text-sm 2xl:tracking-[0.2em] ${NAV_FONT_CLASS}`}>
           {PRIMARY_NAV_LINKS.map(([label, path]) => (
             <Link
               key={path}
               to={path}
-              className={`whitespace-nowrap border-b-2 pb-1 transition-colors ${
+              className={`shrink-0 whitespace-nowrap border-b-2 pb-1 transition-colors ${
                 isActiveLink(path)
                   ? 'border-brand-accent text-brand-accent'
                   : 'border-transparent hover:text-brand-accent'
@@ -218,7 +218,7 @@ const Header = () => {
           {canAccessAdmin && (
             <Link
               to="/admin"
-              className={`border-b-2 pb-1 transition-colors ${
+              className={`hidden shrink-0 whitespace-nowrap border-b-2 pb-1 transition-colors 2xl:inline-block ${
                 isActiveLink('/admin')
                   ? 'border-brand-accent text-brand-accent'
                   : 'border-transparent hover:text-brand-accent'
@@ -229,14 +229,14 @@ const Header = () => {
           )}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-5">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-2 xl:gap-3 2xl:gap-5">
           <CurrencySelect
             currency={currency}
             changeCurrency={changeCurrency}
             supportedCurrencies={supportedCurrencies}
           />
 
-          <Link to="/cart" className="relative inline-flex items-center transition-colors hover:text-brand-accent">
+          <Link to="/cart" className="relative inline-flex shrink-0 items-center transition-colors hover:text-brand-accent">
             <div className="relative">
               <ShoppingBag size={22} className="text-brand-accent" />
               {cartItems.length > 0 && (
@@ -249,15 +249,15 @@ const Header = () => {
           </Link>
 
           {userInfo ? (
-            <div className="relative hidden lg:block">
+            <div className="relative hidden shrink-0 lg:block">
               <button
                 type="button"
                 onClick={() => setAccountMenuOpen((open) => !open)}
-                className={`inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-[0.16em] transition-colors duration-200 hover:border-brand-accent hover:text-brand-accent ${NAV_FONT_CLASS}`}
+                className={`inline-flex max-w-[150px] items-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition-colors duration-200 hover:border-brand-accent hover:text-brand-accent xl:max-w-[180px] xl:px-4 xl:text-sm xl:tracking-[0.16em] ${NAV_FONT_CLASS}`}
               >
-                <User size={18} className="mr-2 text-brand-accent" />
-                {userInfo.name?.split(' ')[0] || 'Account'}
-                <ChevronDown size={16} className="ml-2" />
+                <User size={18} className="mr-1.5 shrink-0 text-brand-accent xl:mr-2" />
+                <span className="truncate">{userInfo.name?.split(' ')[0] || 'Account'}</span>
+                <ChevronDown size={16} className="ml-1.5 shrink-0 xl:ml-2" />
               </button>
 
               {accountMenuOpen && (
@@ -373,16 +373,16 @@ const Header = () => {
               )}
             </div>
           ) : (
-            <div className="hidden items-center gap-3 lg:flex">
+            <div className="hidden shrink-0 items-center gap-2 lg:flex xl:gap-3">
               <Link
                 to="/login"
-                className={`text-sm font-semibold uppercase tracking-[0.16em] transition-colors duration-200 hover:text-brand-accent ${NAV_FONT_CLASS}`}
+                className={`text-xs font-semibold uppercase tracking-[0.1em] transition-colors duration-200 hover:text-brand-accent xl:text-sm xl:tracking-[0.16em] ${NAV_FONT_CLASS}`}
               >
                 Login
               </Link>
               <Link
                 to="/register"
-                className={`rounded-full border border-brand-accent/30 px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-brand-accent transition-colors duration-200 hover:bg-brand-accent hover:text-[#081729] xl:px-4 ${NAV_FONT_CLASS}`}
+                className={`rounded-full border border-brand-accent/30 px-2.5 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-brand-accent transition-colors duration-200 hover:bg-brand-accent hover:text-[#081729] xl:px-3 xl:text-sm xl:tracking-[0.16em] 2xl:px-4 ${NAV_FONT_CLASS}`}
               >
                 Register
               </Link>
