@@ -1,9 +1,52 @@
+import { CheckCircle2, HeartHandshake, Leaf, ShieldCheck, Sprout } from 'lucide-react';
+
+const storyHighlights = [
+  {
+    title: '100% Sri Lankan',
+    text: 'Proudly local, always.',
+    icon: CheckCircle2,
+  },
+  {
+    title: 'No Artificial Additives',
+    text: 'Pure and natural.',
+    icon: Leaf,
+  },
+  {
+    title: 'Supporting Local Farmers',
+    text: 'Better for farmers, better for you.',
+    icon: HeartHandshake,
+  },
+];
+
+const qualityPromises = [
+  {
+    number: '1',
+    title: 'Verified Suppliers',
+    text: 'We work with trusted local farmers and producers who follow ethical, sustainable, and traceable sourcing practices.',
+    icon: Sprout,
+  },
+  {
+    number: '2',
+    title: 'Authentic & Ethical',
+    text: 'Every product is selected for genuine Sri Lankan character, responsibly sourced and carefully prepared.',
+    icon: HeartHandshake,
+  },
+  {
+    number: '3',
+    title: 'Quality Guaranteed',
+    text: 'Strict quality checks and hygienic packaging help preserve freshness, aroma, and customer satisfaction.',
+    icon: ShieldCheck,
+  },
+];
+
 const AboutPage = () => {
   return (
     <div>
       <div className="bg-brand-dark text-white pt-8 pb-20 text-center">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Our Story</h1>
-        <p className="text-xl max-w-2xl mx-auto text-gray-300">Connecting the world's finest organic spice growers with kitchens everywhere.</p>
+        <p className="text-xl max-w-2xl mx-auto text-gray-300">
+          Connecting the world's finest Sri Lankan flavors from our land to kitchens everywhere.
+        </p>
       </div>
 
       <div className="container mx-auto px-4 py-16">
@@ -24,11 +67,33 @@ const AboutPage = () => {
           <div className="md:w-1/2">
             <h2 className="text-3xl font-serif font-bold mb-6">Built on Trust, Powered by Quality</h2>
             <p className="text-gray-700 mb-4 leading-relaxed">
-              Apex Spices began as a premium spice sourcing house and has grown into a global marketplace for authentic, organic spices and herbs. We saw that consumers and professional chefs struggled to find a single trusted platform offering genuinely premium spices — free of fillers, artificial coloring, or blending compromises.
+              Apex Spices is a Sri Lankan brand dedicated to delivering authentic, high-quality spices, dried foods,
+              and pantry essentials with the care our island's culinary heritage deserves. From the rich soils and
+              trusted grower networks of Sri Lanka, we bring true flavor to homes, chefs, and food lovers around the
+              world.
+            </p>
+            <p className="text-gray-700 mb-4 leading-relaxed">
+              Our range includes premium whole spices, ground spices, herbs, and carefully selected dried food
+              products, all sourced with attention to purity, freshness, and consistency. Every product is prepared
+              with traditional knowledge, modern quality standards, and a deep respect for natural ingredients.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              We partner directly with certified local farmers and single-origin estates across Ceylon, Madagascar, India, and other prime spice-growing regions. These direct relationships ensure fair trade prices for local growers, complete batch traceability, and unmatched freshness for our customers.
+              We believe better food begins with honest sourcing. That is why we support local farmers, avoid
+              unnecessary additives, and keep every batch focused on clean aroma, rich color, and dependable taste.
             </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {storyHighlights.map(({ title, text, icon: Icon }) => (
+                <div
+                  key={title}
+                  className="rounded-lg border border-brand-accent/20 bg-[#fcfaf7] px-4 py-4 text-center shadow-sm"
+                >
+                  <Icon size={24} className="mx-auto mb-3 text-brand-accent" />
+                  <h3 className="text-sm font-bold text-brand-dark">{title}</h3>
+                  <p className="mt-1 text-xs leading-5 text-gray-600">{text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -36,21 +101,19 @@ const AboutPage = () => {
           <div className="container mx-auto">
             <h2 className="text-3xl font-serif font-bold mb-12 text-center">Our Quality Promise</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div className="bg-white p-8 rounded-lg shadow-sm">
-                <div className="w-16 h-16 mx-auto bg-brand-primary text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">1</div>
-                <h3 className="text-xl font-bold mb-3">Verified Suppliers</h3>
-                <p className="text-gray-600">Every farm estate and supplier is audited against international organic standards before joining our marketplace.</p>
-              </div>
-              <div className="bg-white p-8 rounded-lg shadow-sm">
-                <div className="w-16 h-16 mx-auto bg-brand-primary text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">2</div>
-                <h3 className="text-xl font-bold mb-3">Ethically Sourced</h3>
-                <p className="text-gray-600">We champion fair trade, organic farming, and sustainable practices across our spice estates.</p>
-              </div>
-              <div className="bg-white p-8 rounded-lg shadow-sm">
-                <div className="w-16 h-16 mx-auto bg-brand-primary text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">3</div>
-                <h3 className="text-xl font-bold mb-3">Quality Guaranteed</h3>
-                <p className="text-gray-600">Strict lab checks for purity, protective packaging to lock in essential oils, and a 30-day return promise.</p>
-              </div>
+              {qualityPromises.map(({ number, title, text, icon: Icon }) => (
+                <div
+                  key={title}
+                  className="relative bg-white p-8 rounded-lg border border-brand-accent/10 shadow-[0_12px_30px_rgba(48,20,10,0.08)]"
+                >
+                  <div className="absolute left-1/2 top-0 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-brand-primary text-sm font-bold text-white shadow-md">
+                    {number}
+                  </div>
+                  <Icon size={34} className="mx-auto mb-5 mt-2 text-brand-primary" />
+                  <h3 className="text-xl font-bold mb-3">{title}</h3>
+                  <p className="text-gray-600 leading-6">{text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
