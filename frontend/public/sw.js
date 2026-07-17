@@ -1,12 +1,23 @@
-const CACHE_NAME = 'apex-link-v2';
+const CACHE_NAME = 'apex-link-v3';
 const APP_SHELL = [
-  '/',
-  '/products',
-  '/track-order',
   '/offline.html',
   '/manifest.webmanifest',
   '/logo.webp?v=20260716'
 ];
+
+const HTML_CONTENT_TYPE = 'text/html';
+
+const isHtmlResponse = (response) => {
+  const contentType = response.headers.get('content-type') || '';
+  return contentType.includes(HTML_CONTENT_TYPE);
+};
+
+const isCacheableStaticResponse = (response) =>
+  response && response.status === 200 && response.type !== 'opaque' && !isHtmlResponse(response);
+
+const isStaticAssetRequest = (request, url) =>
+  url.pathname.startsWith('/assets/') ||
+  ['font', 'image', 'manifest', 'script', 'style'].includes(request.destination);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -17,11 +28,17 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+    )
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -39,32 +56,34 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/offline.html')))
+      fetch(request, { cache: 'no-store' })
+        .then((response) => response)
+        .catch(() => caches.match('/offline.html'))
     );
+    return;
+  }
+
+  if (!isStaticAssetRequest(request, url)) {
     return;
   }
 
   event.respondWith(
     caches.match(request).then((cached) => {
+      const fetchAndCache = () => fetch(request).then((response) => {
+        if (isCacheableStaticResponse(response)) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+
+        return response;
+      });
+
       if (cached) {
+        event.waitUntil(fetchAndCache().catch(() => undefined));
         return cached;
       }
 
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type === 'opaque') {
-          return response;
-        }
-
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        return response;
-      });
+      return fetchAndCache();
     })
   );
 });

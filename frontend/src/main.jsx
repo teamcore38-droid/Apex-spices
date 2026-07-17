@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext'
 import { CurrencyProvider } from './context/CurrencyContext'
 import App from './App.jsx'
 import { installFrontendErrorMonitoring } from './utils/errorMonitoring'
+import { installChunkLoadRecovery } from './utils/chunkLoadRecovery'
 import { installAdTracking } from './utils/analytics'
 import './index.css'
 
@@ -16,6 +17,7 @@ if (apiBaseUrl) {
 }
 
 installFrontendErrorMonitoring()
+installChunkLoadRecovery()
 installAdTracking()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -34,8 +36,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.error('[serviceWorker]', error)
-    })
+    navigator.serviceWorker
+      .register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => {
+        registration.update().catch(() => {})
+      })
+      .catch((error) => {
+        console.error('[serviceWorker]', error)
+      })
   })
 }
