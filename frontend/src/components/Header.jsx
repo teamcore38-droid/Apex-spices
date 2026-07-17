@@ -15,6 +15,7 @@ const PRIMARY_NAV_LINKS = [
 ];
 
 const NAV_FONT_CLASS = "[font-family:'Times_New_Roman',Times,serif]";
+const SHOW_EXPERIENCE_NAV_ITEMS = false;
 
 const CurrencySelect = ({ currency, changeCurrency, supportedCurrencies, mobile = false }) => (
   <CurrencyDropdown
@@ -275,13 +276,15 @@ const Header = () => {
                   >
                     <ShoppingBag size={16} className="mr-3 text-brand-accent" /> My Orders
                   </Link>
-                  <Link
-                    to="/vendor/onboarding"
-                    onClick={() => setAccountMenuOpen(false)}
-                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
-                  >
-                    <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Vendor Onboarding
-                  </Link>
+                  {SHOW_EXPERIENCE_NAV_ITEMS && (
+                    <Link
+                      to="/vendor/onboarding"
+                      onClick={() => setAccountMenuOpen(false)}
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
+                    >
+                      <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Vendor Onboarding
+                    </Link>
+                  )}
                   {(userInfo.isVendor || userInfo.isAdmin) && (
                     <Link
                       to="/vendor/dashboard"
@@ -291,13 +294,15 @@ const Header = () => {
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Vendor Dashboard
                     </Link>
                   )}
-                  <Link
-                    to="/customer-experience"
-                    onClick={() => setAccountMenuOpen(false)}
-                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
-                  >
-                    <User size={16} className="mr-3 text-brand-accent" /> Customer Experience
-                  </Link>
+                  {SHOW_EXPERIENCE_NAV_ITEMS && (
+                    <Link
+                      to="/customer-experience"
+                      onClick={() => setAccountMenuOpen(false)}
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
+                    >
+                      <User size={16} className="mr-3 text-brand-accent" /> Customer Experience
+                    </Link>
+                  )}
                   <Link
                     to="/privacy-center"
                     onClick={() => setAccountMenuOpen(false)}
@@ -431,15 +436,19 @@ const Header = () => {
                 <Link to="/track-order" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Track Order
                 </Link>
-                <Link to="/customer-experience" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
-                  Customer Experience
-                </Link>
+                {SHOW_EXPERIENCE_NAV_ITEMS && (
+                  <Link to="/customer-experience" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
+                    Customer Experience
+                  </Link>
+                )}
                 <Link to="/privacy-center" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Privacy Center
                 </Link>
-                <Link to="/vendor/onboarding" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
-                  Vendor Onboarding
-                </Link>
+                {SHOW_EXPERIENCE_NAV_ITEMS && (
+                  <Link to="/vendor/onboarding" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
+                    Vendor Onboarding
+                  </Link>
+                )}
                 {(userInfo.isVendor || userInfo.isAdmin) && (
                   <Link to="/vendor/dashboard" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Vendor Dashboard
