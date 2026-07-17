@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Search } from 'lucide-react';
 
 const isSelectableOption = (option) => option && !option.disabled;
 
@@ -15,6 +15,8 @@ const CustomSelect = ({
   buttonClassName = '',
   listClassName = '',
   leftIcon = null,
+  searchable = false,
+  searchPlaceholder = 'Search...',
 }) => {
   const generatedId = useId();
   const selectId = id || `custom-select-${generatedId}`;
@@ -25,11 +27,24 @@ const CustomSelect = ({
   const optionRefs = useRef([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const selectedIndex = useMemo(
     () => options.findIndex((option) => String(option.value) === String(value)),
     [options, value]
   );
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchTerm.trim()) {
+      return options;
+    }
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    return options.filter((option) =>
+      String(option.label || option.value || '')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
+  }, [options, searchable, searchTerm]);
 
   const selectedOption = selectedIndex >= 0 ? options[selectedIndex] : null;
   const selectedLabel = selectedOption?.label || placeholder;
@@ -66,26 +81,30 @@ const CustomSelect = ({
       return;
     }
 
+    setSearchTerm('');
     const fallbackIndex = options.findIndex(isSelectableOption);
     const nextIndex = selectedIndex >= 0 ? selectedIndex : fallbackIndex;
     setActiveIndex(nextIndex);
     setIsOpen(true);
   };
 
-  const closeListbox = () => setIsOpen(false);
+  const closeListbox = () => {
+    setIsOpen(false);
+    setSearchTerm('');
+  };
 
   const moveActiveIndex = (direction) => {
-    if (!options.length) {
+    if (!filteredOptions.length) {
       return;
     }
 
     let nextIndex = activeIndex;
-    const guardCount = options.length * 2;
+    const guardCount = filteredOptions.length * 2;
     let iterations = 0;
 
     while (iterations < guardCount) {
-      nextIndex = (nextIndex + direction + options.length) % options.length;
-      if (isSelectableOption(options[nextIndex])) {
+      nextIndex = (nextIndex + direction + filteredOptions.length) % filteredOptions.length;
+      if (isSelectableOption(filteredOptions[nextIndex])) {
         setActiveIndex(nextIndex);
         return;
       }
@@ -94,7 +113,7 @@ const CustomSelect = ({
   };
 
   const selectByIndex = (index) => {
-    const option = options[index];
+    const option = filteredOptions[index];
     if (!option || option.disabled) {
       return;
     }
@@ -153,13 +172,13 @@ const CustomSelect = ({
         break;
       case 'Home':
         event.preventDefault();
-        setActiveIndex(options.findIndex(isSelectableOption));
+        setActiveIndex(filteredOptions.findIndex(isSelectableOption));
         break;
       case 'End': {
         event.preventDefault();
-        const reversedIndex = [...options].reverse().findIndex(isSelectableOption);
+        const reversedIndex = [...filteredOptions].reverse().findIndex(isSelectableOption);
         if (reversedIndex >= 0) {
-          setActiveIndex(options.length - 1 - reversedIndex);
+          setActiveIndex(filteredOptions.length - 1 - reversedIndex);
         }
         break;
       }
@@ -181,6 +200,21 @@ const CustomSelect = ({
       default:
         break;
     }
+  };
+
+  const handleSearchChange = (event) => {
+    const nextSearchTerm = event.target.value;
+    const normalizedSearch = nextSearchTerm.trim().toLowerCase();
+    const nextOptions = normalizedSearch
+      ? options.filter((option) =>
+          String(option.label || option.value || '')
+            .toLowerCase()
+            .includes(normalizedSearch)
+        )
+      : options;
+
+    setSearchTerm(nextSearchTerm);
+    setActiveIndex(nextOptions.findIndex(isSelectableOption));
   };
 
   return (
@@ -213,50 +247,74 @@ const CustomSelect = ({
       </button>
 
       {isOpen ? (
-        <ul
-          role="listbox"
-          id={listboxId}
-          aria-labelledby={selectId}
-          tabIndex={-1}
-          className={`absolute z-50 mt-2 max-h-64 w-full overflow-auto rounded-xl border border-[#d7dfeb] bg-[#fafbfd] py-1.5 shadow-[0_22px_40px_rgba(11,31,58,0.16)] ${listClassName}`}
-          onKeyDown={onListboxKeyDown}
-        >
-          {options.map((option, index) => {
-            const isSelected = String(option.value) === String(value);
-            const isActive = index === activeIndex;
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-[#d7dfeb] bg-[#fafbfd] shadow-[0_22px_40px_rgba(11,31,58,0.16)]">
+          {searchable ? (
+            <div className="border-b border-[#e2e8f0] bg-white p-2">
+              <label className="relative block">
+                <Search
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#93a5bf]"
+                />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onKeyDown={onListboxKeyDown}
+                  placeholder={searchPlaceholder}
+                  className="w-full rounded-lg border border-[#d7dfeb] bg-[#f7f9fc] py-2 pl-9 pr-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                />
+              </label>
+            </div>
+          ) : null}
+          <ul
+            role="listbox"
+            id={listboxId}
+            aria-labelledby={selectId}
+            tabIndex={-1}
+            className={`max-h-64 w-full overflow-auto py-1.5 ${listClassName}`}
+            onKeyDown={onListboxKeyDown}
+          >
+            {filteredOptions.length === 0 ? (
+              <li className="mx-1 rounded-lg px-3 py-3 text-sm text-gray-400">No matching options</li>
+            ) : (
+              filteredOptions.map((option, index) => {
+                const isSelected = String(option.value) === String(value);
+                const isActive = index === activeIndex;
 
-            return (
-              <li
-                key={`${option.value}-${index}`}
-                id={`${listboxId}-option-${index}`}
-                ref={(element) => {
-                  optionRefs.current[index] = element;
-                }}
-                role="option"
-                aria-selected={isSelected}
-                className={`mx-1 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
-                  option.disabled
-                    ? 'cursor-not-allowed text-gray-300'
-                    : isActive
-                      ? 'bg-[#e8edf5] text-brand-dark'
-                      : isSelected
-                        ? 'bg-[#f1f4fa] text-brand-dark'
-                        : 'text-[#1c3a61] hover:bg-[#edf1f8]'
-                }`}
-                onMouseEnter={() => {
-                  if (!option.disabled) {
-                    setActiveIndex(index);
-                  }
-                }}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => selectByIndex(index)}
-              >
-                <span>{option.label}</span>
-                {isSelected ? <Check size={15} className="text-brand-accent" /> : null}
-              </li>
-            );
-          })}
-        </ul>
+                return (
+                  <li
+                    key={`${option.value}-${index}`}
+                    id={`${listboxId}-option-${index}`}
+                    ref={(element) => {
+                      optionRefs.current[index] = element;
+                    }}
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`mx-1 flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+                      option.disabled
+                        ? 'cursor-not-allowed text-gray-300'
+                        : isActive
+                          ? 'bg-[#e8edf5] text-brand-dark'
+                          : isSelected
+                            ? 'bg-[#f1f4fa] text-brand-dark'
+                            : 'text-[#1c3a61] hover:bg-[#edf1f8]'
+                    }`}
+                    onMouseEnter={() => {
+                      if (!option.disabled) {
+                        setActiveIndex(index);
+                      }
+                    }}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectByIndex(index)}
+                  >
+                    <span>{option.label}</span>
+                    {isSelected ? <Check size={15} className="text-brand-accent" /> : null}
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
       ) : null}
     </div>
   );

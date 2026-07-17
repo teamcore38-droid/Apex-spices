@@ -68,7 +68,7 @@ const validateCheckoutForm = (form) => {
     ['email', 'Email address'],
     ['addressLine1', 'Address line 1'],
     ['city', 'City'],
-    ['state', isSriLankaDelivery ? 'District' : 'State / Province'],
+    ['state', isSriLankaDelivery ? 'District' : 'State / Province / Region'],
     ['postalCode', 'Postal code'],
     ['country', 'Country'],
   ];
@@ -348,8 +348,8 @@ const CheckoutInner = ({ payhereEnabled }) => {
       ...currentForm,
       country: country.name,
       countryCode: country.iso2,
-      state: country.iso2 === SRI_LANKA_COUNTRY_CODE ? '' : currentForm.state,
-      district: country.iso2 === SRI_LANKA_COUNTRY_CODE ? '' : '',
+      state: '',
+      district: '',
     }));
   };
 
@@ -1073,12 +1073,14 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     value={form.countryCode}
                     onChange={handleCountryChange}
                     options={COUNTRY_OPTIONS}
+                    searchable
+                    searchPlaceholder="Search country..."
                     listClassName="max-h-72"
                   />
                 </div>
                 <div>
                   <label htmlFor="checkout-state" className="mb-2 block text-sm font-semibold text-brand-dark">
-                    {isSriLankaDelivery ? 'District' : 'State / Province'}
+                    {isSriLankaDelivery ? 'District' : 'State / Province / Region'}
                   </label>
                   {isSriLankaDelivery ? (
                     <CustomSelect
@@ -1086,6 +1088,8 @@ const CheckoutInner = ({ payhereEnabled }) => {
                       value={form.district || form.state}
                       onChange={handleDistrictChange}
                       placeholder="Select district"
+                      searchable
+                      searchPlaceholder="Search district..."
                       options={SRI_LANKA_DISTRICTS.map((district) => ({
                         value: district,
                         label: district,
