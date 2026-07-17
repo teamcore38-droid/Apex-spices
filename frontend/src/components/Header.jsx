@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Mail, Menu, ShoppingBag, User, LogOut, MapPinned } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -14,26 +14,151 @@ const PRIMARY_NAV_LINKS = [
   ['CONTACT', '/contact'],
 ];
 
+const NAV_FONT_CLASS = "[font-family:'Times_New_Roman',Times,serif]";
+
 const CurrencySelect = ({ currency, changeCurrency, supportedCurrencies, mobile = false }) => (
-  <label className={mobile ? 'block' : 'hidden sm:block'}>
-    <span className="sr-only">Currency</span>
-    <select
-      value={currency}
-      onChange={(event) => changeCurrency(event.target.value)}
-      className={
-        mobile
-          ? 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold uppercase tracking-[0.14em] text-brand-light outline-none focus:border-brand-accent'
-          : 'rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-brand-accent outline-none transition hover:border-brand-accent focus:border-brand-accent'
-      }
-    >
-      {supportedCurrencies.map((option) => (
-        <option key={option.code} value={option.code} className="bg-white text-brand-dark">
-          {option.label}
-        </option>
-      ))}
-    </select>
-  </label>
+  <CurrencyDropdown
+    currency={currency}
+    changeCurrency={changeCurrency}
+    supportedCurrencies={supportedCurrencies}
+    mobile={mobile}
+  />
 );
+
+const CurrencyDropdown = ({ currency, changeCurrency, supportedCurrencies, mobile = false }) => {
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const dropdownRef = useRef(null);
+  const selectedIndex = Math.max(
+    supportedCurrencies.findIndex((option) => option.code === currency),
+    0
+  );
+  const safeActiveIndex = Math.min(Math.max(activeIndex, 0), Math.max(supportedCurrencies.length - 1, 0));
+  const visibleActiveIndex = open ? safeActiveIndex : selectedIndex;
+  const selectedCurrency = supportedCurrencies[selectedIndex] || { code: currency, label: currency };
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
+  const chooseCurrency = (nextCurrency) => {
+    changeCurrency(nextCurrency);
+    setOpen(false);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex((current) => (open ? current + 1 : selectedIndex + 1) % supportedCurrencies.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex((current) =>
+        (open ? current - 1 + supportedCurrencies.length : selectedIndex - 1 + supportedCurrencies.length) %
+        supportedCurrencies.length
+      );
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (open) {
+        chooseCurrency(supportedCurrencies[visibleActiveIndex]?.code || selectedCurrency.code);
+      } else {
+        setActiveIndex(selectedIndex);
+        setOpen(true);
+      }
+    } else if (event.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={dropdownRef} className={`relative ${mobile ? 'w-full' : 'hidden sm:block'}`}>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Select currency"
+        onClick={() => {
+          setActiveIndex(selectedIndex);
+          setOpen((current) => !current);
+        }}
+        onKeyDown={handleKeyDown}
+        className={`group inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl border border-brand-accent/35 bg-[#2b150d] px-4 py-2.5 text-sm font-bold uppercase tracking-[0.14em] text-brand-accent shadow-[0_10px_28px_rgba(0,0,0,0.22)] outline-none transition duration-200 hover:border-brand-accent hover:bg-[#3a1f15] focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/30 ${
+          mobile ? 'w-full' : 'sm:w-[96px]'
+        } ${NAV_FONT_CLASS}`}
+      >
+        <span>{selectedCurrency.label}</span>
+        <ChevronDown
+          size={15}
+          className={`text-brand-accent transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      <div
+        className={`absolute right-0 top-[calc(100%+0.55rem)] z-50 w-full min-w-[128px] overflow-hidden rounded-2xl border border-brand-accent/25 bg-[#1f0e08] p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.38)] transition duration-200 ${
+          open
+            ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none -translate-y-1 scale-95 opacity-0'
+        } ${mobile ? 'left-0 right-auto' : ''}`}
+      >
+        <div
+          role="listbox"
+          aria-label="Currency options"
+          aria-activedescendant={`currency-option-${supportedCurrencies[visibleActiveIndex]?.code || selectedCurrency.code}`}
+          className="grid gap-1"
+        >
+          {supportedCurrencies.map((option, index) => {
+            const selected = option.code === currency;
+            const active = index === visibleActiveIndex;
+
+            return (
+              <button
+                id={`currency-option-${option.code}`}
+                key={option.code}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => chooseCurrency(option.code)}
+                className={`flex min-h-10 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-bold uppercase tracking-[0.14em] transition duration-150 ${NAV_FONT_CLASS} ${
+                  selected
+                    ? 'bg-brand-accent text-brand-dark shadow-sm'
+                    : active
+                    ? 'bg-white/10 text-brand-accent'
+                    : 'text-brand-light hover:bg-white/10 hover:text-brand-accent'
+                }`}
+              >
+                <span>{option.label}</span>
+                {selected && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Header = () => {
   const { cartItems } = useCart();
@@ -75,7 +200,7 @@ const Header = () => {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-4 text-xs font-semibold uppercase tracking-[0.15em] lg:flex xl:gap-7 xl:text-sm xl:tracking-[0.2em]">
+        <nav className={`hidden items-center gap-4 text-xs font-semibold uppercase tracking-[0.15em] lg:flex xl:gap-7 xl:text-sm xl:tracking-[0.2em] ${NAV_FONT_CLASS}`}>
           {PRIMARY_NAV_LINKS.map(([label, path]) => (
             <Link
               key={path}
@@ -119,7 +244,7 @@ const Header = () => {
                 </span>
               )}
             </div>
-            <span className="ml-2 hidden text-sm font-semibold uppercase tracking-wider xl:inline">Cart</span>
+            <span className={`ml-2 hidden text-sm font-semibold uppercase tracking-wider xl:inline ${NAV_FONT_CLASS}`}>Cart</span>
           </Link>
 
           {userInfo ? (
@@ -127,7 +252,7 @@ const Header = () => {
               <button
                 type="button"
                 onClick={() => setAccountMenuOpen((open) => !open)}
-                className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-[0.16em] transition-colors duration-200 hover:border-brand-accent hover:text-brand-accent"
+                className={`inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-[0.16em] transition-colors duration-200 hover:border-brand-accent hover:text-brand-accent ${NAV_FONT_CLASS}`}
               >
                 <User size={18} className="mr-2 text-brand-accent" />
                 {userInfo.name?.split(' ')[0] || 'Account'}
@@ -139,21 +264,21 @@ const Header = () => {
                   <Link
                     to="/profile"
                     onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                   >
                     <User size={16} className="mr-3 text-brand-accent" /> My Account
                   </Link>
                   <Link
                     to="/profile?tab=orders"
                     onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                   >
                     <ShoppingBag size={16} className="mr-3 text-brand-accent" /> My Orders
                   </Link>
                   <Link
                     to="/vendor/onboarding"
                     onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                   >
                     <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Vendor Onboarding
                   </Link>
@@ -161,7 +286,7 @@ const Header = () => {
                     <Link
                       to="/vendor/dashboard"
                       onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                     >
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Vendor Dashboard
                     </Link>
@@ -169,21 +294,21 @@ const Header = () => {
                   <Link
                     to="/customer-experience"
                     onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                   >
                     <User size={16} className="mr-3 text-brand-accent" /> Customer Experience
                   </Link>
                   <Link
                     to="/privacy-center"
                     onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                   >
                     <User size={16} className="mr-3 text-brand-accent" /> Privacy Center
                   </Link>
                   <Link
                     to="/track-order"
                     onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                    className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                   >
                     <MapPinned size={16} className="mr-3 text-brand-accent" /> Track Order
                   </Link>
@@ -191,7 +316,7 @@ const Header = () => {
                     <Link
                       to="/admin/professional"
                       onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                     >
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Professional Admin
                     </Link>
@@ -200,7 +325,7 @@ const Header = () => {
                     <Link
                       to="/admin/mobile"
                       onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                     >
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Mobile Admin
                     </Link>
@@ -209,7 +334,7 @@ const Header = () => {
                     <Link
                       to="/admin/messages"
                       onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                     >
                       <Mail size={16} className="mr-3 text-brand-accent" /> Messages
                     </Link>
@@ -218,7 +343,7 @@ const Header = () => {
                     <Link
                       to="/admin/vendors"
                       onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                     >
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Marketplace Ops
                     </Link>
@@ -227,7 +352,7 @@ const Header = () => {
                     <Link
                       to="/admin/commerce"
                       onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light"
+                      className={`flex items-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-brand-light ${NAV_FONT_CLASS}`}
                     >
                       <ShoppingBag size={16} className="mr-3 text-brand-accent" /> Commerce Ops
                     </Link>
@@ -235,7 +360,7 @@ const Header = () => {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-semibold text-red-700 transition-colors duration-200 hover:bg-red-50"
+                    className={`mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-semibold text-red-700 transition-colors duration-200 hover:bg-red-50 ${NAV_FONT_CLASS}`}
                   >
                     <LogOut size={16} className="mr-3" /> Logout
                   </button>
@@ -246,13 +371,13 @@ const Header = () => {
             <div className="hidden items-center gap-3 lg:flex">
               <Link
                 to="/login"
-                className="text-sm font-semibold uppercase tracking-[0.16em] transition-colors duration-200 hover:text-brand-accent"
+                className={`text-sm font-semibold uppercase tracking-[0.16em] transition-colors duration-200 hover:text-brand-accent ${NAV_FONT_CLASS}`}
               >
                 Login
               </Link>
               <Link
                 to="/register"
-                className="rounded-full border border-brand-accent/30 px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-brand-accent transition-colors duration-200 hover:bg-brand-accent hover:text-[#081729] xl:px-4"
+                className={`rounded-full border border-brand-accent/30 px-3 py-2 text-sm font-semibold uppercase tracking-[0.16em] text-brand-accent transition-colors duration-200 hover:bg-brand-accent hover:text-[#081729] xl:px-4 ${NAV_FONT_CLASS}`}
               >
                 Register
               </Link>
@@ -286,7 +411,7 @@ const Header = () => {
                   key={`mobile-nav-${path}`}
                   to={path}
                   onClick={() => setAccountMenuOpen(false)}
-                  className={`block rounded-xl px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  className={`block rounded-xl px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] transition-colors ${NAV_FONT_CLASS} ${
                     isActiveLink(path) ? 'bg-brand-accent/20 text-brand-accent' : 'hover:bg-white/10'
                   }`}
                 >
@@ -297,68 +422,68 @@ const Header = () => {
 
             {userInfo ? (
               <>
-                <Link to="/profile" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/profile" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   My Account
                 </Link>
-                <Link to="/profile?tab=orders" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/profile?tab=orders" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   My Orders
                 </Link>
-                <Link to="/track-order" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/track-order" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Track Order
                 </Link>
-                <Link to="/customer-experience" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/customer-experience" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Customer Experience
                 </Link>
-                <Link to="/privacy-center" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/privacy-center" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Privacy Center
                 </Link>
-                <Link to="/vendor/onboarding" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/vendor/onboarding" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Vendor Onboarding
                 </Link>
                 {(userInfo.isVendor || userInfo.isAdmin) && (
-                  <Link to="/vendor/dashboard" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                  <Link to="/vendor/dashboard" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Vendor Dashboard
                   </Link>
                 )}
                 {canAccessAdmin && (
-                  <Link to="/admin" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                  <Link to="/admin" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Admin
                   </Link>
                 )}
                 {canAccessAdmin && (
-                  <Link to="/admin/professional" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                  <Link to="/admin/professional" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Professional Admin
                   </Link>
                 )}
                 {canAccessAdmin && (
-                  <Link to="/admin/mobile" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                  <Link to="/admin/mobile" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Mobile Admin
                   </Link>
                 )}
                 {userInfo.isAdmin && (
-                  <Link to="/admin/vendors" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                  <Link to="/admin/vendors" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Marketplace Ops
                   </Link>
                 )}
                 {userInfo.isAdmin && (
-                  <Link to="/admin/messages" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                  <Link to="/admin/messages" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                     Messages
                   </Link>
                 )}
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="block w-full rounded-xl bg-red-50 px-4 py-3 text-left text-sm font-semibold uppercase tracking-[0.14em] text-red-700"
+                  className={`block w-full rounded-xl bg-red-50 px-4 py-3 text-left text-sm font-semibold uppercase tracking-[0.14em] text-red-700 ${NAV_FONT_CLASS}`}
                 >
                   Logout
                 </button>
               </>
             ) : (
               <div className="grid gap-3">
-                <Link to="/login" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em]">
+                <Link to="/login" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] ${NAV_FONT_CLASS}`}>
                   Login
                 </Link>
-                <Link to="/register" onClick={() => setAccountMenuOpen(false)} className="block rounded-xl border border-brand-accent/30 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-brand-accent">
+                <Link to="/register" onClick={() => setAccountMenuOpen(false)} className={`block rounded-xl border border-brand-accent/30 px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-brand-accent ${NAV_FONT_CLASS}`}>
                   Register
                 </Link>
               </div>
