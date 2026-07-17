@@ -481,7 +481,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
     clearCart();
 
     setTimeout(() => {
-      navigate(`/order/${order._id}/confirm`, { state: { order } });
+      navigate(`/thank-you?orderId=${order._id}`, { state: { order } });
     }, 900);
   };
 
@@ -586,7 +586,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
       const paymentObj = {
         sandbox: payhereData.sandbox,
         merchant_id: payhereData.merchantId,
-        return_url: `${window.location.origin}/orders/${order._id}`,
+        return_url: `${window.location.origin}/thank-you?orderId=${order._id}`,
         cancel_url: `${window.location.origin}/checkout`,
         notify_url: payhereData.notifyUrl,
         order_id: order._id,

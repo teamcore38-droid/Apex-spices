@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowRight,
@@ -30,13 +30,16 @@ import {
 import OrderTimeline from '../components/OrderTimeline';
 
 const OrderSuccessPage = () => {
-  const { id } = useParams();
-  const { state, pathname } = useLocation();
+  const { id: routeOrderId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { state, pathname, search } = useLocation();
   const { userInfo, logout } = useAuth();
   const navigate = useNavigate();
+  const id = routeOrderId || searchParams.get('orderId') || state?.order?._id || '';
+  const missingOrderId = !id;
 
   const [order, setOrder] = useState(state?.order || null);
-  const [loading, setLoading] = useState(!state?.order);
+  const [loading, setLoading] = useState(!state?.order && !missingOrderId);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -44,8 +47,12 @@ const OrderSuccessPage = () => {
       return;
     }
 
+    if (missingOrderId) {
+      return;
+    }
+
     if (!userInfo?.token) {
-      navigate(`/login?redirect=${pathname}`);
+      navigate(`/login?redirect=${pathname}${search}`);
       return;
     }
 
@@ -75,7 +82,7 @@ const OrderSuccessPage = () => {
           const msg = fetchError.response?.data?.message || '';
           if (msg.toLowerCase().includes('token')) {
             logout();
-            navigate(`/login?redirect=${pathname}`);
+            navigate(`/login?redirect=${pathname}${search}`);
             return;
           }
         }
@@ -97,9 +104,9 @@ const OrderSuccessPage = () => {
       isMounted = false;
       if (pollTimer) clearTimeout(pollTimer);
     };
-  }, [id, navigate, pathname, userInfo, logout, order]);
+  }, [id, missingOrderId, navigate, pathname, search, userInfo, logout, order]);
 
-  const isConfirmation = pathname.includes('confirm');
+  const isConfirmation = pathname.includes('confirm') || pathname.includes('thank-you');
 
   const status = order?.orderStatus || 'Processing';
   const shippingLines = useMemo(
@@ -122,7 +129,7 @@ const OrderSuccessPage = () => {
     );
   }
 
-  if (error || !order) {
+  if (error || missingOrderId || !order) {
     const isAuthError = error === 'Not authorized to view this order';
     return (
       <div className="container mx-auto max-w-lg px-4 py-16 text-center">
@@ -133,7 +140,7 @@ const OrderSuccessPage = () => {
           <p className="mt-4 text-sm leading-7 text-gray-600">
             {isAuthError
               ? 'You are not authorized to view this order. If this was a guest checkout, please use the Track Order page with your email to view it.'
-              : error || 'The order confirmation details could not be found.'}
+              : error || 'The order confirmation link is missing an order ID.'}
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             {isAuthError ? (
