@@ -10,7 +10,7 @@ import {
   LogIn,
   MapPin,
   ShieldCheck,
-  Truck,
+  Sparkles,
   UserRound,
   RotateCcw,
 } from 'lucide-react';
@@ -75,6 +75,7 @@ const wait = (milliseconds) =>
   });
 
 const PAYHERE_SUPPORTED_CURRENCIES = ['LKR', 'USD', 'EUR', 'GBP', 'AUD'];
+const PAYHERE_BRAND_DESCRIPTION = 'Apex Spices Premium Order';
 
 const waitForVerifiedPayment = async ({ orderId, token }) => {
   for (let attempt = 0; attempt < 15; attempt += 1) {
@@ -115,6 +116,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [saveAddressToBook, setSaveAddressToBook] = useState(false);
   const [setDefaultAddress, setSetDefaultAddress] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [paymentStage, setPaymentStage] = useState('idle');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
@@ -209,6 +211,21 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const displayGiftCardAmount = activeQuote?.giftCardAmount ?? 0;
   const displayTotalPrice = activeQuote?.totalPrice ?? convertLocalEstimate(totalPrice);
   const displayCurrency = activeQuote?.currency || checkoutCurrency;
+  const payhereOrderDescription = pendingOrderId
+    ? `${PAYHERE_BRAND_DESCRIPTION} #${pendingOrderId.slice(-8).toUpperCase()}`
+    : PAYHERE_BRAND_DESCRIPTION;
+  const paymentButtonLabel =
+    paymentStage === 'verifying'
+      ? 'Verifying Payment...'
+      : loading
+      ? payhereEnabled
+        ? paymentStage === 'opening'
+          ? 'Opening PayHere...'
+          : 'Preparing Payment...'
+        : 'Placing Order...'
+      : payhereEnabled
+      ? 'Pay Securely with PayHere'
+      : 'Place Order';
   const formatCheckoutBasePrice = (baseValue) =>
     activeQuote?.exchangeRate
       ? formatCurrency(Number(baseValue || 0) * Number(activeQuote.exchangeRate || 1), displayCurrency)
@@ -363,6 +380,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   };
 
   const finalizeSuccess = (order) => {
+    setPaymentStage('idle');
     trackEvent(
       'purchase',
       {
@@ -421,6 +439,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
 
     saveShippingAddress(nextShippingAddress);
     setLoading(true);
+    setPaymentStage('creating');
 
     try {
       await requestQuote(nextShippingAddress);
@@ -448,6 +467,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
         return;
       }
 
+      setPaymentStage('opening');
       const { data: payhereData } = await axios.post(
         '/api/payments/payhere/hash',
         { orderId: order._id },
@@ -465,6 +485,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
 
       window.payhere.onCompleted = async function onCompleted() {
         setLoading(true);
+        setPaymentStage('verifying');
         setError('');
 
         try {
@@ -475,6 +496,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
           finalizeSuccess(verifiedOrder);
         } catch (verificationError) {
           setError(verificationError.message || 'Unable to verify the payment right now.');
+          setPaymentStage('idle');
         } finally {
           setLoading(false);
         }
@@ -482,11 +504,13 @@ const CheckoutInner = ({ payhereEnabled }) => {
 
       window.payhere.onDismissed = function onDismissed() {
         setError('Payment was closed. Please try again to complete your purchase.');
+        setPaymentStage('idle');
         setLoading(false);
       };
 
       window.payhere.onError = function onError(payhereErr) {
         setError('Payment error: ' + payhereErr);
+        setPaymentStage('idle');
         setLoading(false);
       };
 
@@ -497,7 +521,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
         cancel_url: `${window.location.origin}/checkout`,
         notify_url: payhereData.notifyUrl,
         order_id: order._id,
-        items: 'Apex Spices Order',
+        items: `${PAYHERE_BRAND_DESCRIPTION} #${order._id.slice(-8).toUpperCase()}`,
         amount: payhereData.amount,
         currency: payhereData.currency,
         first_name: form.fullName.split(' ')[0] || 'Customer',
@@ -507,6 +531,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
         address: form.addressLine1,
         city: form.city,
         country: form.country || 'Sri Lanka',
+        platform: 'Apex Spices Website',
+        custom_1: 'Apex Spices',
+        custom_2: order._id,
         hash: payhereData.hash,
       };
 
@@ -520,6 +547,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
       );
     } finally {
       setLoading(false);
+      if (paymentStage !== 'verifying') {
+        setPaymentStage('idle');
+      }
     }
   };
 
@@ -686,8 +716,10 @@ const CheckoutInner = ({ payhereEnabled }) => {
         )}
 
         {pendingOrderId && !success && (
-          <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-            Your order has already been created and is waiting for payment confirmation. You can safely retry payment without losing your cart.
+          <div className="mt-4 rounded-2xl border border-brand-accent/30 bg-[#fff8e8] px-4 py-3 text-sm font-semibold text-brand-dark shadow-sm">
+            {paymentStage === 'verifying'
+              ? 'Payment completed in PayHere. We are waiting for the secure backend notification before marking your order as paid.'
+              : 'Your Apex Spices order is ready and waiting for secure PayHere confirmation. You can safely retry payment without losing your cart.'}
           </div>
         )}
 
@@ -997,43 +1029,71 @@ const CheckoutInner = ({ payhereEnabled }) => {
               </div>
             </section>
 
-            <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand-primary">
-                  <CreditCard size={20} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-accent">Payment Method</p>
-                  <h2 className="font-serif text-2xl font-bold text-brand-dark">
-                    {payhereEnabled ? 'Secure Payment' : 'Development payment mode'}
-                  </h2>
+            <section className="overflow-hidden rounded-[28px] border border-brand-accent/20 bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
+              <div className="bg-gradient-to-br from-[#2a1007] via-[#4a2518] to-[#8f6b2b] p-6 text-white sm:p-8">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-accent/35 bg-white/10 text-brand-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
+                    <CreditCard size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-accent">Payment Method</p>
+                    <h2 className="font-serif text-2xl font-bold">
+                      {payhereEnabled ? 'Secure PayHere Checkout' : 'Development payment mode'}
+                    </h2>
+                  </div>
                 </div>
               </div>
 
-              {payhereEnabled ? (
-                <div className="mt-6 rounded-[24px] border border-brand-accent/15 bg-[#f5f8fc] p-5">
-                  <div className="mb-4 flex items-center gap-2 text-brand-dark">
-                    <LockKeyhole size={16} />
-                    <p className="text-sm font-semibold">Secure checkout via PayHere</p>
+              <div className="p-6 sm:p-8">
+                {payhereEnabled ? (
+                  <div className="rounded-[24px] border border-brand-accent/20 bg-[#fffaf2] p-5 shadow-sm">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="mb-3 flex items-center gap-2 text-brand-dark">
+                          <LockKeyhole size={16} className="text-brand-primary" />
+                          <p className="text-sm font-bold uppercase tracking-[0.16em]">Protected PayHere window</p>
+                        </div>
+                        <p className="text-sm leading-7 text-gray-700">
+                          The payment form opens in PayHere&apos;s secure hosted interface. Apex Spices controls this surrounding checkout experience, while card entry, bank selection, and wallet authentication remain inside PayHere&apos;s protected payment UI.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-brand-accent/20 bg-white px-4 py-3 text-sm shadow-sm sm:min-w-44">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">Description</p>
+                        <p className="mt-1 font-serif text-lg font-bold text-brand-dark">{payhereOrderDescription}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      {[
+                        ['Verified by Backend', 'Payment is marked paid only after PayHere notification validation.'],
+                        ['Secure Card Entry', 'Sensitive payment fields are handled by PayHere, not Apex Spices.'],
+                        ['Apex Branded Flow', 'Order copy, buttons, and status messages match the store theme.'],
+                      ].map(([title, body]) => (
+                        <div key={title} className="rounded-2xl border border-brand-accent/15 bg-white p-4">
+                          <div className="mb-2 flex items-center gap-2 text-brand-primary">
+                            <Sparkles size={14} />
+                            <p className="text-xs font-bold uppercase tracking-[0.14em]">{title}</p>
+                          </div>
+                          <p className="text-xs leading-5 text-gray-600">{body}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-sm leading-7 text-gray-600">
-                    You will be securely redirected to the PayHere payment gateway (supporting Visa, Mastercard, American Express, LankaQR, and mobile wallets) to complete your transaction.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-6 rounded-[24px] border border-brand-accent/15 bg-[#f5f8fc] p-5">
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-accent">
-                    Development mode
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-gray-600">
-                    PayHere script is not loaded, so checkout will place the order in safe manual-payment mode. This keeps development moving without blocking checkout.
-                  </p>
-                  <label className="mt-4 inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-dark shadow-sm">
-                    <input type="radio" checked readOnly className="mr-2" />
-                    Manual / Development Placeholder
-                  </label>
-                </div>
-              )}
+                ) : (
+                  <div className="rounded-[24px] border border-brand-accent/15 bg-[#fffaf2] p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-accent">
+                      Development mode
+                    </p>
+                    <p className="mt-3 text-sm leading-7 text-gray-600">
+                      PayHere script is not loaded, so checkout will place the order in safe manual-payment mode. This keeps development moving without blocking checkout.
+                    </p>
+                    <label className="mt-4 inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-dark shadow-sm">
+                      <input type="radio" checked readOnly className="mr-2" />
+                      Manual / Development Placeholder
+                    </label>
+                  </div>
+                )}
+              </div>
             </section>
 
             <section className="rounded-[28px] border border-brand-accent/20 bg-[#f5f8fc] p-6 shadow-sm">
@@ -1117,23 +1177,23 @@ const CheckoutInner = ({ payhereEnabled }) => {
                 type="button"
                 onClick={placeOrderHandler}
                 disabled={loading}
-                className={`mt-6 inline-flex w-full items-center justify-center rounded-xl bg-brand-primary px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white transition-colors duration-200 hover:bg-brand-dark ${
-                  loading ? 'cursor-not-allowed opacity-70' : ''
+                className={`mt-6 inline-flex w-full items-center justify-center rounded-2xl border border-brand-accent/40 bg-gradient-to-r from-[#2a1007] via-[#4b2518] to-[#7f5b25] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_16px_34px_rgba(42,16,7,0.24)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(42,16,7,0.30)] focus:outline-none focus:ring-2 focus:ring-brand-accent/40 ${
+                  loading ? 'cursor-not-allowed opacity-80 hover:translate-y-0' : ''
                 }`}
               >
                 {loading ? (
                   <Loader2 size={18} className="mr-2 animate-spin" />
                 ) : (
-                  <Truck size={18} className="mr-2" />
+                  <LockKeyhole size={18} className="mr-2 text-brand-accent" />
                 )}
-                {loading
-                  ? payhereEnabled
-                    ? 'Redirecting to Payment...'
-                    : 'Placing Order...'
-                  : payhereEnabled
-                    ? 'Pay & Place Order'
-                    : 'Place Order'}
+                {paymentButtonLabel}
               </button>
+
+              {payhereEnabled && (
+                <p className="mt-3 text-center text-xs leading-5 text-gray-500">
+                  PayHere&apos;s secure popup may retain its own branding for compliance and card security.
+                </p>
+              )}
             </div>
           </aside>
         </div>
