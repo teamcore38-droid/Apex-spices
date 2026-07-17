@@ -17,6 +17,10 @@ const refreshTokenSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    rememberMe: {
+      type: Boolean,
+      default: false,
+    },
     userAgent: {
       type: String,
       default: '',

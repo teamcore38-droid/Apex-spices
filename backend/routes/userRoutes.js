@@ -32,7 +32,7 @@ router.route('/').post(authRegisterLimiter, registerUser);
 router.post('/login', authLoginLimiter, authUser);
 router.post('/login/2fa', authLoginLimiter, verifyAdminTwoFactorLogin);
 router.post('/refresh', refreshAccessToken);
-router.post('/logout', protect, logoutUser);
+router.post('/logout', logoutUser);
 router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
 router.route('/security/events').get(protect, getSecurityEvents);
 router.route('/security/2fa').put(protect, updateAdminTwoFactor);

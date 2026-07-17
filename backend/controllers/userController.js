@@ -16,10 +16,11 @@ import {
   adminRequiresTwoFactor,
   clearRefreshCookie,
   createTwoFactorChallenge,
-  generateAccessToken,
+  getRefreshTokenDays,
   getRefreshTokenFromRequest,
   hashValue,
   isAccountLocked,
+  issueAccessToken,
   issueRefreshToken,
   recordSecurityEvent,
   registerFailedLogin,
@@ -33,38 +34,45 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const sanitizePhone = (value = '') => value.toString().trim();
 
-const serializeUser = (user) => ({
-  _id: user._id,
-  name: user.name,
-  email: user.email,
-  phone: user.phone || '',
-  countryCode: user.countryCode || 'LK',
-  countryName: user.countryName || 'Sri Lanka',
-  preferredCurrency: resolveSupportedCurrency(user.preferredCurrency || getSupportedCurrencyForCountry(user.countryCode || 'LK')),
-  isAdmin: user.isAdmin,
-  isStaff: Boolean(user.isStaff),
-  role: user.role || (user.isAdmin ? 'admin' : 'customer'),
-  staffStatus: user.staffStatus || 'Active',
-  permissions: getPermissionsForUser(user),
-  isVendor: Boolean(user.isVendor),
-  vendorStatus: user.vendorStatus || 'None',
-  security: {
-    adminTwoFactorEnabled: user.security?.adminTwoFactorEnabled !== false,
-    lastLoginAt: user.security?.lastLoginAt || null,
-    accountLockedUntil: user.security?.accountLockedUntil || null,
-  },
-  createdAt: user.createdAt,
-  addresses: user.addresses || [],
-  token: generateAccessToken(user._id),
-});
+const serializeUser = (user) => {
+  const accessToken = issueAccessToken(user._id);
+
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || '',
+    countryCode: user.countryCode || 'LK',
+    countryName: user.countryName || 'Sri Lanka',
+    preferredCurrency: resolveSupportedCurrency(user.preferredCurrency || getSupportedCurrencyForCountry(user.countryCode || 'LK')),
+    isAdmin: user.isAdmin,
+    isStaff: Boolean(user.isStaff),
+    role: user.role || (user.isAdmin ? 'admin' : 'customer'),
+    staffStatus: user.staffStatus || 'Active',
+    permissions: getPermissionsForUser(user),
+    isVendor: Boolean(user.isVendor),
+    vendorStatus: user.vendorStatus || 'None',
+    security: {
+      adminTwoFactorEnabled: user.security?.adminTwoFactorEnabled !== false,
+      lastLoginAt: user.security?.lastLoginAt || null,
+      accountLockedUntil: user.security?.accountLockedUntil || null,
+    },
+    createdAt: user.createdAt,
+    addresses: user.addresses || [],
+    ...accessToken,
+  };
+};
 
 const findUserByEmail = async (email) =>
   User.findOne({ email: String(email || '').trim().toLowerCase() });
 
-const issueLoginResponse = async (req, res, user, statusCode = 200) => {
+const issueLoginResponse = async (req, res, user, statusCode = 200, options = {}) => {
+  const rememberMe = Boolean(options.rememberMe);
+  const refreshTokenDays = getRefreshTokenDays(rememberMe);
+
   await registerSuccessfulLogin(req, user);
-  const refreshToken = await issueRefreshToken(user, req);
-  setRefreshCookie(res, refreshToken.token);
+  const refreshToken = await issueRefreshToken(user, req, undefined, { rememberMe, refreshTokenDays });
+  setRefreshCookie(res, refreshToken.token, refreshTokenDays);
   return res.status(statusCode).json(serializeUser(user));
 };
 
@@ -135,7 +143,7 @@ const registerUser = async (req, res) => {
 // @route   POST /api/users/login
 // @access  Public
 const authUser = async (req, res) => {
-  const { email = '', password = '' } = req.body;
+  const { email = '', password = '', rememberMe = false } = req.body;
 
   try {
     const normalizedEmail = String(email).trim().toLowerCase();
@@ -165,7 +173,7 @@ const authUser = async (req, res) => {
       });
     }
 
-    return issueLoginResponse(req, res, user);
+    return issueLoginResponse(req, res, user, 200, { rememberMe });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -173,7 +181,7 @@ const authUser = async (req, res) => {
 };
 
 const verifyAdminTwoFactorLogin = async (req, res) => {
-  const { challengeId = '', code = '' } = req.body;
+  const { challengeId = '', code = '', rememberMe = false } = req.body;
 
   try {
     const result = await verifyTwoFactorChallenge(req, {
@@ -186,7 +194,7 @@ const verifyAdminTwoFactorLogin = async (req, res) => {
       return res.status(400).json({ message: result.message });
     }
 
-    return issueLoginResponse(req, res, result.user);
+    return issueLoginResponse(req, res, result.user, 200, { rememberMe });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -215,11 +223,15 @@ const refreshAccessToken = async (req, res) => {
       return res.status(401).json({ message: 'Session expired. Please sign in again.' });
     }
 
-    const nextRefresh = await issueRefreshToken(tokenRecord.user, req, tokenRecord.family);
+    const refreshTokenDays = getRefreshTokenDays(tokenRecord.rememberMe);
+    const nextRefresh = await issueRefreshToken(tokenRecord.user, req, tokenRecord.family, {
+      rememberMe: tokenRecord.rememberMe,
+      refreshTokenDays,
+    });
     tokenRecord.revokedAt = new Date();
     tokenRecord.replacedByTokenHash = nextRefresh.tokenHash;
     await tokenRecord.save();
-    setRefreshCookie(res, nextRefresh.token);
+    setRefreshCookie(res, nextRefresh.token, refreshTokenDays);
     await recordSecurityEvent(req, 'session.refresh', tokenRecord.user);
     res.json(serializeUser(tokenRecord.user));
   } catch (error) {

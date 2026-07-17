@@ -5,8 +5,10 @@ import SecurityEvent from '../models/securityEventModel.js';
 import TwoFactorChallenge from '../models/twoFactorChallengeModel.js';
 import { sendAdminTwoFactorCodeEmail, sendSecurityAlertEmail } from './emailService.js';
 
-const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '1h';
-const REFRESH_TOKEN_DAYS = Number(process.env.REFRESH_TOKEN_DAYS || 30);
+const ACCESS_TOKEN_SECONDS = Number(process.env.ACCESS_TOKEN_SECONDS || 15 * 60);
+const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || `${ACCESS_TOKEN_SECONDS}s`;
+const REFRESH_TOKEN_DAYS = Number(process.env.REFRESH_TOKEN_DAYS || 7);
+const REMEMBER_ME_REFRESH_TOKEN_DAYS = Number(process.env.REMEMBER_ME_REFRESH_TOKEN_DAYS || 30);
 const REFRESH_COOKIE_NAME = 'apexRefreshToken';
 const LOCKOUT_THRESHOLD = Number(process.env.LOGIN_LOCKOUT_THRESHOLD || 5);
 const LOCKOUT_MINUTES = Number(process.env.LOGIN_LOCKOUT_MINUTES || 15);
@@ -26,12 +28,34 @@ const generateAccessToken = (id) =>
     expiresIn: ACCESS_TOKEN_TTL,
   });
 
-const buildRefreshCookieOptions = () => ({
+const getAccessTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  const expiresAt = decoded?.exp ? decoded.exp * 1000 : Date.now() + ACCESS_TOKEN_SECONDS * 1000;
+
+  return {
+    tokenExpiresAt: new Date(expiresAt).toISOString(),
+    tokenExpiresInSeconds: Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)),
+  };
+};
+
+const issueAccessToken = (id) => {
+  const token = generateAccessToken(id);
+
+  return {
+    token,
+    ...getAccessTokenExpiry(token),
+  };
+};
+
+const getRefreshTokenDays = (rememberMe = false) =>
+  rememberMe ? REMEMBER_ME_REFRESH_TOKEN_DAYS : REFRESH_TOKEN_DAYS;
+
+const buildRefreshCookieOptions = (refreshTokenDays = REFRESH_TOKEN_DAYS) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   path: '/api/users',
-  maxAge: REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000,
+  maxAge: refreshTokenDays * 24 * 60 * 60 * 1000,
 });
 
 const parseCookieHeader = (cookieHeader = '') =>
@@ -51,25 +75,29 @@ const getRefreshTokenFromRequest = (req) => {
   return cookies[REFRESH_COOKIE_NAME] || req.body?.refreshToken || '';
 };
 
-const issueRefreshToken = async (user, req, family = crypto.randomUUID()) => {
+const issueRefreshToken = async (user, req, family = crypto.randomUUID(), options = {}) => {
+  const rememberMe = Boolean(options.rememberMe);
+  const refreshTokenDays = Number(options.refreshTokenDays || getRefreshTokenDays(rememberMe));
+  const tokenFamily = family || crypto.randomUUID();
   const token = crypto.randomBytes(48).toString('hex');
   const tokenHash = hashValue(token);
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + refreshTokenDays * 24 * 60 * 60 * 1000);
 
   await RefreshToken.create({
     user: user._id,
     tokenHash,
-    family,
+    family: tokenFamily,
+    rememberMe,
     userAgent: getUserAgent(req),
     ipAddress: getRequestIp(req),
     expiresAt,
   });
 
-  return { token, tokenHash, family, expiresAt };
+  return { token, tokenHash, family: tokenFamily, expiresAt, rememberMe, refreshTokenDays };
 };
 
-const setRefreshCookie = (res, token) => {
-  res.cookie(REFRESH_COOKIE_NAME, token, buildRefreshCookieOptions());
+const setRefreshCookie = (res, token, refreshTokenDays = REFRESH_TOKEN_DAYS) => {
+  res.cookie(REFRESH_COOKIE_NAME, token, buildRefreshCookieOptions(refreshTokenDays));
 };
 
 const clearRefreshCookie = (res) => {
@@ -208,11 +236,13 @@ export {
   adminRequiresTwoFactor,
   clearRefreshCookie,
   generateAccessToken,
+  getRefreshTokenDays,
   getRefreshTokenFromRequest,
   getRequestIp,
   getUserAgent,
   hashValue,
   isAccountLocked,
+  issueAccessToken,
   issueRefreshToken,
   recordSecurityEvent,
   registerFailedLogin,

@@ -12,6 +12,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -76,9 +77,10 @@ const LoginPage = () => {
         await verifyTwoFactorLogin({
           challengeId: twoFactorChallenge.challengeId,
           code: twoFactorCode,
+          rememberMe,
         });
       } else {
-        const result = await login(email, password);
+        const result = await login(email, password, rememberMe);
         if (result?.requiresTwoFactor) {
           setTwoFactorChallenge(result);
           setFieldErrors({});
@@ -177,6 +179,16 @@ const LoginPage = () => {
                     </p>
                   )}
                 </div>
+
+                <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
+                  />
+                  <span>Remember me for 30 days</span>
+                </label>
               </>
             ) : (
               <div>
