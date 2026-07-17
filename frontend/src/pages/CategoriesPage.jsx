@@ -58,9 +58,12 @@ const CategoriesPage = () => {
 
         <div className="mt-14">
           {loading ? (
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div className="flex flex-wrap justify-center gap-8">
               {[...Array(6)].map((_, index) => (
-                <div key={index} className="h-[360px] animate-pulse rounded-[28px] bg-white shadow-sm" />
+                <div
+                  key={index}
+                  className="h-[360px] w-full animate-pulse rounded-[28px] bg-white shadow-sm md:w-[calc((100%_-_2rem)/2)] xl:w-[calc((100%_-_4rem)/3)]"
+                />
               ))}
             </div>
           ) : error ? (
@@ -77,12 +80,12 @@ const CategoriesPage = () => {
               </p>
             </div>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div className="flex flex-wrap justify-center gap-8">
               {categories.map((category) => (
                 <Link
                   key={category._id}
                   to={`/category/${category.slug}`}
-                  className="group overflow-hidden rounded-[28px] bg-white shadow-[0_20px_50px_rgba(11,31,58,0.08)] transition-transform duration-300 hover:-translate-y-1"
+                  className="group w-full overflow-hidden rounded-[28px] bg-white shadow-[0_20px_50px_rgba(11,31,58,0.08)] transition-transform duration-300 hover:-translate-y-1 md:w-[calc((100%_-_2rem)/2)] xl:w-[calc((100%_-_4rem)/3)]"
                 >
                   <div className="relative h-72 overflow-hidden">
                     <img
