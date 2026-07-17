@@ -9,11 +9,17 @@ const AboutPage = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col md:flex-row gap-12 items-center mb-20">
           <div className="md:w-1/2">
-            <img
-              src="/Top-left.webp"
-              alt="Organic culinary spices"
-              className="rounded-lg shadow-lg w-full"
-            />
+            <picture>
+              <source media="(max-width: 767px)" srcSet="/about-home-bottom-mobile.webp" />
+              <source media="(min-width: 768px)" srcSet="/about-home-bottom-desktop.webp" />
+              <img
+                src="/about-home-bottom-desktop.webp"
+                alt="Organic culinary spices"
+                className="rounded-lg shadow-lg w-full"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
           </div>
           <div className="md:w-1/2">
             <h2 className="text-3xl font-serif font-bold mb-6">Built on Trust, Powered by Quality</h2>

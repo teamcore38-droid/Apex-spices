@@ -444,11 +444,17 @@ const HomePage = () => {
           <div className="flex flex-col items-center gap-16 md:flex-row">
             <div className="relative md:w-1/2">
               <div className="absolute -inset-4 translate-x-4 translate-y-4 transform rounded-lg border-2 border-brand-accent"></div>
-              <img
-                src="/Top-left.webp"
-                alt="Flat lay of organic culinary spices"
-                className="relative z-10 h-[500px] w-full rounded-lg object-cover shadow-2xl"
-              />
+              <picture>
+                <source media="(max-width: 767px)" srcSet="/about-home-bottom-mobile.webp" />
+                <source media="(min-width: 768px)" srcSet="/about-home-bottom-desktop.webp" />
+                <img
+                  src="/about-home-bottom-desktop.webp"
+                  alt="Flat lay of organic culinary spices"
+                  className="relative z-10 h-[500px] w-full rounded-lg object-cover shadow-2xl"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
             </div>
             <div className="md:w-1/2">
               <h2 className="mb-6 font-serif text-4xl font-bold text-brand-dark md:text-5xl">Our Promise of Quality</h2>
