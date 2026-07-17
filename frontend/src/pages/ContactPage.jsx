@@ -14,8 +14,21 @@ const createInitialForm = (userInfo) => ({
 const REQUIRED_FIELD_MESSAGE = 'This field is required';
 const requiredFields = ['name', 'email', 'subject', 'message'];
 const fieldErrorClass = 'mt-2 text-xs font-medium text-red-600';
+const customerCarePhone = '+94 76 566 9961';
+const whatsappUrl = `https://wa.me/94765669961?text=${encodeURIComponent(
+  'Hello Apex Spices, I would like to inquire about your products/services.'
+)}`;
 
 const getRequiredError = (value) => (value.trim() ? '' : REQUIRED_FIELD_MESSAGE);
+
+const WhatsAppIcon = ({ className = 'h-5 w-5' }) => (
+  <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false" className={className}>
+    <path
+      fill="currentColor"
+      d="M16.02 3.2A12.7 12.7 0 0 0 5.11 22.4L3.5 28.8l6.55-1.55A12.66 12.66 0 0 0 16 28.8h.02A12.8 12.8 0 0 0 28.8 16 12.79 12.79 0 0 0 16.02 3.2Zm0 23.45h-.02a10.58 10.58 0 0 1-5.39-1.48l-.39-.23-3.88.92.95-3.78-.25-.4A10.54 10.54 0 1 1 16.02 26.65Zm5.79-7.9c-.32-.16-1.88-.93-2.17-1.03-.29-.11-.5-.16-.71.16-.21.32-.82 1.03-1 1.24-.18.21-.37.24-.69.08-.32-.16-1.34-.49-2.55-1.57-.94-.84-1.58-1.88-1.76-2.19-.18-.32-.02-.49.14-.65.14-.14.32-.37.48-.55.16-.18.21-.32.32-.53.11-.21.05-.4-.03-.56-.08-.16-.71-1.7-.97-2.33-.25-.61-.51-.53-.71-.54h-.61c-.21 0-.56.08-.85.4-.29.32-1.11 1.08-1.11 2.64s1.14 3.06 1.3 3.27c.16.21 2.24 3.42 5.43 4.8.76.33 1.35.52 1.81.67.76.24 1.45.21 2 .13.61-.09 1.88-.77 2.14-1.51.27-.74.27-1.38.19-1.51-.08-.13-.29-.21-.61-.37Z"
+    />
+  </svg>
+);
 
 const ContactPage = () => {
   const { userInfo } = useAuth();
@@ -30,13 +43,13 @@ const ContactPage = () => {
     () => [
       {
         icon: MapPin,
-        title: 'Studio & Dispatch',
+        title: 'Warehouse & Dispatch',
         body: '580/12, Moque Lane\nNawala, Rajagiriya\nSri Lanka',
       },
       {
         icon: Phone,
         title: 'Customer Care',
-        body: '+94 76 566 9961\nMonday to Friday\n9:00 AM - 6:00 PM',
+        body: `${customerCarePhone}\nMonday to Friday\n9:00 AM - 6:00 PM`,
       },
       {
         icon: Mail,
@@ -126,7 +139,7 @@ const ContactPage = () => {
           </p>
         </section>
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="mt-8 grid gap-8 xl:grid-cols-[0.8fr_1.2fr]">
           <aside className="space-y-6">
             <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Customer Care</p>
@@ -136,17 +149,17 @@ const ContactPage = () => {
               </p>
             </div>
 
-            <div className="grid gap-5">
+            <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
               {contactCards.map(({ icon: Icon, title, body }) => (
                 <article
                   key={title}
-                  className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]"
+                  className="rounded-[24px] bg-white p-5 shadow-[0_14px_32px_rgba(11,31,58,0.07)] sm:p-4 xl:p-5"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand-primary">
-                    <Icon size={20} />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-light text-brand-primary">
+                    <Icon size={18} />
                   </div>
-                  <h3 className="mt-4 font-serif text-2xl font-bold text-brand-dark">{title}</h3>
-                  <div className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">{body}</div>
+                  <h3 className="mt-3 font-serif text-xl font-bold text-brand-dark xl:text-2xl">{title}</h3>
+                  <div className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-gray-600">{body}</div>
                 </article>
               ))}
             </div>
@@ -298,6 +311,31 @@ const ContactPage = () => {
                   'Send Message'
                 )}
               </button>
+
+              <div className="rounded-[24px] border border-[#25d366]/25 bg-[#f4fbf7] p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#25d366] text-white shadow-sm">
+                      <WhatsAppIcon className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-serif text-xl font-bold text-brand-dark">Prefer to chat with us?</p>
+                      <p className="mt-1 text-sm leading-6 text-gray-600">
+                        Contact our Customer Care team on WhatsApp for quick assistance.
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#25d366] px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#1faa53]"
+                  >
+                    <WhatsAppIcon className="mr-2 h-5 w-5" />
+                    WhatsApp
+                  </a>
+                </div>
+              </div>
             </form>
           </section>
         </div>
