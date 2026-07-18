@@ -800,7 +800,10 @@ const CheckoutInner = ({ payhereEnabled }) => {
         )}
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-          <form onSubmit={placeOrderHandler} className="space-y-8">
+          <form
+            onSubmit={placeOrderHandler}
+            className="order-1 space-y-8 lg:col-start-1 lg:row-start-1"
+          >
             <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand-primary">
@@ -1131,7 +1134,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-[28px] border border-brand-accent/20 bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
+          </form>
+
+          <section className="order-3 overflow-hidden rounded-[28px] border border-brand-accent/20 bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)] md:order-2 lg:col-start-1 lg:row-start-2">
               <div className="bg-gradient-to-br from-[#2a1007] via-[#4a2518] to-[#8f6b2b] p-6 text-white sm:p-8">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-accent/35 bg-white/10 text-brand-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
@@ -1196,9 +1201,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
                   </div>
                 )}
               </div>
-            </section>
+          </section>
 
-            <section className="rounded-[28px] border border-brand-accent/20 bg-[#f5f8fc] p-6 shadow-sm">
+          <section className="order-4 rounded-[28px] border border-brand-accent/20 bg-[#f5f8fc] p-6 shadow-sm md:order-3 lg:col-start-1 lg:row-start-3">
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-primary shadow-sm">
                   <ShieldCheck size={20} />
@@ -1210,10 +1215,9 @@ const CheckoutInner = ({ payhereEnabled }) => {
                   </p>
                 </div>
               </div>
-            </section>
-          </form>
+          </section>
 
-          <aside className="space-y-6">
+          <aside className="order-2 space-y-6 md:order-4 lg:order-2 lg:col-start-2 lg:row-span-3 lg:row-start-1">
             <div className="sticky top-24 rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
               <h2 className="border-b border-gray-100 pb-4 font-serif text-2xl font-bold text-brand-dark">
                 Order Summary

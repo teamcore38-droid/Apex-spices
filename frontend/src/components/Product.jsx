@@ -14,7 +14,6 @@ const Product = ({ product, compactOnMobile = false }) => {
   const statusBadge = getProductStatusBadge(product);
   const stockBadge = getStockPresentation(product.countInStock);
   const showStockBadge = product.countInStock > 0;
-  const stockBadgePosition = compactOnMobile && statusBadge ? 'top-8 sm:top-4' : 'top-2 sm:top-4';
 
   const handleAddToCart = (event) => {
     event.preventDefault();
@@ -38,7 +37,7 @@ const Product = ({ product, compactOnMobile = false }) => {
 
           {statusBadge && (
             <span
-              className={`absolute inline-flex rounded-full font-bold uppercase shadow-lg ${compactOnMobile ? 'left-2 top-2 max-w-[calc(100%-1rem)] px-2 py-0.5 text-[8px] tracking-[0.08em] sm:left-4 sm:top-4 sm:max-w-none sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.18em]' : 'left-4 top-4 px-3 py-1 text-[11px] tracking-[0.18em]'} ${statusBadge.className}`}
+              className={`absolute inline-flex whitespace-nowrap rounded-full font-bold uppercase shadow-lg ${compactOnMobile ? 'left-2 top-2 px-2 py-0.5 text-[8px] leading-none tracking-[0.06em] sm:left-4 sm:top-4 sm:px-3 sm:py-1 sm:text-[11px] sm:leading-normal sm:tracking-[0.18em]' : 'left-4 top-4 px-3 py-1 text-[11px] tracking-[0.18em]'} ${statusBadge.className}`}
             >
               {statusBadge.label}
             </span>
@@ -46,7 +45,7 @@ const Product = ({ product, compactOnMobile = false }) => {
 
           {showStockBadge && (
             <span
-              className={`absolute inline-flex rounded-full border font-bold uppercase ${compactOnMobile ? `right-2 ${stockBadgePosition} max-w-[calc(100%-1rem)] px-2 py-0.5 text-[8px] tracking-[0.08em] sm:right-4 sm:max-w-none sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.18em]` : 'right-4 top-4 px-3 py-1 text-[11px] tracking-[0.18em]'} ${stockBadge.className}`}
+              className={`absolute inline-flex whitespace-nowrap rounded-full border font-bold uppercase ${compactOnMobile ? 'right-2 top-2 px-2 py-0.5 text-[8px] leading-none tracking-[0.06em] sm:right-4 sm:top-4 sm:px-3 sm:py-1 sm:text-[11px] sm:leading-normal sm:tracking-[0.18em]' : 'right-4 top-4 px-3 py-1 text-[11px] tracking-[0.18em]'} ${stockBadge.className}`}
             >
               {stockBadge.label}
             </span>
