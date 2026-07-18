@@ -3,14 +3,14 @@ import axios from 'axios';
 import { Loader2, UploadCloud, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'general' }) => {
+const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'general', multiple = false }) => {
   const { userInfo } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
-  const handleUpload = async (file) => {
+  const uploadSingleFile = async (file) => {
     if (!file) return;
 
     // Validate file type
@@ -42,9 +42,7 @@ const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'genera
       });
 
       setSuccess(true);
-      if (onUploadSuccess) {
-        onUploadSuccess(data.url);
-      }
+      onUploadSuccess?.(data.url);
     } catch (uploadError) {
       console.error(uploadError);
       setError(uploadError.response?.data?.message || 'Failed to upload image. Please try again.');
@@ -53,9 +51,22 @@ const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'genera
     }
   };
 
+  const handleUpload = async (files) => {
+    const selectedFiles = Array.from(files || []).filter(Boolean);
+
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    for (const file of selectedFiles) {
+      // Sequential uploads keep Cloudinary/admin API load modest.
+      await uploadSingleFile(file);
+    }
+  };
+
   const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    handleUpload(file);
+    handleUpload(event.target.files);
+    event.target.value = '';
   };
 
   const handleDragOver = (event) => {
@@ -70,8 +81,7 @@ const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'genera
   const handleDrop = (event) => {
     event.preventDefault();
     setDragOver(false);
-    const file = event.dataTransfer.files[0];
-    handleUpload(file);
+    handleUpload(event.dataTransfer.files);
   };
 
   return (
@@ -91,6 +101,7 @@ const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'genera
         <input
           type="file"
           accept="image/*"
+          multiple={multiple}
           onChange={handleFileChange}
           disabled={uploading}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -107,7 +118,9 @@ const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'genera
             <div className="text-xs text-gray-600">
               <span className="font-semibold text-brand-primary">Click to upload</span> or drag and drop
             </div>
-            <p className="text-[10px] text-gray-400">PNG, JPG, WEBP or GIF up to 5MB</p>
+            <p className="text-[10px] text-gray-400">
+              PNG, JPG, WEBP or GIF up to 5MB{multiple ? ' each' : ''}
+            </p>
           </div>
         )}
       </div>

@@ -60,6 +60,7 @@ const ProductPage = () => {
   const [error, setError] = useState('');
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState('');
+  const [imageReady, setImageReady] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
   const [wishlistSaving, setWishlistSaving] = useState(false);
@@ -98,7 +99,8 @@ const ProductPage = () => {
           },
           { token: userInfo?.token }
         );
-        setSelectedImage(data.image);
+        setImageReady(false);
+        setSelectedImage(getProductImages(data)[0] || data.image);
         setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
         setQty(1);
         setDetailsOpen(false);
@@ -286,25 +288,33 @@ const ProductPage = () => {
               <img
                 src={selectedImage || product.image}
                 alt={product.name}
-                className="h-[420px] w-full object-cover sm:h-[500px] lg:h-[520px]"
+                onLoad={() => setImageReady(true)}
+                className={`h-[420px] w-full object-cover transition duration-300 ease-out sm:h-[500px] lg:h-[520px] ${
+                  imageReady ? 'scale-100 opacity-100' : 'scale-[1.01] opacity-0'
+                }`}
               />
             </div>
 
             {productImages.length > 1 && (
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
                 {productImages.map((image) => (
                   <button
                     key={image}
                     type="button"
-                    onClick={() => setSelectedImage(image)}
-                    className={`overflow-hidden rounded-[20px] border-2 transition ${
+                    onClick={() => {
+                      if (image !== selectedImage) {
+                        setImageReady(false);
+                        setSelectedImage(image);
+                      }
+                    }}
+                    className={`w-24 flex-shrink-0 overflow-hidden rounded-[20px] border-2 transition sm:w-full ${
                       selectedImage === image ? 'border-brand-primary' : 'border-transparent'
                     }`}
                   >
                     <img
                       src={image}
                       alt={`${product.name} gallery`}
-                      className="h-28 w-full object-cover"
+                      className="h-24 w-full object-cover sm:h-28"
                     />
                   </button>
                 ))}
@@ -578,17 +588,19 @@ const ProductPage = () => {
             <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Why customers choose Apex Link Group</h2>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 md:gap-5 xl:grid-cols-4">
             {TRUST_POINTS.map(([title, subtitle], index) => {
               const Icon = [BadgeCheck, Sparkles, ShieldCheck, Truck][index];
 
               return (
-                <div key={title} className="rounded-[24px] bg-[#f4f7fb] p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-primary shadow-sm">
-                    <Icon size={20} />
+                <div key={title} className="flex min-h-[92px] items-center gap-3 rounded-[20px] bg-[#f4f7fb] p-4 md:block md:min-h-0 md:rounded-[24px] md:p-5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-brand-primary shadow-sm md:h-12 md:w-12">
+                    <Icon size={18} className="md:h-5 md:w-5" />
                   </div>
-                  <h3 className="mt-4 text-lg font-bold text-brand-dark">{title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-gray-600">{subtitle}</p>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-bold leading-tight text-brand-dark md:mt-4 md:text-lg">{title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-gray-600 md:mt-2 md:leading-7">{subtitle}</p>
+                  </div>
                 </div>
               );
             })}

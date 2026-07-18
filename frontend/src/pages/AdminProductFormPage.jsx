@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Loader2, Plus, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, ChevronLeft, ChevronRight, Loader2, Plus, Save, Sparkles, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 import ImageUpload from '../components/ImageUpload';
@@ -42,6 +42,27 @@ const validateForm = (form) => {
   }
 
   return '';
+};
+
+const parseImageLines = (value = '') =>
+  String(value || '')
+    .split('\n')
+    .flatMap((entry) => entry.split(','))
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+const getFormGalleryImages = (form = {}) => {
+  const images = [form.image, ...parseImageLines(form.imageList)];
+  return [...new Set(images.filter(Boolean))];
+};
+
+const splitGalleryImagesForForm = (images = []) => {
+  const uniqueImages = [...new Set(images.map((image) => String(image || '').trim()).filter(Boolean))];
+
+  return {
+    image: uniqueImages[0] || '',
+    imageList: uniqueImages.slice(1).join('\n'),
+  };
 };
 
 const AdminProductFormPage = ({ mode = 'create' }) => {
@@ -150,6 +171,47 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
   }, [form, id]);
 
   const previewImages = useMemo(() => getProductImages(previewProduct), [previewProduct]);
+  const formImages = useMemo(() => getFormGalleryImages(form), [form]);
+
+  const updateGalleryImages = (images) => {
+    setError('');
+    setSuccess('');
+    setForm((currentForm) => ({
+      ...currentForm,
+      ...splitGalleryImagesForForm(images),
+    }));
+  };
+
+  const addGalleryImage = (url) => {
+    setForm((currentForm) => {
+      const currentImages = getFormGalleryImages(currentForm);
+
+      return {
+        ...currentForm,
+        ...splitGalleryImagesForForm([...currentImages, url]),
+      };
+    });
+  };
+
+  const removeGalleryImage = (imageToRemove) => {
+    updateGalleryImages(formImages.filter((image) => image !== imageToRemove));
+  };
+
+  const moveGalleryImage = (index, direction) => {
+    const nextIndex = index + direction;
+
+    if (nextIndex < 0 || nextIndex >= formImages.length) {
+      return;
+    }
+
+    const nextImages = [...formImages];
+    [nextImages[index], nextImages[nextIndex]] = [nextImages[nextIndex], nextImages[index]];
+    updateGalleryImages(nextImages);
+  };
+
+  const makeMainGalleryImage = (image) => {
+    updateGalleryImages([image, ...formImages.filter((galleryImage) => galleryImage !== image)]);
+  };
 
   const handleChange = (event) => {
     const { checked, name, type, value } = event.target;
@@ -467,11 +529,25 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
                 <h2 className="mt-2 font-serif text-2xl font-bold text-brand-dark">Visuals and selling copy</h2>
               </div>
 
-              <div>
-                <label htmlFor="image" className="mb-2 block text-sm font-semibold text-brand-dark">
-                  Main Image URL
-                </label>
-                <div className="space-y-2">
+              <div className="space-y-4 rounded-[24px] border border-gray-100 bg-[#fbfcfe] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-brand-dark">Product Image Gallery</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-500">
+                    The first image is used as the main storefront image. Upload, remove, or reorder images before saving.
+                  </p>
+                </div>
+
+                <ImageUpload
+                  label="Upload Product Images"
+                  folder="products"
+                  multiple
+                  onUploadSuccess={addGalleryImage}
+                />
+
+                <div>
+                  <label htmlFor="image" className="mb-2 block text-sm font-semibold text-brand-dark">
+                    Main Image URL
+                  </label>
                   <input
                     id="image"
                     name="image"
@@ -479,26 +555,14 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
                     value={form.image}
                     onChange={handleChange}
                     placeholder="https://..."
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                  />
-                  <ImageUpload
-                    label=""
-                    folder="products"
-                    onUploadSuccess={(url) => {
-                      setForm((currentForm) => ({
-                        ...currentForm,
-                        image: url,
-                      }));
-                    }}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="imageList" className="mb-2 block text-sm font-semibold text-brand-dark">
-                  Additional Image URLs
-                </label>
-                <div className="space-y-2">
+                <div>
+                  <label htmlFor="imageList" className="mb-2 block text-sm font-semibold text-brand-dark">
+                    Additional Image URLs
+                  </label>
                   <textarea
                     id="imageList"
                     name="imageList"
@@ -506,23 +570,72 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
                     value={form.imageList}
                     onChange={handleChange}
                     placeholder="One image URL per line"
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                  />
-                  <ImageUpload
-                    label=""
-                    folder="products"
-                    onUploadSuccess={(url) => {
-                      setForm((currentForm) => {
-                        const currentList = currentForm.imageList ? currentForm.imageList.trim() : '';
-                        const nextList = currentList ? `${currentList}\n${url}` : url;
-                        return {
-                          ...currentForm,
-                          imageList: nextList,
-                        };
-                      });
-                    }}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
                   />
                 </div>
+
+                {formImages.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {formImages.map((image, index) => (
+                      <article key={image} className="overflow-hidden rounded-[20px] border border-gray-200 bg-white shadow-sm">
+                        <div className="relative">
+                          <img src={image} alt={`Product gallery item ${index + 1}`} className="h-36 w-full object-cover" />
+                          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                            <span className="rounded-full bg-brand-dark/85 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                              {index === 0 ? 'Main Image' : `Image ${index + 1}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 p-3">
+                          <p className="truncate text-xs text-gray-500">{image}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => moveGalleryImage(index, -1)}
+                              disabled={index === 0}
+                              className="inline-flex items-center rounded-full border border-brand-primary/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary transition hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                              aria-label={`Move image ${index + 1} left`}
+                            >
+                              <ChevronLeft size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveGalleryImage(index, 1)}
+                              disabled={index === formImages.length - 1}
+                              className="inline-flex items-center rounded-full border border-brand-primary/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary transition hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                              aria-label={`Move image ${index + 1} right`}
+                            >
+                              <ChevronRight size={14} />
+                            </button>
+                            {index > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => makeMainGalleryImage(image)}
+                                className="inline-flex items-center rounded-full border border-brand-primary/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary transition hover:bg-brand-primary hover:text-white"
+                              >
+                                <ArrowLeftRight size={14} className="mr-1.5" />
+                                Make Main
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryImage(image)}
+                              className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-red-700 transition hover:bg-red-100"
+                            >
+                              <Trash2 size={14} className="mr-1.5" />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[20px] border border-dashed border-brand-accent/30 bg-white px-4 py-8 text-center text-sm text-gray-500">
+                    Upload images or paste image URLs to build this product gallery.
+                  </div>
+                )}
               </div>
 
               <div>
