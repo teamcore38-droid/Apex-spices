@@ -144,8 +144,8 @@ const CategoryPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] pb-16">
-      <div className="container mx-auto max-w-7xl px-4 pt-4 sm:pt-5 lg:pt-6">
+    <div className="bg-[#f4f7fb] pb-8 sm:pb-10">
+      <div className="container mx-auto max-w-7xl px-4 pt-3 sm:pt-4 lg:pt-5">
         <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.06)]">
           <Link
             to="/categories"
@@ -198,9 +198,9 @@ const CategoryPage = () => {
             </div>
           )}
 
-          <div className="mt-8">
+          <div className="mt-6">
             {!loadingProducts && !error && (
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-gray-500">
                   <span className="font-semibold text-brand-dark">{meta.totalProducts}</span> products in{' '}
                   <span className="font-semibold text-brand-dark">{category?.name}</span>
@@ -215,18 +215,18 @@ const CategoryPage = () => {
             )}
 
             {loadingProducts ? (
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {[...Array(4)].map((_, index) => (
                   <div key={index} className="h-[420px] animate-pulse rounded-[28px] bg-[#f4f7fb]" />
                 ))}
               </div>
             ) : products.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-brand-accent/30 bg-[#f4f7fb] px-6 py-14 text-center">
+              <div className="rounded-3xl border border-dashed border-brand-accent/30 bg-[#f4f7fb] px-6 py-10 text-center">
                 <p className="font-serif text-2xl font-bold text-brand-dark">No products found in this category</p>
                 <p className="mt-2 text-sm text-gray-500">
                   Try adjusting your search or continue browsing the full marketplace.
                 </p>
-                <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -248,13 +248,13 @@ const CategoryPage = () => {
               </div>
             ) : (
               <>
-                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {products.map((product) => (
                     <Product key={product._id} product={product} />
                   ))}
                 </div>
 
-                <div className="mt-8 flex flex-col gap-4 border-t border-[#e1e8f2] pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-6 flex flex-col gap-4 border-t border-[#e1e8f2] pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-gray-500">
                     Page <span className="font-semibold text-brand-dark">{meta.currentPage}</span> of{' '}
                     <span className="font-semibold text-brand-dark">{meta.totalPages}</span>

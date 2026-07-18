@@ -29,8 +29,8 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-brand-accent/20 bg-brand-dark py-12 text-brand-light">
-      <div className="container mx-auto grid grid-cols-1 gap-8 px-4 md:grid-cols-4">
+    <footer className="border-t border-brand-accent/20 bg-brand-dark py-8 text-brand-light sm:py-10">
+      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 md:grid-cols-4 md:gap-8">
         <div>
           <h3 className="mb-4 flex items-center text-xl font-serif font-bold text-brand-accent">
             <Globe size={20} className="mr-2" /> APEX SPICES
@@ -135,7 +135,7 @@ const Footer = () => {
             </li>
           </ul>
 
-          <form onSubmit={subscribe} className="mt-6">
+          <form onSubmit={subscribe} className="mt-5">
             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-brand-accent/80">
               Newsletter
             </label>
@@ -161,7 +161,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="container mx-auto mt-12 border-t border-white/10 px-4 pt-8 text-center text-sm text-gray-400">
+      <div className="container mx-auto mt-8 border-t border-white/10 px-4 pt-6 text-center text-sm text-gray-400">
         &copy; {new Date().getFullYear()} Apex Spices. All rights reserved.
       </div>
     </footer>

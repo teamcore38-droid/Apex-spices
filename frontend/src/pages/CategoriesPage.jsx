@@ -26,9 +26,9 @@ const CategoriesPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] pt-6 pb-16">
+    <div className="bg-[#f4f7fb] pb-8 pt-4 sm:pb-10 sm:pt-5">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="relative overflow-hidden rounded-[32px] bg-brand-dark px-6 py-16 text-white shadow-2xl sm:px-10">
+        <div className="relative overflow-hidden rounded-[32px] bg-brand-dark px-6 py-10 text-white shadow-2xl sm:px-10 sm:py-12">
           <div className="absolute -right-16 top-0 h-48 w-48 rounded-full bg-brand-accent/20 blur-3xl" />
           <div className="absolute bottom-0 left-0 h-52 w-52 rounded-full bg-brand-primary/40 blur-3xl" />
           <div className="relative z-10 max-w-3xl">
@@ -36,10 +36,10 @@ const CategoriesPage = () => {
             <h1 className="mt-4 font-serif text-4xl font-bold leading-tight sm:text-5xl">
               Find the right category for every culinary need
             </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
               Explore curated collections spanning whole spices, ground spices, and hand-crafted blends — all verified for premium quality.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/products"
                 className="inline-flex items-center rounded-md bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-[0.2em] text-brand-dark transition-transform duration-200 hover:-translate-y-0.5"
@@ -56,9 +56,9 @@ const CategoriesPage = () => {
           </div>
         </div>
 
-        <div className="mt-14">
+        <div className="mt-6 sm:mt-8">
           {loading ? (
-            <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-wrap justify-center gap-6">
               {[...Array(6)].map((_, index) => (
                 <div
                   key={index}
@@ -72,7 +72,7 @@ const CategoriesPage = () => {
               <p className="mt-2 text-sm">{error}</p>
             </div>
           ) : categories.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-brand-accent/30 bg-white px-6 py-12 text-center shadow-sm">
+            <div className="rounded-3xl border border-dashed border-brand-accent/30 bg-white px-6 py-10 text-center shadow-sm">
               <Sparkles size={36} className="mx-auto text-brand-accent" />
               <p className="mt-4 font-serif text-2xl font-bold text-brand-dark">No active categories available</p>
               <p className="mt-2 text-sm text-gray-500">
@@ -80,7 +80,7 @@ const CategoriesPage = () => {
               </p>
             </div>
           ) : (
-            <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-wrap justify-center gap-6">
               {categories.map((category) => (
                 <Link
                   key={category._id}

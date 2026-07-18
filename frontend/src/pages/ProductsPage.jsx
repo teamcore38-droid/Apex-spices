@@ -313,7 +313,7 @@ const ProductsPage = () => {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] pt-3 pb-16 sm:pt-4">
+    <div className="relative overflow-hidden bg-[#f4f7fb] pb-8 pt-3 sm:pb-10 sm:pt-4">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#e2e9f3] to-transparent opacity-70" />
       <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-multiply" />
 
@@ -426,7 +426,7 @@ const ProductsPage = () => {
             )}
           </div>
 
-          <div className="mt-6 hidden lg:block">
+          <div className="mt-5 hidden lg:block">
             {renderFilterControls({
               values: filters,
               onChange: updateFilter,
@@ -443,22 +443,22 @@ const ProductsPage = () => {
           </div>
 
           {error ? (
-            <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
+            <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
               {error}
             </div>
           ) : loading ? (
-            <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 sm:gap-8 lg:grid-cols-3">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-3">
               {[...Array(PRODUCT_PAGE_SIZE)].map((_, index) => (
                 <div key={index} className="h-[390px] animate-pulse rounded-[18px] bg-[#f4f7fb] sm:h-[470px] sm:rounded-[28px]" />
               ))}
             </div>
           ) : products.length === 0 ? (
-            <div className="mt-10 rounded-3xl border border-dashed border-brand-accent/30 bg-[#f4f7fb] px-6 py-12 text-center">
+            <div className="mt-8 rounded-3xl border border-dashed border-brand-accent/30 bg-[#f4f7fb] px-6 py-10 text-center">
               <p className="font-serif text-3xl font-bold text-brand-dark">No products match your filters</p>
               <p className="mt-3 text-sm text-gray-500">
                 Try widening your price range, changing categories, or resetting the shop controls.
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <button
                   type="button"
                   onClick={resetFilters}
@@ -476,13 +476,13 @@ const ProductsPage = () => {
             </div>
           ) : (
             <>
-              <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 sm:gap-8 lg:grid-cols-3">
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-3">
                 {products.map((product) => (
                   <Product key={product._id} product={product} compactOnMobile />
                 ))}
               </div>
 
-              <div className="mt-10 flex flex-col gap-4 border-t border-[#e1e8f2] pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-6 flex flex-col gap-4 border-t border-[#e1e8f2] pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-gray-500">
                   Page <span className="font-semibold text-brand-dark">{meta.currentPage}</span> of{' '}
                   <span className="font-semibold text-brand-dark">{meta.totalPages}</span>

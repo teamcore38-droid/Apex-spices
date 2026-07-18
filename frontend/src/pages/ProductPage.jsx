@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   Heart,
   Loader2,
+  MessageSquareText,
   MessageSquare,
   Minus,
   Plus,
@@ -29,6 +30,7 @@ const TRUST_POINTS = [
   ['Ethically Sourced', 'Chosen from trusted producers and origin partners.'],
   ['Fast Delivery', 'Packed with care and shipped promptly worldwide.'],
 ];
+const COMPANY_WHATSAPP_NUMBER = '94765669961';
 
 const getCustomerSessionId = () => {
   const key = 'apexCustomerSessionId';
@@ -291,9 +293,13 @@ const ProductPage = () => {
     }
   };
 
+  const productUrl = window.location.href;
+  const whatsappInquiryMessage = `Hello, I'm interested in purchasing ${product.name}. Could you please provide more information about availability, pricing, and delivery?\n\nProduct: ${product.name}\nLink: ${productUrl}`;
+  const whatsappInquiryUrl = `https://wa.me/${COMPANY_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappInquiryMessage)}`;
+
   return (
-    <div className="bg-[#f7f9fc] pb-14 lg:pb-16">
-      <div className="container mx-auto max-w-7xl px-4 pb-10 pt-5 sm:pt-6 lg:pb-12 lg:pt-7">
+    <div className="bg-[#f7f9fc] pb-8 lg:pb-10">
+      <div className="container mx-auto max-w-7xl px-4 pb-8 pt-4 sm:pt-5 lg:pb-10 lg:pt-6">
         <Link
           to="/products"
           className="inline-flex items-center text-sm font-semibold text-gray-600 transition-colors duration-200 hover:text-brand-primary"
@@ -483,11 +489,22 @@ const ProductPage = () => {
                   {effectiveStock === 0 ? 'Currently Out of Stock' : 'Add to Cart'}
                 </button>
 
+                <a
+                  href={whatsappInquiryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackEvent('whatsapp_product_inquiry', { productId: product._id, name: product.name })}
+                  className="order-3 inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:order-none lg:col-start-2 lg:row-start-2 lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
+                >
+                  <MessageSquareText size={16} className="mr-2" />
+                  WhatsApp Inquiry
+                </a>
+
                 <button
                   type="button"
                   onClick={addToWishlist}
                   disabled={wishlistSaving}
-                  className="order-3 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60 lg:order-none lg:col-start-2 lg:row-start-1"
+                  className="order-4 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60 lg:order-none lg:col-start-2 lg:row-start-1"
                 >
                   {wishlistSaving ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Heart size={16} className="mr-2" />}
                   Save
@@ -495,7 +512,7 @@ const ProductPage = () => {
 
                 <Link
                   to="/products"
-                  className="order-4 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-start-2 lg:row-start-2 lg:px-4"
+                  className="order-5 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-span-2 lg:row-start-3 lg:px-4"
                 >
                   Continue Shopping
                 </Link>
@@ -510,8 +527,8 @@ const ProductPage = () => {
           </section>
         </div>
 
-        <section className="mt-10 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-12 sm:p-8">
-          <div className="mb-6">
+        <section className="mt-6 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-8 sm:p-7">
+          <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Reviews</p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Customer feedback</h2>
           </div>
@@ -522,7 +539,7 @@ const ProductPage = () => {
             </div>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
             <form onSubmit={submitReview} className="rounded-[24px] border border-gray-100 bg-brand-light p-5">
               <label className="block">
                 <span className="mb-2 block text-sm font-semibold text-brand-dark">Rating</span>
@@ -575,8 +592,8 @@ const ProductPage = () => {
           </div>
         </section>
 
-        <section className="mt-10 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-12 sm:p-8">
-          <div className="mb-6">
+        <section className="mt-6 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-8 sm:p-7">
+          <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Trust & Quality</p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Why customers choose Apex Link Group</h2>
           </div>
@@ -599,8 +616,8 @@ const ProductPage = () => {
         </section>
 
         {relatedProducts.length > 0 && (
-          <section className="mt-10 sm:mt-12">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <section className="mt-6 sm:mt-8">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Related Products</p>
                 <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">
@@ -615,7 +632,7 @@ const ProductPage = () => {
               </Link>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((relatedProduct) => (
                 <Product key={relatedProduct._id} product={relatedProduct} />
               ))}
@@ -624,12 +641,12 @@ const ProductPage = () => {
         )}
 
         {recommendedProducts.length > 0 && (
-          <section className="mt-10 sm:mt-12">
-            <div className="mb-6">
+          <section className="mt-6 sm:mt-8">
+            <div className="mb-5">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">For You</p>
               <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Personalized recommendations</h2>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {recommendedProducts.map((recommendedProduct) => (
                 <Product key={recommendedProduct._id} product={recommendedProduct} />
               ))}
