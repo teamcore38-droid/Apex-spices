@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import cloudinary from '../config/cloudinary.js';
+import cloudinary, { isCloudinaryConfigured } from '../config/cloudinary.js';
 import AuditLog from '../models/auditLogModel.js';
 import Category from '../models/categoryModel.js';
 import MediaAsset from '../models/mediaAssetModel.js';
@@ -20,10 +20,6 @@ import { recordAuditLog } from '../utils/auditService.js';
 
 const STAFF_SELECT = 'name email phone isAdmin isStaff role staffPermissions staffStatus isVendor vendorStatus createdAt';
 
-const CLOUDINARY_REQUIRED_ENV = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
-
-const isCloudinaryConfigured = () => CLOUDINARY_REQUIRED_ENV.every((key) => Boolean(process.env[key]));
-
 const sanitizeCloudinaryFolder = (folder = 'general') => {
   const cleanFolder = String(folder || 'general')
     .trim()
@@ -33,6 +29,31 @@ const sanitizeCloudinaryFolder = (folder = 'general') => {
     .replace(/^\/|\/$/g, '');
 
   return cleanFolder || 'general';
+};
+
+const getCloudinaryUploadMessage = (error) => {
+  const cloudinaryMessage = String(error?.message || '').toLowerCase();
+
+  if (
+    cloudinaryMessage.includes('api key') ||
+    cloudinaryMessage.includes('signature') ||
+    cloudinaryMessage.includes('cloud name') ||
+    cloudinaryMessage.includes('authentication') ||
+    cloudinaryMessage.includes('unauthorized')
+  ) {
+    return 'Cloudinary rejected the backend credentials. Verify CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Vercel, then redeploy the backend.';
+  }
+
+  if (
+    cloudinaryMessage.includes('invalid image') ||
+    cloudinaryMessage.includes('image file') ||
+    cloudinaryMessage.includes('unsupported') ||
+    cloudinaryMessage.includes('format')
+  ) {
+    return 'Cloudinary rejected this image file. Please upload a valid PNG, JPG, WEBP, or GIF under 5MB.';
+  }
+
+  return 'Cloudinary upload failed. Please verify the image file and Cloudinary backend settings.';
 };
 
 const parseBoolean = (value, fallback = true) => {
@@ -741,7 +762,7 @@ const uploadImage = async (req, res) => {
 
     const statusCode = error.http_code && error.http_code >= 400 && error.http_code < 500 ? 400 : 502;
     res.status(statusCode).json({
-      message: 'Cloudinary upload failed. Please verify the image file and Cloudinary backend settings.',
+      message: getCloudinaryUploadMessage(error),
     });
   }
 };
