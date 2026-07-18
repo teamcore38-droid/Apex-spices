@@ -45,7 +45,9 @@ const ImageUpload = ({ onUploadSuccess, label = 'Upload Image', folder = 'genera
       onUploadSuccess?.(data.url);
     } catch (uploadError) {
       console.error(uploadError);
-      setError(uploadError.response?.data?.message || 'Failed to upload image. Please try again.');
+      const responseMessage = uploadError.response?.data?.message || 'Failed to upload image. Please try again.';
+      const responseDetail = uploadError.response?.data?.detail;
+      setError(responseDetail ? `${responseMessage} ${responseDetail}` : responseMessage);
     } finally {
       setUploading(false);
     }

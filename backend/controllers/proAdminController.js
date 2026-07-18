@@ -31,13 +31,34 @@ const sanitizeCloudinaryFolder = (folder = 'general') => {
   return cleanFolder || 'general';
 };
 
+const getCloudinaryErrorDetail = (error) => {
+  const rawDetail = String(error?.message || '').replace(/\s+/g, ' ').trim();
+
+  if (!rawDetail) {
+    return '';
+  }
+
+  return ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'].reduce((detail, key) => {
+    const value = String(process.env[key] || '').trim().replace(/^['"]|['"]$/g, '');
+    return value ? detail.replaceAll(value, '[redacted]') : detail;
+  }, rawDetail).slice(0, 240);
+};
+
 const getCloudinaryUploadMessage = (error) => {
   const cloudinaryMessage = String(error?.message || '').toLowerCase();
 
   if (
     cloudinaryMessage.includes('api key') ||
+    cloudinaryMessage.includes('api_key') ||
+    cloudinaryMessage.includes('api secret') ||
+    cloudinaryMessage.includes('api_secret') ||
+    cloudinaryMessage.includes('must supply') ||
+    cloudinaryMessage.includes('unknown api') ||
+    cloudinaryMessage.includes('invalid api') ||
+    cloudinaryMessage.includes('credentials') ||
     cloudinaryMessage.includes('signature') ||
     cloudinaryMessage.includes('cloud name') ||
+    cloudinaryMessage.includes('cloud_name') ||
     cloudinaryMessage.includes('authentication') ||
     cloudinaryMessage.includes('unauthorized')
   ) {
@@ -53,7 +74,10 @@ const getCloudinaryUploadMessage = (error) => {
     return 'Cloudinary rejected this image file. Please upload a valid PNG, JPG, WEBP, or GIF under 5MB.';
   }
 
-  return 'Cloudinary upload failed. Please verify the image file and Cloudinary backend settings.';
+  const detail = getCloudinaryErrorDetail(error);
+  return detail
+    ? `Cloudinary upload failed: ${detail}`
+    : 'Cloudinary upload failed. Please verify the image file and Cloudinary backend settings.';
 };
 
 const parseBoolean = (value, fallback = true) => {
