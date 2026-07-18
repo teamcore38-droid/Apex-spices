@@ -292,8 +292,8 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="bg-[#f7f9fc] pb-20">
-      <div className="container mx-auto max-w-7xl px-4 py-10">
+    <div className="bg-[#f7f9fc] pb-14 lg:pb-16">
+      <div className="container mx-auto max-w-7xl px-4 pb-10 pt-5 sm:pt-6 lg:pb-12 lg:pt-7">
         <Link
           to="/products"
           className="inline-flex items-center text-sm font-semibold text-gray-600 transition-colors duration-200 hover:text-brand-primary"
@@ -301,18 +301,18 @@ const ProductPage = () => {
           <ArrowLeft size={16} className="mr-2" /> Back to Shop
         </Link>
 
-        <div className="mt-8 grid gap-10 xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="space-y-5">
+        <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] lg:items-start xl:gap-8">
+          <section className="space-y-4">
             <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_24px_70px_rgba(11,31,58,0.10)]">
               <img
                 src={selectedImage || product.image}
                 alt={product.name}
-                className="h-[520px] w-full object-cover"
+                className="h-[420px] w-full object-cover sm:h-[500px] lg:h-[520px]"
               />
             </div>
 
             {productImages.length > 1 && (
-              <div className="grid gap-4 sm:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-4">
                 {productImages.map((image) => (
                   <button
                     key={image}
@@ -333,7 +333,7 @@ const ProductPage = () => {
             )}
           </section>
 
-          <section className="rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.10)] sm:p-8">
+          <section className="rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.10)]">
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 to={`/category/${slugifyCategoryName(product.category)}`}
@@ -353,17 +353,17 @@ const ProductPage = () => {
               )}
             </div>
 
-            <h1 className="mt-4 font-serif text-4xl font-bold text-brand-dark sm:text-5xl">{product.name}</h1>
+            <h1 className="mt-3 font-serif text-4xl font-bold text-brand-dark sm:text-5xl">{product.name}</h1>
 
             <button
               type="button"
               onClick={shareProduct}
-              className="mt-4 rounded-md border border-brand-primary/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-primary"
+              className="mt-3 rounded-md border border-brand-primary/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-primary"
             >
               Share Product
             </button>
 
-            <div className="mt-5 flex flex-wrap items-center gap-4">
+            <div className="mt-4 flex flex-wrap items-center gap-4">
               <div className="flex items-center text-brand-accent">
                 {[...Array(5)].map((_, index) => (
                   <Star
@@ -382,7 +382,7 @@ const ProductPage = () => {
               </span>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-end gap-4">
+            <div className="mt-5 flex flex-wrap items-end gap-4">
               {product.compareAtPrice > product.price && (
                 <p className="text-xl text-gray-400 line-through">
                   {formatPrice(product.compareAtPrice)}
@@ -398,11 +398,11 @@ const ProductPage = () => {
               )}
             </div>
 
-            <p className="mt-6 text-base leading-8 text-gray-700">
+            <p className="mt-5 text-base leading-8 text-gray-700">
               {product.description}
             </p>
 
-            <div className="mt-8 grid gap-4 rounded-[28px] bg-[#f4f7fb] p-5 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 rounded-[28px] bg-[#f4f7fb] p-5 sm:grid-cols-2">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Origin</p>
                 <p className="mt-2 text-sm leading-7 text-gray-700">{product.origin || 'Premium source details coming soon.'}</p>
@@ -413,7 +413,7 @@ const ProductPage = () => {
               </div>
             </div>
 
-            <div className="mt-8 rounded-[28px] border border-[#e1e8f2] p-5">
+            <div className="mt-6 rounded-[28px] border border-[#e1e8f2] p-5">
               {product.variants?.length > 0 && (
                 <div className="mb-6">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Variant</p>
@@ -510,8 +510,8 @@ const ProductPage = () => {
           </section>
         </div>
 
-        <section className="mt-16 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:p-8">
-          <div className="mb-8">
+        <section className="mt-10 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-12 sm:p-8">
+          <div className="mb-6">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Reviews</p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Customer feedback</h2>
           </div>
@@ -522,7 +522,7 @@ const ProductPage = () => {
             </div>
           )}
 
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
             <form onSubmit={submitReview} className="rounded-[24px] border border-gray-100 bg-brand-light p-5">
               <label className="block">
                 <span className="mb-2 block text-sm font-semibold text-brand-dark">Rating</span>
@@ -575,8 +575,8 @@ const ProductPage = () => {
           </div>
         </section>
 
-        <section className="mt-16 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:p-8">
-          <div className="mb-8">
+        <section className="mt-10 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-12 sm:p-8">
+          <div className="mb-6">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Trust & Quality</p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Why customers choose Apex Link Group</h2>
           </div>
@@ -599,8 +599,8 @@ const ProductPage = () => {
         </section>
 
         {relatedProducts.length > 0 && (
-          <section className="mt-16">
-            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <section className="mt-10 sm:mt-12">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Related Products</p>
                 <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">
@@ -615,7 +615,7 @@ const ProductPage = () => {
               </Link>
             </div>
 
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((relatedProduct) => (
                 <Product key={relatedProduct._id} product={relatedProduct} />
               ))}
@@ -624,12 +624,12 @@ const ProductPage = () => {
         )}
 
         {recommendedProducts.length > 0 && (
-          <section className="mt-16">
-            <div className="mb-8">
+          <section className="mt-10 sm:mt-12">
+            <div className="mb-6">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">For You</p>
               <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Personalized recommendations</h2>
             </div>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {recommendedProducts.map((recommendedProduct) => (
                 <Product key={recommendedProduct._id} product={recommendedProduct} />
               ))}
