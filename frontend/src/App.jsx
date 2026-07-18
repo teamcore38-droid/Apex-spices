@@ -2,21 +2,21 @@ import { Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
-import HomePage from './pages/HomePage'
-import ProductsPage from './pages/ProductsPage'
-import CategoriesPage from './pages/CategoriesPage'
-import CategoryPage from './pages/CategoryPage'
-import CartPage from './pages/CartPage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import AboutPage from './pages/AboutPage'
-import NotFoundPage from './pages/NotFoundPage'
 import RouteLoadingScreen from './components/RouteLoadingScreen'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import CookieConsentBanner from './components/CookieConsentBanner'
 import { lazyWithChunkRecovery } from './utils/chunkLoadRecovery'
 
+const HomePage = lazyWithChunkRecovery(() => import('./pages/HomePage'))
+const ProductsPage = lazyWithChunkRecovery(() => import('./pages/ProductsPage'))
+const CategoriesPage = lazyWithChunkRecovery(() => import('./pages/CategoriesPage'))
+const CategoryPage = lazyWithChunkRecovery(() => import('./pages/CategoryPage'))
 const ProductPage = lazyWithChunkRecovery(() => import('./pages/ProductPage'))
+const CartPage = lazyWithChunkRecovery(() => import('./pages/CartPage'))
+const LoginPage = lazyWithChunkRecovery(() => import('./pages/LoginPage'))
+const RegisterPage = lazyWithChunkRecovery(() => import('./pages/RegisterPage'))
+const AboutPage = lazyWithChunkRecovery(() => import('./pages/AboutPage'))
+const NotFoundPage = lazyWithChunkRecovery(() => import('./pages/NotFoundPage'))
 const CheckoutPage = lazyWithChunkRecovery(() => import('./pages/CheckoutPage'))
 const ProfilePage = lazyWithChunkRecovery(() => import('./pages/ProfilePage'))
 const ForgotPasswordPage = lazyWithChunkRecovery(() => import('./pages/ForgotPasswordPage'))

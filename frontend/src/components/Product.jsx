@@ -7,6 +7,8 @@ import {
   getStockPresentation,
 } from '../utils/productUi';
 
+const preloadProductPage = () => import('../pages/ProductPage');
+
 const Product = ({ product, compactOnMobile = false }) => {
   const { addToCart } = useCart();
   const { formatPrice } = useCurrency();
@@ -14,7 +16,6 @@ const Product = ({ product, compactOnMobile = false }) => {
   const statusBadge = getProductStatusBadge(product);
   const stockBadge = getStockPresentation(product.countInStock);
   const showStockBadge = product.countInStock > 0;
-
   const handleAddToCart = (event) => {
     event.preventDefault();
 
@@ -26,11 +27,19 @@ const Product = ({ product, compactOnMobile = false }) => {
 
   return (
     <article className={`group flex h-full flex-col overflow-hidden border border-[#dce4ef] bg-white shadow-[0_20px_50px_rgba(11,31,58,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(11,31,58,0.14)] ${compactOnMobile ? 'rounded-[18px] sm:rounded-[28px]' : 'rounded-[28px]'}`}>
-      <Link to={`/product/${product._id}`} className="relative block">
+      <Link
+        to={`/product/${product._id}`}
+        className="relative block"
+        onMouseEnter={preloadProductPage}
+        onFocus={preloadProductPage}
+        onTouchStart={preloadProductPage}
+      >
         <div className={`relative overflow-hidden bg-[#ecf0f7] ${compactOnMobile ? 'h-36 sm:h-72' : 'h-72'}`}>
           <img
             src={product.image}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#071427]/45 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
@@ -64,7 +73,13 @@ const Product = ({ product, compactOnMobile = false }) => {
           </span>
         )}
 
-        <Link to={`/product/${product._id}`} className={compactOnMobile ? 'mt-2 block sm:mt-3' : 'mt-3 block'}>
+        <Link
+          to={`/product/${product._id}`}
+          className={compactOnMobile ? 'mt-2 block sm:mt-3' : 'mt-3 block'}
+          onMouseEnter={preloadProductPage}
+          onFocus={preloadProductPage}
+          onTouchStart={preloadProductPage}
+        >
           <h3 className={`line-clamp-2 font-serif font-bold text-[#081729] transition-colors duration-200 group-hover:text-[#a07c16] ${compactOnMobile ? 'text-base leading-5 sm:text-2xl sm:leading-tight' : 'text-2xl leading-tight'}`}>
             {product.name}
           </h3>

@@ -1309,7 +1309,7 @@ const ProfilePage = () => {
                   <div className="mt-6 grid gap-5 md:grid-cols-2">
                     {wishlist.map((item) => (
                       <article key={item._id} className="flex gap-4 rounded-[24px] border border-gray-100 bg-brand-light p-4">
-                        <img src={item.product?.image} alt={item.product?.name} className="h-24 w-24 rounded-2xl object-cover" />
+                        <img src={item.product?.image} alt={item.product?.name} loading="lazy" decoding="async" className="h-24 w-24 rounded-2xl object-cover" />
                         <div className="min-w-0 flex-1">
                           <h3 className="font-serif text-xl font-bold text-brand-dark">{item.product?.name}</h3>
                           <p className="mt-1 text-sm font-semibold text-brand-primary">{formatPrice(item.product?.price || 0)}</p>

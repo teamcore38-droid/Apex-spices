@@ -41,36 +41,65 @@ const CategoryPage = () => {
   }, [searchInput]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchCategory = async () => {
       setLoadingCategory(true);
       setError('');
 
       try {
         const { data } = await axios.get(`/api/categories/${slug}`);
+
+        if (cancelled) {
+          return;
+        }
+
         setCategory(data);
-        const seoResponse = await axios.get(`/api/seo/category/${data.slug}`).catch(() => null);
         applySeo({
-          title: seoResponse?.data?.title || data.seo?.title || data.name,
-          description: seoResponse?.data?.description || data.seo?.description || data.description,
-          keywords: seoResponse?.data?.keywords || data.seo?.keywords || [data.name, 'Apex Link Group'],
-          canonicalUrl: seoResponse?.data?.canonicalUrl || window.location.href,
-          ogImage: seoResponse?.data?.ogImage || data.seo?.ogImage || data.image,
+          title: data.seo?.title || data.name,
+          description: data.seo?.description || data.description,
+          keywords: data.seo?.keywords || [data.name, 'Apex Link Group'],
+          canonicalUrl: data.seo?.canonicalUrl || window.location.href,
+          ogImage: data.seo?.ogImage || data.image,
           type: 'website',
-          structuredData: seoResponse?.data?.structuredData || buildCategoryStructuredData(data),
+          structuredData: buildCategoryStructuredData(data),
         });
         setSearchInput('');
         setKeyword('');
         setSort('');
         setPage(1);
+        setLoadingCategory(false);
+
+        void axios
+          .get(`/api/seo/category/${data.slug}`)
+          .then(({ data: seoData }) => {
+            if (cancelled) return;
+            applySeo({
+              title: seoData.title || data.seo?.title || data.name,
+              description: seoData.description || data.seo?.description || data.description,
+              keywords: seoData.keywords || data.seo?.keywords || [data.name, 'Apex Link Group'],
+              canonicalUrl: seoData.canonicalUrl || data.seo?.canonicalUrl || window.location.href,
+              ogImage: seoData.ogImage || data.seo?.ogImage || data.image,
+              type: 'website',
+              structuredData: seoData.structuredData || buildCategoryStructuredData(data),
+            });
+          })
+          .catch(() => {});
       } catch (fetchError) {
         console.error(fetchError);
-        setError(fetchError.response?.data?.message || 'Unable to load this category right now.');
+        if (!cancelled) {
+          setError(fetchError.response?.data?.message || 'Unable to load this category right now.');
+        }
       } finally {
-        setLoadingCategory(false);
+        if (!cancelled) setLoadingCategory(false);
       }
     };
 
     fetchCategory();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   useEffect(() => {

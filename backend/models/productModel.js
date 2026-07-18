@@ -203,6 +203,10 @@ const productSchema = mongoose.Schema(
   }
 );
 
+productSchema.index({ slug: 1 });
+productSchema.index({ isActive: 1, approvalStatus: 1, isFeatured: -1, isBestSeller: -1, createdAt: -1 });
+productSchema.index({ category: 1, isActive: 1, approvalStatus: 1, createdAt: -1 });
+
 const Product = mongoose.model('Product', productSchema);
 
 export default Product;

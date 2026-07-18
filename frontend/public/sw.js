@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-link-v4';
+const CACHE_NAME = 'apex-link-v5';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
@@ -16,8 +16,9 @@ const isCacheableStaticResponse = (response) =>
   response && response.status === 200 && response.type !== 'opaque' && !isHtmlResponse(response);
 
 const isStaticAssetRequest = (request, url) =>
-  url.pathname.startsWith('/assets/') ||
-  ['font', 'image', 'manifest', 'script', 'style'].includes(request.destination);
+  url.origin === self.location.origin &&
+  (url.pathname.startsWith('/assets/') ||
+    ['font', 'image', 'manifest', 'script', 'style'].includes(request.destination));
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -56,7 +57,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request, { cache: 'no-store' })
+      fetch(request, { cache: 'no-cache' })
         .then((response) => response)
         .catch(() => caches.match('/offline.html'))
     );
@@ -68,16 +69,20 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(request, { cache: 'no-store' })
-      .then((response) => {
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(request).then((response) => {
         if (isCacheableStaticResponse(response)) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
 
         return response;
-      })
-      .catch(() => caches.match(request))
+      });
+    })
   );
 });
 

@@ -189,6 +189,8 @@ const Header = () => {
           <img
             src="/logo.webp?v=20260716"
             alt="Apex Spices logo"
+            decoding="async"
+            fetchPriority="high"
             className="h-12 w-auto shrink-0 object-contain sm:h-16 lg:h-11 xl:h-12 2xl:h-16"
           />
           <div className="flex min-w-0 flex-col items-start justify-center">

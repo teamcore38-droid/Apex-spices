@@ -325,6 +325,8 @@ const HomePage = () => {
                   <img
                     src={getCategoryCardImage(category)}
                     alt={category.name}
+                    loading="lazy"
+                    decoding="async"
                     onError={() => onCategoryImageError(category)}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />

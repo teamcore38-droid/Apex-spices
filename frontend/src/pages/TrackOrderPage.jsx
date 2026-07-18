@@ -480,7 +480,7 @@ const TrackOrderPage = () => {
                         className="flex min-w-0 flex-col gap-4 rounded-[24px] border border-gray-100 bg-[#fafbfd] p-4 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex min-w-0 items-center gap-4">
-                          <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded-2xl object-cover" />
+                          <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-16 w-16 shrink-0 rounded-2xl object-cover" />
                           <div className="min-w-0">
                             <p className="break-words font-serif text-lg font-bold text-brand-dark sm:text-xl">{item.name}</p>
                             <p className="text-sm text-gray-500">Qty: {item.qty}</p>

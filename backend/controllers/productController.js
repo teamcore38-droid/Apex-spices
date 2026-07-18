@@ -493,17 +493,22 @@ const getProducts = async (req, res) => {
     }
 
     const queryFilter = filters.length > 0 ? { $and: filters } : {};
-    const totalProducts = await Product.countDocuments(queryFilter);
+    const requestedSkip = (pageNumber - 1) * limitNumber;
+    const [totalProducts, requestedProducts] = await Promise.all([
+      Product.countDocuments(queryFilter),
+      Product.find(queryFilter)
+        .sort(PRODUCT_SORT_OPTIONS[sortKey] || DEFAULT_PRODUCT_SORT)
+        .skip(requestedSkip)
+        .limit(limitNumber)
+        .lean(),
+    ]);
     const totalPages = totalProducts === 0 ? 1 : Math.ceil(totalProducts / limitNumber);
     const currentPage = totalProducts === 0 ? 1 : Math.min(pageNumber, totalPages);
     const skip = (currentPage - 1) * limitNumber;
     const sortOption = PRODUCT_SORT_OPTIONS[sortKey] || DEFAULT_PRODUCT_SORT;
-
-    const products = await Product.find(queryFilter)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limitNumber)
-      .lean();
+    const products = skip === requestedSkip
+      ? requestedProducts
+      : await Product.find(queryFilter).sort(sortOption).skip(skip).limit(limitNumber).lean();
     const productsWithReviewStats = await hydrateProductReviewStats(products);
 
     res.json(

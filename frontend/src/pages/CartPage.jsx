@@ -41,7 +41,7 @@ const CartPage = () => {
                 {cartItems.map(item => (
                   <li key={`${item.product}-${item.variantId || 'default'}`} className="p-6 flex flex-col md:grid md:grid-cols-5 items-center gap-4">
                     <div className="col-span-2 flex items-center w-full">
-                      <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded" />
+                      <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="w-20 h-20 object-cover rounded" />
                       <Link to={`/product/${item.product}`} className="ml-4 font-semibold text-brand-dark hover:text-brand-primary">
                         {item.name}
                         {item.variantLabel && (

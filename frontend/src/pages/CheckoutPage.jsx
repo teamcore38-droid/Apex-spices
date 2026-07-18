@@ -93,6 +93,48 @@ const wait = (milliseconds) =>
 
 const PAYHERE_SUPPORTED_CURRENCIES = ['LKR', 'USD', 'EUR', 'GBP', 'AUD'];
 const PAYHERE_BRAND_DESCRIPTION = 'Apex Spices Premium Order';
+const PAYHERE_SCRIPT_ID = 'payhere-checkout-sdk';
+const PAYHERE_SCRIPT_URL = 'https://www.payhere.lk/lib/payhere.js';
+let payhereScriptRequest = null;
+
+const loadPayhereScript = () => {
+  if (typeof window === 'undefined' || window.payhere) {
+    return Promise.resolve();
+  }
+
+  if (payhereScriptRequest) {
+    return payhereScriptRequest;
+  }
+
+  payhereScriptRequest = new Promise((resolve, reject) => {
+    const existingScript = document.getElementById(PAYHERE_SCRIPT_ID);
+    const script = existingScript || document.createElement('script');
+
+    const onLoad = () => {
+      if (window.payhere) {
+        resolve();
+      } else {
+        reject(new Error('PayHere SDK loaded without initializing.'));
+      }
+    };
+    const onError = () => reject(new Error('Unable to load the PayHere SDK.'));
+
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+
+    if (!existingScript) {
+      script.id = PAYHERE_SCRIPT_ID;
+      script.src = PAYHERE_SCRIPT_URL;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  }).catch((error) => {
+    payhereScriptRequest = null;
+    throw error;
+  });
+
+  return payhereScriptRequest;
+};
 
 const waitForVerifiedPayment = async ({ orderId, token }) => {
   for (let attempt = 0; attempt < 15; attempt += 1) {
@@ -712,7 +754,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={item.image} alt={item.name} className="h-14 w-14 rounded-2xl object-cover" />
+                      <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-14 w-14 rounded-2xl object-cover" />
                       <div>
                         <h4 className="text-sm font-bold text-brand-dark">{item.name}</h4>
                         <p className="text-xs text-gray-500">Qty: {item.qty}</p>
@@ -1230,7 +1272,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <img src={item.image} alt={item.name} className="h-14 w-14 rounded-2xl object-cover" />
+                      <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-14 w-14 rounded-2xl object-cover" />
                       <div>
                         <h4 className="text-sm font-bold text-brand-dark">{item.name}</h4>
                         <p className="text-xs text-gray-500">Qty: {item.qty}</p>
@@ -1316,7 +1358,27 @@ const CheckoutInner = ({ payhereEnabled }) => {
 };
 
 const CheckoutPage = () => {
-  const payhereEnabled = typeof window !== 'undefined' && !!window.payhere;
+  const [payhereEnabled, setPayhereEnabled] = useState(
+    () => typeof window !== 'undefined'
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    loadPayhereScript()
+      .then(() => {
+        if (active) setPayhereEnabled(true);
+      })
+      .catch((error) => {
+        if (import.meta.env.DEV) console.error('[PayHere]', error);
+        if (active) setPayhereEnabled(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return <CheckoutInner payhereEnabled={payhereEnabled} />;
 };
 

@@ -56,6 +56,7 @@ const ProductPage = () => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [qty, setQty] = useState(1);
@@ -67,28 +68,50 @@ const ProductPage = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchProduct = async () => {
       setLoading(true);
       setError('');
+      setRelatedProducts([]);
+      setRecommendedProducts([]);
+      setReviews([]);
+      setReviewsLoading(true);
 
       try {
         const { data } = await axios.get(`/api/products/${id}`);
+
+        if (cancelled) {
+          return;
+        }
+
         setProduct(data);
-        const seoResponse = await axios.get(`/api/seo/product/${data._id}`).catch(() => null);
         applySeo({
-          title: seoResponse?.data?.title || data.seo?.title || data.name,
+          title: data.seo?.title || data.name,
           description:
-            seoResponse?.data?.description ||
             data.seo?.description ||
             data.shortDescription ||
             data.description?.slice(0, 160),
-          keywords: seoResponse?.data?.keywords || data.seo?.keywords || [data.category, data.brand, data.sku].filter(Boolean),
-          canonicalUrl: seoResponse?.data?.canonicalUrl || window.location.href,
-          ogImage: seoResponse?.data?.ogImage || data.seo?.ogImage || data.image,
+          keywords: data.seo?.keywords || [data.category, data.brand, data.sku].filter(Boolean),
+          canonicalUrl: data.seo?.canonicalUrl || window.location.href,
+          ogImage: data.seo?.ogImage || data.image,
           type: 'product',
-          structuredData: seoResponse?.data?.structuredData || buildProductStructuredData(data),
+          structuredData: buildProductStructuredData(data),
         });
-        trackEvent(
+        setImageReady(false);
+        setSelectedImage(getProductImages(data)[0] || data.image);
+        setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
+        setQty(1);
+        setDetailsOpen(false);
+        setLoading(false);
+
+        const sessionId = getCustomerSessionId();
+        const requestHeaders = {
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
+          'x-session-id': sessionId,
+        };
+
+        void trackEvent(
           'product_view',
           {
             productId: data._id,
@@ -99,76 +122,97 @@ const ProductPage = () => {
           },
           { token: userInfo?.token }
         );
-        setImageReady(false);
-        setSelectedImage(getProductImages(data)[0] || data.image);
-        setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
-        setQty(1);
-        setDetailsOpen(false);
 
-        try {
-          const sessionId = getCustomerSessionId();
-          await axios.post(
+        void axios
+          .get(`/api/seo/product/${data._id}`)
+          .then(({ data: seoData }) => {
+            if (cancelled) return;
+            applySeo({
+              title: seoData.title || data.seo?.title || data.name,
+              description:
+                seoData.description ||
+                data.seo?.description ||
+                data.shortDescription ||
+                data.description?.slice(0, 160),
+              keywords: seoData.keywords || data.seo?.keywords || [data.category, data.brand, data.sku].filter(Boolean),
+              canonicalUrl: seoData.canonicalUrl || data.seo?.canonicalUrl || window.location.href,
+              ogImage: seoData.ogImage || data.seo?.ogImage || data.image,
+              type: 'product',
+              structuredData: seoData.structuredData || buildProductStructuredData(data),
+            });
+          })
+          .catch(() => {});
+
+        void axios
+          .post(
             '/api/customer/recently-viewed',
             { productId: data._id, sessionId },
-            {
-              headers: {
-                ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
-                'x-session-id': sessionId,
-              },
-            }
-          );
-        } catch (viewError) {
-          console.error(viewError);
-        }
+            { headers: requestHeaders }
+          )
+          .catch((viewError) => console.error(viewError));
 
-        try {
-          const sessionId = getCustomerSessionId();
-          const recommendationResponse = await axios.get('/api/customer/recommendations', {
+        void axios
+          .get('/api/customer/recommendations', {
             params: { sessionId, limit: 4 },
-            headers: {
-              ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
-              'x-session-id': sessionId,
-            },
+            headers: requestHeaders,
+          })
+          .then(({ data: recommendationData }) => {
+            if (!cancelled) {
+              setRecommendedProducts(recommendationData.filter((item) => item._id !== data._id));
+            }
+          })
+          .catch((recommendationError) => {
+            console.error(recommendationError);
+            if (!cancelled) setRecommendedProducts([]);
           });
-          setRecommendedProducts(recommendationResponse.data.filter((item) => item._id !== data._id));
-        } catch (recommendationError) {
-          console.error(recommendationError);
-          setRecommendedProducts([]);
-        }
 
-        try {
-          const reviewResponse = await axios.get(`/api/reviews/product/${data._id}`);
-          setReviews(reviewResponse.data);
-        } catch (reviewError) {
-          console.error(reviewError);
-          setReviews([]);
-        }
+        void axios
+          .get(`/api/reviews/product/${data._id}`)
+          .then(({ data: reviewData }) => {
+            if (!cancelled) setReviews(reviewData);
+          })
+          .catch((reviewError) => {
+            console.error(reviewError);
+            if (!cancelled) setReviews([]);
+          })
+          .finally(() => {
+            if (!cancelled) setReviewsLoading(false);
+          });
 
-        try {
-          const relatedResponse = await axios.get('/api/products', {
+        void axios
+          .get('/api/products', {
             params: {
               category: slugifyCategoryName(data.category),
               exclude: data._id,
               limit: 4,
               sort: '',
             },
+          })
+          .then(({ data: relatedData }) => {
+            if (!cancelled) {
+              setRelatedProducts(normalizeProductPayload(relatedData).products);
+            }
+          })
+          .catch((relatedError) => {
+            console.error(relatedError);
+            if (!cancelled) setRelatedProducts([]);
           });
-
-          const relatedPayload = normalizeProductPayload(relatedResponse.data);
-          setRelatedProducts(relatedPayload.products);
-        } catch (relatedError) {
-          console.error(relatedError);
-          setRelatedProducts([]);
-        }
       } catch (fetchError) {
         console.error(fetchError);
-        setError(fetchError.response?.data?.message || 'Unable to load this product right now.');
+        if (!cancelled) {
+          setError(fetchError.response?.data?.message || 'Unable to load this product right now.');
+          setReviewsLoading(false);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchProduct();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id, userInfo?.token]);
 
   const productImages = useMemo(() => getProductImages(product || {}), [product]);
@@ -288,6 +332,8 @@ const ProductPage = () => {
               <img
                 src={selectedImage || product.image}
                 alt={product.name}
+                decoding="async"
+                fetchPriority="high"
                 onLoad={() => setImageReady(true)}
                 className={`h-[420px] w-full object-cover transition duration-300 ease-out sm:h-[500px] lg:h-[520px] ${
                   imageReady ? 'scale-100 opacity-100' : 'scale-[1.01] opacity-0'
@@ -314,6 +360,8 @@ const ProductPage = () => {
                     <img
                       src={image}
                       alt={`${product.name} gallery`}
+                      loading="lazy"
+                      decoding="async"
                       className="h-24 w-full object-cover sm:h-28"
                     />
                   </button>
@@ -551,7 +599,11 @@ const ProductPage = () => {
           )}
 
           <div className="space-y-4">
-            {reviews.length === 0 ? (
+            {reviewsLoading ? (
+              <div className="rounded-[24px] border border-gray-100 bg-brand-light p-6 text-sm font-semibold text-gray-500">
+                Loading verified reviews...
+              </div>
+            ) : reviews.length === 0 ? (
               <div className="rounded-[24px] border border-dashed border-brand-accent/30 bg-brand-light p-6 text-sm text-gray-600">
                 <p>No reviews yet. Be the first verified customer to review this product.</p>
                 <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">

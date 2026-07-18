@@ -207,8 +207,13 @@ const getHomePageData = async (req, res) => {
     ),
   ]);
 
-  featuredResult.data = await hydrateProductReviewStats(featuredResult.data);
-  bestSellerResult.data = await hydrateProductReviewStats(bestSellerResult.data);
+  const featuredCount = featuredResult.data.length;
+  const hydratedProducts = await hydrateProductReviewStats([
+    ...featuredResult.data,
+    ...bestSellerResult.data,
+  ]);
+  featuredResult.data = hydratedProducts.slice(0, featuredCount);
+  bestSellerResult.data = hydratedProducts.slice(featuredCount);
 
   const warnings = [featuredResult.warning, bestSellerResult.warning, categoriesResult.warning].filter(Boolean);
   res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
@@ -297,54 +302,59 @@ const getAdvancedSearch = async (req, res) => {
     ...buildProductReviewStatsStages(minRating),
   ];
 
-  const [totalResult, products, facets, priceRange] = await Promise.all([
-    Product.aggregate([...searchPipeline, { $count: 'totalProducts' }]),
-    Product.aggregate([
-      ...searchPipeline,
-      { $sort: sortMap[sort] || { isFeatured: -1, isBestSeller: -1, createdAt: -1 } },
-      { $skip: (page - 1) * limit },
-      { $limit: limit },
-    ]),
-    Product.aggregate([
-      ...searchPipeline,
-      {
-        $facet: {
-          categories: [{ $group: { _id: '$category', count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }],
-          brands: [{ $group: { _id: '$brand', count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }],
-          origins: [{ $group: { _id: '$origin', count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }],
-          availability: [
-            {
-              $group: {
-                _id: { $cond: [{ $gt: ['$countInStock', 0] }, 'in-stock', 'out-of-stock'] },
-                count: { $sum: 1 },
-              },
+  const [searchResult = {}] = await Product.aggregate([
+    ...searchPipeline,
+    {
+      $facet: {
+        total: [{ $count: 'totalProducts' }],
+        products: [
+          { $sort: sortMap[sort] || { isFeatured: -1, isBestSeller: -1, createdAt: -1 } },
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+        ],
+        categories: [
+          { $group: { _id: '$category', count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+        ],
+        brands: [
+          { $group: { _id: '$brand', count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+        ],
+        origins: [
+          { $group: { _id: '$origin', count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+        ],
+        availability: [
+          {
+            $group: {
+              _id: { $cond: [{ $gt: ['$countInStock', 0] }, 'in-stock', 'out-of-stock'] },
+              count: { $sum: 1 },
             },
-          ],
-        },
+          },
+        ],
+        priceRange: [
+          { $group: { _id: null, min: { $min: '$price' }, max: { $max: '$price' } } },
+        ],
       },
-    ]),
-    Product.aggregate([
-      ...searchPipeline,
-      { $group: { _id: null, min: { $min: '$price' }, max: { $max: '$price' } } },
-    ]),
+    },
   ]);
 
-  const totalProducts = totalResult[0]?.totalProducts || 0;
+  const totalProducts = searchResult.total?.[0]?.totalProducts || 0;
   const totalPages = totalProducts === 0 ? 1 : Math.ceil(totalProducts / limit);
 
   res.json({
-    products,
+    products: searchResult.products || [],
     currentPage: Math.min(page, totalPages),
     totalPages,
     totalProducts,
     hasNextPage: page < totalPages,
     hasPrevPage: page > 1,
     facets: {
-      categories: facets[0]?.categories || [],
-      brands: facets[0]?.brands || [],
-      origins: facets[0]?.origins || [],
-      availability: facets[0]?.availability || [],
-      priceRange: priceRange[0] || { min: 0, max: 0 },
+      categories: searchResult.categories || [],
+      brands: searchResult.brands || [],
+      origins: searchResult.origins || [],
+      availability: searchResult.availability || [],
+      priceRange: searchResult.priceRange?.[0] || { min: 0, max: 0 },
     },
   });
 };
