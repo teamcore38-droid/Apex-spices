@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/productUi';
 import { ACCOUNT_TABS, createInitialAddressForm, formatAddressLines } from '../utils/accountUi';
+import OrderItemReviewForm from '../components/OrderItemReviewForm';
 import {
   getDeliveryBadgeClass,
   getDeliveryLabel,
@@ -496,6 +497,33 @@ const ProfilePage = () => {
       console.error(returnError);
       setError(returnError.response?.data?.message || 'Unable to create return request.');
     }
+  };
+
+  const markOrderItemReviewed = (orderId, productId, review) => {
+    setOrders((currentOrders) =>
+      currentOrders.map((order) => {
+        if (String(order._id) !== String(orderId)) {
+          return order;
+        }
+
+        return {
+          ...order,
+          orderItems: order.orderItems.map((item) => {
+            const itemProductId = item.product?._id || item.product;
+
+            if (String(itemProductId) !== String(productId)) {
+              return item;
+            }
+
+            return {
+              ...item,
+              review,
+              reviewEligible: false,
+            };
+          }),
+        };
+      })
+    );
   };
 
   const handlePasswordChange = (event) => {
@@ -1123,6 +1151,40 @@ const ProfilePage = () => {
                                 Return
                               </button>
                             </div>
+                          </div>
+
+                          <div className="mt-5 grid gap-3 border-t border-white/70 pt-4">
+                            {(order.orderItems || []).map((item, index) => (
+                              <div
+                                key={`${item.product?._id || item.product || item.name}-${index}`}
+                                className="rounded-[20px] border border-white/80 bg-white/70 p-4"
+                              >
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <img
+                                      src={item.image}
+                                      alt={item.name}
+                                      className="h-14 w-14 shrink-0 rounded-2xl object-cover"
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="font-serif text-lg font-bold text-brand-dark">{item.name}</p>
+                                      <p className="mt-1 text-sm text-gray-500">
+                                        Qty {item.qty} | {formatCurrency(item.price, order.currency || 'LKR')} each
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <p className="font-serif text-lg font-bold text-brand-primary">
+                                    {formatCurrency(item.qty * item.price, order.currency || 'LKR')}
+                                  </p>
+                                </div>
+                                <OrderItemReviewForm
+                                  item={item}
+                                  orderId={order._id}
+                                  token={userInfo?.token}
+                                  onSubmitted={markOrderItemReviewed}
+                                />
+                              </div>
+                            ))}
                           </div>
                         </article>
                       );

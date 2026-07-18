@@ -1,5 +1,6 @@
 import Category from '../models/categoryModel.js';
 import Product from '../models/productModel.js';
+import Review from '../models/reviewModel.js';
 
 const getSiteUrl = () =>
   String(process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
@@ -62,6 +63,32 @@ const buildProductSeo = (product) => {
   };
 };
 
+const hydrateProductReviewStats = async (product) => {
+  const stats = await Review.aggregate([
+    {
+      $match: {
+        product: product._id,
+        status: 'Approved',
+        verifiedPurchase: true,
+      },
+    },
+    {
+      $group: {
+        _id: '$product',
+        rating: { $avg: '$rating' },
+        numReviews: { $sum: 1 },
+      },
+    },
+  ]);
+  const ratingStats = stats[0] || {};
+
+  return {
+    ...(product.toObject ? product.toObject() : product),
+    rating: Number(Number(ratingStats.rating || 0).toFixed(1)),
+    numReviews: Number(ratingStats.numReviews || 0),
+  };
+};
+
 const buildCategorySeo = (category) => {
   const siteUrl = getSiteUrl();
   const url = `${siteUrl}/category/${category.slug}`;
@@ -99,7 +126,7 @@ const getProductSeo = async (req, res) => {
     return res.status(404).json({ message: 'Product not found' });
   }
 
-  res.json(buildProductSeo(product));
+  res.json(buildProductSeo(await hydrateProductReviewStats(product)));
 };
 
 const getCategorySeo = async (req, res) => {

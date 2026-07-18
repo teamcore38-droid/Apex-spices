@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Field = ({ label, value, onChange, type = 'text' }) => (
@@ -136,6 +136,17 @@ const AdminCommercePage = () => {
     await loadCommerce();
   };
 
+  const deleteReview = async (reviewId) => {
+    const confirmed = window.confirm('Delete this review permanently?');
+
+    if (!confirmed) {
+      return;
+    }
+
+    await axios.delete(`/api/reviews/admin/${reviewId}`, config);
+    await loadCommerce();
+  };
+
   const updateReturn = async (returnId, status) => {
     await axios.put(`/api/returns/admin/${returnId}`, { status }, config);
     await loadCommerce();
@@ -245,16 +256,34 @@ const AdminCommercePage = () => {
           <section className="rounded-[28px] bg-white p-6 shadow-sm">
             <h2 className="font-serif text-2xl font-bold text-brand-dark">Review Moderation</h2>
             <div className="mt-4 space-y-3">
-              {reviews.slice(0, 10).map((review) => (
-                <div key={review._id} className="rounded-2xl bg-brand-light p-4 text-sm">
-                  <p className="font-semibold text-brand-dark">{review.product?.name || 'Product'} - {review.rating}/5</p>
-                  <p className="mt-1 text-gray-600">{review.comment}</p>
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={() => moderateReview(review._id, 'Approved')} className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Approve</button>
-                    <button onClick={() => moderateReview(review._id, 'Rejected')} className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Reject</button>
+              {reviews.length === 0 ? (
+                <p className="text-sm text-gray-500">No reviews are waiting for moderation.</p>
+              ) : (
+                reviews.slice(0, 10).map((review) => (
+                  <div key={review._id} className="rounded-2xl bg-brand-light p-4 text-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-brand-dark">{review.product?.name || 'Product'} - {review.rating}/5</p>
+                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-accent">
+                          {review.status} {review.verifiedPurchase ? '| Verified Purchase' : ''}
+                        </p>
+                        {review.title && <p className="mt-2 font-semibold text-brand-dark">{review.title}</p>}
+                      </div>
+                      <p className="text-xs text-gray-500">{review.user?.email || review.name}</p>
+                    </div>
+                    <p className="mt-2 text-gray-600">{review.comment}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button onClick={() => moderateReview(review._id, 'Approved')} className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">Approve</button>
+                      <button onClick={() => moderateReview(review._id, 'Rejected')} className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Reject</button>
+                      <button onClick={() => moderateReview(review._id, 'Hidden')} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Hide</button>
+                      <button onClick={() => moderateReview(review._id, 'Pending')} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-primary">Pending</button>
+                      <button onClick={() => deleteReview(review._id)} className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800">
+                        <Trash2 size={13} className="mr-1" /> Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </section>
 

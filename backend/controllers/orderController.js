@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Order from '../models/orderModel.js';
 import User from '../models/userModel.js';
+import Review from '../models/reviewModel.js';
 import { normalizeAddressPayload, saveAddressToUser } from '../utils/addressBook.js';
 import {
   sendOrderConfirmationEmail,
@@ -83,6 +84,53 @@ const getNormalizedPaymentStatus = (paymentStatus, isPaid) => {
   }
 
   return isPaid ? 'Paid' : 'Unpaid';
+};
+
+const isDeliveredPaidOrder = (order = {}) =>
+  Boolean(
+    order &&
+      (order.isDelivered || order.orderStatus === 'Delivered') &&
+      (order.isPaid || order.paymentStatus === 'Paid')
+  );
+
+const attachReviewMetadataToOrders = async (orders = [], userId) => {
+  const orderList = Array.isArray(orders) ? orders : [orders];
+  const normalizedOrders = orderList.map((order) => (order?.toObject ? order.toObject() : order));
+  const orderIds = normalizedOrders.map((order) => order?._id).filter(Boolean);
+
+  if (!userId || orderIds.length === 0) {
+    return Array.isArray(orders) ? normalizedOrders : normalizedOrders[0];
+  }
+
+  const reviews = await Review.find({
+    user: userId,
+    order: { $in: orderIds },
+  })
+    .select('_id product order title rating status verifiedPurchase createdAt')
+    .lean();
+
+  const reviewByOrderProduct = new Map(
+    reviews.map((review) => [`${review.order}:${review.product}`, review])
+  );
+
+  const enrichedOrders = normalizedOrders.map((order) => {
+    const reviewEligibleOrder = isDeliveredPaidOrder(order);
+
+    return {
+      ...order,
+      orderItems: (order.orderItems || []).map((item) => {
+        const review = reviewByOrderProduct.get(`${order._id}:${item.product}`) || null;
+
+        return {
+          ...item,
+          review,
+          reviewEligible: Boolean(reviewEligibleOrder && !review),
+        };
+      }),
+    };
+  });
+
+  return Array.isArray(orders) ? enrichedOrders : enrichedOrders[0];
 };
 
 const buildNormalizedShippingAddress = (payload = {}, fallbackUser = null) => {
@@ -786,7 +834,13 @@ const getOrderById = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized to view this order' });
     }
 
-    res.json(order);
+    const orderUserId = order.user?._id || order.user;
+    const enrichedOrder =
+      String(orderUserId) === String(req.user._id)
+        ? await attachReviewMetadataToOrders(order, req.user._id)
+        : order;
+
+    res.json(enrichedOrder);
   } catch (error) {
     if (error.name === 'CastError') {
       return res.status(404).json({ message: 'Order not found' });
@@ -803,7 +857,8 @@ const getOrderById = async (req, res) => {
 const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
-    res.json(orders);
+    const enrichedOrders = await attachReviewMetadataToOrders(orders, req.user._id);
+    res.json(enrichedOrders);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });

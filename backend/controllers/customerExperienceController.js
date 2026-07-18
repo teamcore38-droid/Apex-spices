@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Category from '../models/categoryModel.js';
 import Product from '../models/productModel.js';
+import Review from '../models/reviewModel.js';
 import RecentlyViewed from '../models/recentlyViewedModel.js';
 import SupportTicket from '../models/supportTicketModel.js';
 import User from '../models/userModel.js';
@@ -26,6 +27,90 @@ const normalizeFallbackCategory = (category) => ({
   ...category,
   _id: category._id || category.slug,
 });
+
+const hydrateProductReviewStats = async (products = []) => {
+  const productList = Array.isArray(products) ? products : [products];
+  const normalizedProducts = productList.map((product) => (product?.toObject ? product.toObject() : product));
+  const productIds = normalizedProducts.map((product) => product?._id).filter(Boolean);
+
+  if (mongoose.connection.readyState !== 1 || productIds.length === 0) {
+    return Array.isArray(products) ? normalizedProducts : normalizedProducts[0];
+  }
+
+  const reviewStats = await Review.aggregate([
+    {
+      $match: {
+        product: { $in: productIds },
+        status: 'Approved',
+        verifiedPurchase: true,
+      },
+    },
+    {
+      $group: {
+        _id: '$product',
+        rating: { $avg: '$rating' },
+        numReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const statsByProductId = new Map(
+    reviewStats.map((stats) => [
+      String(stats._id),
+      {
+        rating: Number(Number(stats.rating || 0).toFixed(1)),
+        numReviews: Number(stats.numReviews || 0),
+      },
+    ])
+  );
+
+  const hydratedProducts = normalizedProducts.map((product) => ({
+    ...product,
+    ...(statsByProductId.get(String(product._id)) || { rating: 0, numReviews: 0 }),
+  }));
+
+  return Array.isArray(products) ? hydratedProducts : hydratedProducts[0];
+};
+
+const buildProductReviewStatsStages = (minRating = 0) => [
+  {
+    $lookup: {
+      from: Review.collection.name,
+      let: { productId: '$_id' },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ['$product', '$$productId'] },
+                { $eq: ['$status', 'Approved'] },
+                { $eq: ['$verifiedPurchase', true] },
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            rating: { $avg: '$rating' },
+            numReviews: { $sum: 1 },
+          },
+        },
+      ],
+      as: 'reviewStats',
+    },
+  },
+  {
+    $addFields: {
+      rating: {
+        $round: [{ $ifNull: [{ $arrayElemAt: ['$reviewStats.rating', 0] }, 0] }, 1],
+      },
+      numReviews: { $ifNull: [{ $arrayElemAt: ['$reviewStats.numReviews', 0] }, 0] },
+    },
+  },
+  { $project: { reviewStats: 0 } },
+  ...(minRating > 0 ? [{ $match: { rating: { $gte: minRating } } }] : []),
+];
 
 const getFallbackFeaturedProducts = () =>
   fallbackProducts
@@ -122,6 +207,9 @@ const getHomePageData = async (req, res) => {
     ),
   ]);
 
+  featuredResult.data = await hydrateProductReviewStats(featuredResult.data);
+  bestSellerResult.data = await hydrateProductReviewStats(bestSellerResult.data);
+
   const warnings = [featuredResult.warning, bestSellerResult.warning, categoriesResult.warning].filter(Boolean);
   res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   res.json({
@@ -142,7 +230,6 @@ const buildSearchFilter = (query = {}) => {
     minPrice = '',
     maxPrice = '',
     stock = '',
-    rating = '',
   } = query;
   const filters = [activeProductFilter];
 
@@ -189,11 +276,6 @@ const buildSearchFilter = (query = {}) => {
     filters.push({ countInStock: { $lte: 0 } });
   }
 
-  const minRating = Number(rating || 0);
-  if (minRating > 0) {
-    filters.push({ rating: { $gte: minRating } });
-  }
-
   return { $and: filters };
 };
 
@@ -202,6 +284,7 @@ const getAdvancedSearch = async (req, res) => {
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 12, 1), 48);
   const sort = String(req.query.sort || '');
   const filter = buildSearchFilter(req.query);
+  const minRating = Math.max(0, Number(req.query.rating || 0) || 0);
   const sortMap = {
     newest: { createdAt: -1 },
     'price-low': { price: 1 },
@@ -209,16 +292,21 @@ const getAdvancedSearch = async (req, res) => {
     'rating-high': { rating: -1, createdAt: -1 },
     'name-asc': { name: 1 },
   };
+  const searchPipeline = [
+    { $match: filter },
+    ...buildProductReviewStatsStages(minRating),
+  ];
 
-  const [totalProducts, products, facets, priceRange] = await Promise.all([
-    Product.countDocuments(filter),
-    Product.find(filter)
-      .sort(sortMap[sort] || { isFeatured: -1, isBestSeller: -1, createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
+  const [totalResult, products, facets, priceRange] = await Promise.all([
+    Product.aggregate([...searchPipeline, { $count: 'totalProducts' }]),
     Product.aggregate([
-      { $match: filter },
+      ...searchPipeline,
+      { $sort: sortMap[sort] || { isFeatured: -1, isBestSeller: -1, createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ]),
+    Product.aggregate([
+      ...searchPipeline,
       {
         $facet: {
           categories: [{ $group: { _id: '$category', count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }],
@@ -236,11 +324,12 @@ const getAdvancedSearch = async (req, res) => {
       },
     ]),
     Product.aggregate([
-      { $match: filter },
+      ...searchPipeline,
       { $group: { _id: null, min: { $min: '$price' }, max: { $max: '$price' } } },
     ]),
   ]);
 
+  const totalProducts = totalResult[0]?.totalProducts || 0;
   const totalPages = totalProducts === 0 ? 1 : Math.ceil(totalProducts / limit);
 
   res.json({
@@ -310,7 +399,7 @@ const getRecommendations = async (req, res) => {
     limit: Number.parseInt(req.query.limit, 10) || 8,
   });
 
-  res.json(products);
+  res.json(await hydrateProductReviewStats(products));
 };
 
 const getLoyalty = async (req, res) => {

@@ -4,10 +4,10 @@ import axios from 'axios';
 import {
   ArrowLeft,
   BadgeCheck,
+  ChevronDown,
   Heart,
   Loader2,
   MessageSquareText,
-  MessageSquare,
   Minus,
   Plus,
   ShieldCheck,
@@ -61,10 +61,9 @@ const ProductPage = () => {
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState('');
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [reviewMessage, setReviewMessage] = useState('');
-  const [reviewSaving, setReviewSaving] = useState(false);
   const [wishlistSaving, setWishlistSaving] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -102,6 +101,7 @@ const ProductPage = () => {
         setSelectedImage(data.image);
         setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
         setQty(1);
+        setDetailsOpen(false);
 
         try {
           const sessionId = getCustomerSessionId();
@@ -266,33 +266,6 @@ const ProductPage = () => {
     }
   };
 
-  const submitReview = async (event) => {
-    event.preventDefault();
-
-    if (!userInfo?.token) {
-      navigate(`/login?redirect=/product/${id}`);
-      return;
-    }
-
-    setReviewSaving(true);
-    setReviewMessage('');
-
-    try {
-      await axios.post(`/api/reviews/product/${product._id}`, reviewForm, {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      setReviewForm({ rating: 5, comment: '' });
-      setReviewMessage('Review submitted for moderation.');
-    } catch (reviewError) {
-      setReviewMessage(reviewError.response?.data?.message || 'Unable to submit review.');
-    } finally {
-      setReviewSaving(false);
-    }
-  };
-
   const productUrl = window.location.href;
   const whatsappInquiryMessage = `Hello, I'm interested in purchasing ${product.name}. Could you please provide more information about availability, pricing, and delivery?\n\nProduct: ${product.name}\nLink: ${productUrl}`;
   const whatsappInquiryUrl = `https://wa.me/${COMPANY_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappInquiryMessage)}`;
@@ -377,12 +350,12 @@ const ProductPage = () => {
                     size={16}
                     fill={index < Math.floor(product.rating || 0) ? 'currentColor' : 'none'}
                     className={index < Math.floor(product.rating || 0) ? 'text-brand-accent' : 'text-gray-300'}
-                  />
-                ))}
-                <span className="ml-2 text-sm font-semibold text-gray-500">
-                  {product.numReviews || reviews.length || 0} reviews
-                </span>
-              </div>
+                />
+              ))}
+              <span className="ml-2 text-sm font-semibold text-gray-500">
+                  {product.numReviews || 0} reviews
+              </span>
+            </div>
               <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${stockPresentation.className}`}>
                 {stockPresentation.label}
               </span>
@@ -404,18 +377,46 @@ const ProductPage = () => {
               )}
             </div>
 
-            <p className="mt-5 text-base leading-8 text-gray-700">
-              {product.description}
-            </p>
+            <div className="mt-5 overflow-hidden rounded-[28px] bg-[#f4f7fb]">
+              <button
+                type="button"
+                onClick={() => setDetailsOpen((current) => !current)}
+                aria-expanded={detailsOpen}
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors duration-200 hover:bg-[#eef2f8]"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Product Details</p>
+                  {!detailsOpen && (
+                    <p className="mt-2 line-clamp-1 text-sm leading-6 text-gray-700">
+                      {product.description || 'View origin, contents, and product specifications.'}
+                    </p>
+                  )}
+                </div>
+                <ChevronDown
+                  size={20}
+                  className={`shrink-0 text-brand-primary transition-transform duration-300 ${detailsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-            <div className="mt-6 grid gap-4 rounded-[28px] bg-[#f4f7fb] p-5 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Origin</p>
-                <p className="mt-2 text-sm leading-7 text-gray-700">{product.origin || 'Premium source details coming soon.'}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Contents & Specifications</p>
-                <p className="mt-2 text-sm leading-7 text-gray-700">{product.ingredients || 'Premium product with verified sourcing.'}</p>
+              <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${detailsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                <div className="overflow-hidden">
+                  <div className="border-t border-white px-5 pb-5 pt-4">
+                    <p className="text-base leading-8 text-gray-700">
+                      {product.description}
+                    </p>
+
+                    <div className="mt-5 grid gap-4 rounded-[24px] bg-white/70 p-5 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Origin</p>
+                        <p className="mt-2 text-sm leading-7 text-gray-700">{product.origin || 'Premium source details coming soon.'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Contents & Specifications</p>
+                        <p className="mt-2 text-sm leading-7 text-gray-700">{product.ingredients || 'Premium product with verified sourcing.'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -539,56 +540,35 @@ const ProductPage = () => {
             </div>
           )}
 
-          <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-            <form onSubmit={submitReview} className="rounded-[24px] border border-gray-100 bg-brand-light p-5">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-brand-dark">Rating</span>
-                <select
-                  value={reviewForm.rating}
-                  onChange={(event) => setReviewForm((current) => ({ ...current, rating: Number(event.target.value) }))}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
-                >
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <option key={rating} value={rating}>{rating} stars</option>
-                  ))}
-                </select>
-              </label>
-              <label className="mt-4 block">
-                <span className="mb-2 block text-sm font-semibold text-brand-dark">Review</span>
-                <textarea
-                  rows="5"
-                  value={reviewForm.comment}
-                  onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-accent"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={reviewSaving}
-                className="mt-4 inline-flex items-center rounded-xl bg-brand-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-brand-dark disabled:opacity-60"
-              >
-                {reviewSaving ? <Loader2 size={16} className="mr-2 animate-spin" /> : <MessageSquare size={16} className="mr-2" />}
-                Submit Review
-              </button>
-            </form>
-
-            <div className="space-y-4">
-              {reviews.length === 0 ? (
-                <p className="rounded-[24px] border border-dashed border-brand-accent/30 bg-brand-light p-6 text-sm text-gray-600">
-                  No approved reviews yet. Be the first to submit one.
+          <div className="space-y-4">
+            {reviews.length === 0 ? (
+              <div className="rounded-[24px] border border-dashed border-brand-accent/30 bg-brand-light p-6 text-sm text-gray-600">
+                <p>No reviews yet. Be the first verified customer to review this product.</p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">
+                  Write reviews from your delivered order history.
                 </p>
-              ) : (
-                reviews.map((review) => (
-                  <article key={review._id} className="rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-serif text-xl font-bold text-brand-dark">{review.name}</p>
-                      <span className="text-sm font-semibold text-brand-accent">{review.rating}/5</span>
+              </div>
+            ) : (
+              reviews.map((review) => (
+                <article key={review._id} className="rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-serif text-xl font-bold text-brand-dark">{review.title || review.name}</p>
+                      {review.title && <p className="mt-1 text-sm font-semibold text-gray-500">{review.name}</p>}
                     </div>
-                    <p className="mt-3 text-sm leading-7 text-gray-600">{review.comment}</p>
-                  </article>
-                ))
-              )}
-            </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-brand-light px-3 py-1 text-sm font-semibold text-brand-accent">{review.rating}/5</span>
+                      {review.verifiedPurchase && (
+                        <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-green-700">
+                          Verified Purchase
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-gray-600">{review.comment}</p>
+                </article>
+              ))
+            )}
           </div>
         </section>
 

@@ -7,6 +7,7 @@ import Product from './models/productModel.js';
 import User from './models/userModel.js';
 import Order from './models/orderModel.js';
 import Category from './models/categoryModel.js';
+import Review from './models/reviewModel.js';
 import connectDB from './config/db.js';
 
 dotenv.config();
@@ -17,6 +18,7 @@ const importData = async () => {
   try {
     console.warn('[seeder] WARNING: data:import is destructive and will delete existing users/products/categories/orders.');
     await Order.deleteMany();
+    await Review.deleteMany();
     await Product.deleteMany();
     await Category.deleteMany();
     await User.deleteMany();
@@ -42,6 +44,7 @@ const destroyData = async () => {
   try {
     console.warn('[seeder] WARNING: data:destroy is destructive and will delete existing users/products/categories/orders.');
     await Order.deleteMany();
+    await Review.deleteMany();
     await Product.deleteMany();
     await Category.deleteMany();
     await User.deleteMany();

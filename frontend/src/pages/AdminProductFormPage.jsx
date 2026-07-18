@@ -132,8 +132,8 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
       return {
         ...payload,
         _id: id || 'preview',
-        rating: 5,
-        numReviews: 18,
+        rating: 0,
+        numReviews: 0,
         images: payload.images,
       };
     } catch {

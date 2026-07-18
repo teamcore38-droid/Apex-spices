@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/productUi';
+import OrderItemReviewForm from '../components/OrderItemReviewForm';
 import {
   getCustomerContactDetails,
   getShippingAddressLines,
@@ -39,7 +40,11 @@ const OrderSuccessPage = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (order && order.isPaid) {
+    const hasReviewMetadata = order?.orderItems?.some(
+      (item) => item.review || item.reviewEligible !== undefined
+    );
+
+    if (order && order.isPaid && hasReviewMetadata) {
       return;
     }
 
@@ -114,6 +119,31 @@ const OrderSuccessPage = () => {
     [order, userInfo]
   );
   const orderCurrency = order?.currency || 'LKR';
+
+  const markOrderItemReviewed = (orderId, productId, review) => {
+    setOrder((currentOrder) => {
+      if (!currentOrder || String(currentOrder._id) !== String(orderId)) {
+        return currentOrder;
+      }
+
+      return {
+        ...currentOrder,
+        orderItems: (currentOrder.orderItems || []).map((item) => {
+          const itemProductId = item.product?._id || item.product;
+
+          if (String(itemProductId) !== String(productId)) {
+            return item;
+          }
+
+          return {
+            ...item,
+            review,
+            reviewEligible: false,
+          };
+        }),
+      };
+    });
+  };
 
   if (loading) {
     return (
@@ -235,24 +265,32 @@ const OrderSuccessPage = () => {
                   {order.orderItems.map((item, index) => (
                     <article
                       key={`${item.product || item.name}-${index}`}
-                      className="flex flex-col gap-4 rounded-[24px] border border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="rounded-[24px] border border-gray-100 p-4"
                     >
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="h-16 w-16 rounded-2xl object-cover"
-                        />
-                        <div>
-                          <h3 className="font-serif text-xl font-bold text-brand-dark">{item.name}</h3>
-                          <p className="text-sm text-gray-500">
-                            Qty: {item.qty} • {formatCurrency(item.price, orderCurrency)} each
-                          </p>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="h-16 w-16 rounded-2xl object-cover"
+                          />
+                          <div>
+                            <h3 className="font-serif text-xl font-bold text-brand-dark">{item.name}</h3>
+                            <p className="text-sm text-gray-500">
+                              Qty: {item.qty} | {formatCurrency(item.price, orderCurrency)} each
+                            </p>
+                          </div>
                         </div>
+                        <p className="font-serif text-xl font-bold text-brand-primary">
+                          {formatCurrency(item.qty * item.price, orderCurrency)}
+                        </p>
                       </div>
-                      <p className="font-serif text-xl font-bold text-brand-primary">
-                        {formatCurrency(item.qty * item.price, orderCurrency)}
-                      </p>
+                      <OrderItemReviewForm
+                        item={item}
+                        orderId={order._id}
+                        token={userInfo?.token}
+                        onSubmitted={markOrderItemReviewed}
+                      />
                     </article>
                   ))}
                 </div>

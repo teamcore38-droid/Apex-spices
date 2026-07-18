@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Category from '../models/categoryModel.js';
 import Product from '../models/productModel.js';
+import Review from '../models/reviewModel.js';
 import { slugify } from './categoryController.js';
 import { hasPermission } from '../utils/permissions.js';
 import { recordAuditLog } from '../utils/auditService.js';
@@ -220,6 +221,50 @@ const buildPaginationPayload = ({ products, page, limit, totalProducts }) => {
     hasNextPage: currentPage < totalPages,
     hasPrevPage: currentPage > 1,
   };
+};
+
+const hydrateProductReviewStats = async (products = []) => {
+  const productList = Array.isArray(products) ? products : [products];
+  const normalizedProducts = productList.map((product) => (product?.toObject ? product.toObject() : product));
+  const productIds = normalizedProducts.map((product) => product?._id).filter(Boolean);
+
+  if (productIds.length === 0) {
+    return Array.isArray(products) ? normalizedProducts : normalizedProducts[0];
+  }
+
+  const reviewStats = await Review.aggregate([
+    {
+      $match: {
+        product: { $in: productIds },
+        status: 'Approved',
+        verifiedPurchase: true,
+      },
+    },
+    {
+      $group: {
+        _id: '$product',
+        rating: { $avg: '$rating' },
+        numReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const statsByProductId = new Map(
+    reviewStats.map((stats) => [
+      String(stats._id),
+      {
+        rating: Number(Number(stats.rating || 0).toFixed(1)),
+        numReviews: Number(stats.numReviews || 0),
+      },
+    ])
+  );
+
+  const hydratedProducts = normalizedProducts.map((product) => ({
+    ...product,
+    ...(statsByProductId.get(String(product._id)) || { rating: 0, numReviews: 0 }),
+  }));
+
+  return Array.isArray(products) ? hydratedProducts : hydratedProducts[0];
 };
 
 const findExistingSlugConflict = async (slug, productId = null) => {
@@ -459,10 +504,11 @@ const getProducts = async (req, res) => {
       .skip(skip)
       .limit(limitNumber)
       .lean();
+    const productsWithReviewStats = await hydrateProductReviewStats(products);
 
     res.json(
       buildPaginationPayload({
-        products,
+        products: productsWithReviewStats,
         page: currentPage,
         limit: limitNumber,
         totalProducts,
@@ -482,7 +528,7 @@ const getProductById = async (req, res) => {
     const product = await findProductByIdWithVisibility(req.params.id, req.user);
 
     if (product) {
-      return res.json(product);
+      return res.json(await hydrateProductReviewStats(product));
     }
 
     res.status(404).json({ message: 'Product not found' });
@@ -512,7 +558,7 @@ const getProductBySlug = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    res.json(product);
+    res.json(await hydrateProductReviewStats(product));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
