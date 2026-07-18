@@ -447,9 +447,9 @@ const ProductsPage = () => {
               {error}
             </div>
           ) : loading ? (
-            <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 sm:gap-8 lg:grid-cols-3">
               {[...Array(PRODUCT_PAGE_SIZE)].map((_, index) => (
-                <div key={index} className="h-[470px] animate-pulse rounded-[28px] bg-[#f4f7fb]" />
+                <div key={index} className="h-[390px] animate-pulse rounded-[18px] bg-[#f4f7fb] sm:h-[470px] sm:rounded-[28px]" />
               ))}
             </div>
           ) : products.length === 0 ? (
@@ -476,9 +476,9 @@ const ProductsPage = () => {
             </div>
           ) : (
             <>
-              <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 sm:gap-8 lg:grid-cols-3">
                 {products.map((product) => (
-                  <Product key={product._id} product={product} />
+                  <Product key={product._id} product={product} compactOnMobile />
                 ))}
               </div>
 

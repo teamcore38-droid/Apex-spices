@@ -316,9 +316,9 @@ const HomePage = () => {
             <div className="mx-auto h-1 w-24 bg-brand-accent"></div>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="mx-auto flex max-w-full flex-wrap justify-center gap-8">
             {categories.slice(0, 3).map((category) => (
-              <Link key={category._id} to={`/category/${category.slug}`} className="group relative h-80 cursor-pointer overflow-hidden rounded-lg shadow-lg">
+              <Link key={category._id} to={`/category/${category.slug}`} className="group relative h-80 w-full cursor-pointer overflow-hidden rounded-lg shadow-lg sm:basis-[calc((100%-2rem)/2)] lg:basis-[calc((100%-4rem)/3)]">
                 {isCategoryImageFailed(category) ? (
                   <div className="h-full w-full bg-gradient-to-br from-[#23120a] via-[#3d251e] to-[#1f0e07]" />
                 ) : (
