@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Eye, EyeOff, Globe2, LockKeyhole, Mail, Phone, Search, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import { COUNTRY_DIAL_CODES, COUNTRY_PHONE_LENGTHS, DEFAULT_COUNTRY_ISO2 } from '../utils/countries';
 
 const getDialDigits = (country) => country.dialCode.replace(/\D/g, '');
@@ -50,8 +51,9 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { register, userInfo } = useAuth();
+  const { register, loginWithGoogle, userInfo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -117,6 +119,24 @@ const RegisterPage = () => {
     }
   };
 
+  const handleGoogleCredential = async (credential) => {
+    setGoogleLoading(true);
+    setError('');
+
+    try {
+      const result = await loginWithGoogle(credential);
+      if (result?.requiresTwoFactor) {
+        navigate(`/login?redirect=${encodeURIComponent(redirect)}`, {
+          state: { twoFactorChallenge: result },
+        });
+      }
+    } catch (googleError) {
+      setError(googleError);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#f7f9fc] pb-14 pt-8 sm:pt-10 lg:pb-20 lg:pt-12">
       <div className="container mx-auto flex justify-center px-4">
@@ -135,7 +155,21 @@ const RegisterPage = () => {
             </div>
           )}
 
-          <form onSubmit={submitHandler} className="mt-8 space-y-5">
+          <div className="mt-8">
+            <GoogleSignInButton
+              text="signup_with"
+              disabled={googleLoading || loading}
+              onCredential={handleGoogleCredential}
+              onError={setError}
+            />
+          </div>
+          <div className="my-6 flex items-center gap-4 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
+            <span className="h-px flex-1 bg-gray-200" />
+            <span>or register with email</span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+
+          <form onSubmit={submitHandler} className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-brand-dark">Full Name</label>

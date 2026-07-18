@@ -1,6 +1,9 @@
 import express from 'express';
 import {
   authUser,
+  authGoogleUser,
+  linkGoogleAccount,
+  verifyGoogleLinkTwoFactor,
   verifyAdminTwoFactorLogin,
   refreshAccessToken,
   logoutUser,
@@ -31,6 +34,9 @@ const router = express.Router();
 router.route('/').post(authRegisterLimiter, registerUser);
 router.post('/login', authLoginLimiter, authUser);
 router.post('/login/2fa', authLoginLimiter, verifyAdminTwoFactorLogin);
+router.post('/google', authLoginLimiter, authGoogleUser);
+router.post('/google/link', protect, authLoginLimiter, linkGoogleAccount);
+router.post('/google/link/2fa', protect, authLoginLimiter, verifyGoogleLinkTwoFactor);
 router.post('/refresh', refreshAccessToken);
 router.post('/logout', logoutUser);
 router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);

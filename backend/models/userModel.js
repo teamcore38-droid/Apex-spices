@@ -103,7 +103,24 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required() {
+        return !this.googleLinkedAt;
+      },
+    },
+    googleSubject: {
+      type: String,
+      trim: true,
+      select: false,
+    },
+    googleEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      select: false,
+    },
+    googleLinkedAt: {
+      type: Date,
+      default: null,
     },
     isAdmin: {
       type: Boolean,
@@ -197,6 +214,10 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password || !enteredPassword) {
+    return false;
+  }
+
   return bcrypt.compare(enteredPassword, this.password);
 };
 
@@ -210,13 +231,21 @@ userSchema.methods.getResetPasswordToken = function () {
 };
 
 userSchema.pre('save', async function (_options) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return;
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
+
+userSchema.index(
+  { googleSubject: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { googleSubject: { $type: 'string' } },
+  }
+);
 
 const User = mongoose.model('User', userSchema);
 

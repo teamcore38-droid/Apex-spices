@@ -24,6 +24,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/productUi';
 import { ACCOUNT_TABS, createInitialAddressForm, formatAddressLines } from '../utils/accountUi';
 import OrderItemReviewForm from '../components/OrderItemReviewForm';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
   getDeliveryBadgeClass,
   getDeliveryLabel,
@@ -209,6 +210,12 @@ const ProfilePage = () => {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [googleLinkPassword, setGoogleLinkPassword] = useState('');
+  const [googleLinkLoading, setGoogleLinkLoading] = useState(false);
+  const [googleLinkMessage, setGoogleLinkMessage] = useState('');
+  const [googleLinkError, setGoogleLinkError] = useState('');
+  const [googleLinkChallenge, setGoogleLinkChallenge] = useState(null);
+  const [googleLinkCode, setGoogleLinkCode] = useState('');
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
 
   const activeTab = useMemo(() => {
@@ -278,6 +285,9 @@ const ProfilePage = () => {
       amount: amountParts.length > 0 ? amountParts.join(' ') : formatted,
     };
   }, [totalSpent]);
+  const authMethods = profile?.authMethods || userInfo?.authMethods || [];
+  const hasPassword = authMethods.includes('password');
+  const hasGoogleSignIn = authMethods.includes('google');
 
   const updateTab = (nextTab) => {
     setSearchParams({ tab: nextTab });
@@ -568,6 +578,92 @@ const ProfilePage = () => {
       setPasswordError(saveError.response?.data?.message || 'Unable to update your password.');
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const markGoogleLinked = (data) => {
+    const nextAuthMethods = data.authMethods || [...new Set([...authMethods, 'google'])];
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      authMethods: nextAuthMethods,
+    }));
+    syncUserInfo({
+      ...userInfo,
+      authMethods: nextAuthMethods,
+    });
+    setGoogleLinkPassword('');
+    setGoogleLinkCode('');
+    setGoogleLinkChallenge(null);
+    setGoogleLinkMessage(data.message || 'Google account linked successfully.');
+  };
+
+  const handleGoogleLinkCredential = async (credential) => {
+    if (!googleLinkPassword) {
+      setGoogleLinkError('Enter your current Apex Spices password before linking Google.');
+      return;
+    }
+
+    setGoogleLinkLoading(true);
+    setGoogleLinkError('');
+    setGoogleLinkMessage('');
+
+    try {
+      const { data } = await axios.post(
+        '/api/users/google/link',
+        { credential, currentPassword: googleLinkPassword },
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (data.requiresTwoFactor) {
+        setGoogleLinkChallenge(data);
+        setGoogleLinkMessage(data.message);
+      } else {
+        markGoogleLinked(data);
+      }
+    } catch (linkError) {
+      console.error(linkError);
+      setGoogleLinkError(linkError.response?.data?.message || 'Unable to link this Google account.');
+    } finally {
+      setGoogleLinkLoading(false);
+    }
+  };
+
+  const submitGoogleLinkTwoFactor = async (event) => {
+    event.preventDefault();
+
+    if (!googleLinkCode.trim()) {
+      setGoogleLinkError('Enter the admin verification code.');
+      return;
+    }
+
+    setGoogleLinkLoading(true);
+    setGoogleLinkError('');
+
+    try {
+      const { data } = await axios.post(
+        '/api/users/google/link/2fa',
+        {
+          challengeId: googleLinkChallenge.challengeId,
+          code: googleLinkCode,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      markGoogleLinked(data);
+    } catch (verifyError) {
+      console.error(verifyError);
+      setGoogleLinkError(verifyError.response?.data?.message || 'Unable to verify the admin code.');
+    } finally {
+      setGoogleLinkLoading(false);
     }
   };
 
@@ -1279,8 +1375,8 @@ const ProfilePage = () => {
 
             {activeTab === 'password' && (
               <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Password Management</p>
-                <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Keep your account secure</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Sign-In Security</p>
+                <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Manage how you sign in</h2>
 
                 {passwordError && (
                   <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
@@ -1294,44 +1390,137 @@ const ProfilePage = () => {
                   </div>
                 )}
 
-                <form className="mt-6 space-y-5" onSubmit={submitPasswordChange}>
-                  <PasswordField
-                    label="Current Password"
-                    name="currentPassword"
-                    value={passwordForm.currentPassword}
-                    onChange={handlePasswordChange}
-                  />
-                  <div className="grid gap-5 md:grid-cols-2">
+                {hasPassword ? (
+                  <form className="mt-6 space-y-5" onSubmit={submitPasswordChange}>
                     <PasswordField
-                      label="New Password"
-                      name="newPassword"
-                      value={passwordForm.newPassword}
+                      label="Current Password"
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
                       onChange={handlePasswordChange}
                     />
-                    <PasswordField
-                      label="Confirm New Password"
-                      name="confirmPassword"
-                      value={passwordForm.confirmPassword}
-                      onChange={handlePasswordChange}
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <button
-                      type="submit"
-                      disabled={passwordSaving}
-                      className="inline-flex items-center rounded-xl bg-brand-primary px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {passwordSaving && <Loader2 size={16} className="mr-2 animate-spin" />}
-                      Update Password
-                    </button>
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <PasswordField
+                        label="New Password"
+                        name="newPassword"
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordChange}
+                      />
+                      <PasswordField
+                        label="Confirm New Password"
+                        name="confirmPassword"
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordChange}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <button
+                        type="submit"
+                        disabled={passwordSaving}
+                        className="inline-flex items-center rounded-xl bg-brand-primary px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {passwordSaving && <Loader2 size={16} className="mr-2 animate-spin" />}
+                        Update Password
+                      </button>
+                      <Link
+                        to="/forgot-password"
+                        className="text-sm font-semibold text-brand-primary transition-colors duration-200 hover:text-brand-dark"
+                      >
+                        Need a reset link instead?
+                      </Link>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="mt-6 rounded-2xl border border-brand-accent/20 bg-brand-light p-5">
+                    <p className="font-semibold text-brand-dark">This account currently signs in with Google.</p>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">
+                      You can add password sign-in by requesting a secure password reset link.
+                    </p>
                     <Link
                       to="/forgot-password"
-                      className="text-sm font-semibold text-brand-primary transition-colors duration-200 hover:text-brand-dark"
+                      className="mt-4 inline-flex text-sm font-bold text-brand-primary transition hover:text-brand-dark"
                     >
-                      Need a reset link instead?
+                      Set an Apex Spices password
                     </Link>
                   </div>
-                </form>
+                )}
+
+                <div className="mt-8 border-t border-gray-100 pt-8">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Google Sign-In</p>
+                  {googleLinkError && (
+                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                      {googleLinkError}
+                    </div>
+                  )}
+                  {googleLinkMessage && (
+                    <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                      {googleLinkMessage}
+                    </div>
+                  )}
+
+                  {hasGoogleSignIn ? (
+                    <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-5">
+                      <p className="font-semibold text-green-800">Google Sign-In is linked to this account.</p>
+                      <p className="mt-2 text-sm leading-6 text-green-700">
+                        You can use Google or your Apex Spices password whenever both methods are available.
+                      </p>
+                    </div>
+                  ) : googleLinkChallenge ? (
+                    <form className="mt-5 space-y-4" onSubmit={submitGoogleLinkTwoFactor}>
+                      <p className="text-sm leading-6 text-gray-600">
+                        Enter the admin verification code sent to your account email to finish linking Google.
+                      </p>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={googleLinkCode}
+                        onChange={(event) => setGoogleLinkCode(event.target.value)}
+                        placeholder="6-digit verification code"
+                        className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
+                      />
+                      {googleLinkChallenge.developmentCode && (
+                        <p className="rounded-xl bg-brand-light px-4 py-3 text-xs font-semibold text-brand-dark">
+                          Development code: {googleLinkChallenge.developmentCode}
+                        </p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={googleLinkLoading}
+                        className="inline-flex items-center rounded-xl bg-brand-primary px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {googleLinkLoading && <Loader2 size={16} className="mr-2 animate-spin" />}
+                        Verify and Link Google
+                      </button>
+                    </form>
+                  ) : hasPassword ? (
+                    <div className="mt-5 space-y-4">
+                      <p className="text-sm leading-6 text-gray-600">
+                        Linking is explicit: confirm your current password, then choose the Google account you want to attach.
+                      </p>
+                      <PasswordField
+                        label="Current Apex Spices Password"
+                        name="googleLinkPassword"
+                        value={googleLinkPassword}
+                        onChange={(event) => {
+                          setGoogleLinkPassword(event.target.value);
+                          setGoogleLinkError('');
+                          setGoogleLinkMessage('');
+                        }}
+                      />
+                      {googleLinkPassword ? (
+                        <GoogleSignInButton
+                          text="continue_with"
+                          disabled={googleLinkLoading}
+                          onCredential={handleGoogleLinkCredential}
+                          onError={setGoogleLinkError}
+                        />
+                      ) : (
+                        <p className="text-xs font-medium text-gray-500">Enter your password to enable the Google linking button.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-gray-600">Google Sign-In is unavailable for this account state.</p>
+                  )}
+                </div>
               </div>
             )}
           </section>

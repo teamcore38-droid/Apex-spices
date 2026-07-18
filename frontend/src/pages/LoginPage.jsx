@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LockKeyhole, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 
 const REQUIRED_FIELD_MESSAGE = 'This field is required';
 const fieldErrorClass = 'mt-2 text-xs font-medium text-red-600';
@@ -9,6 +10,7 @@ const fieldErrorClass = 'mt-2 text-xs font-medium text-red-600';
 const getRequiredError = (value) => (value.trim() ? '' : REQUIRED_FIELD_MESSAGE);
 
 const LoginPage = () => {
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,12 +18,14 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState(
+    () => location.state?.twoFactorChallenge || null
+  );
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
-  const { login, verifyTwoFactorLogin, userInfo } = useAuth();
+  const { login, loginWithGoogle, verifyTwoFactorLogin, userInfo } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const redirect = new URLSearchParams(location.search).get('redirect') || '/';
 
@@ -94,6 +98,23 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleCredential = async (credential) => {
+    setGoogleLoading(true);
+    setError('');
+
+    try {
+      const result = await loginWithGoogle(credential, rememberMe);
+      if (result?.requiresTwoFactor) {
+        setTwoFactorChallenge(result);
+        setFieldErrors({});
+      }
+    } catch (googleError) {
+      setError(googleError);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#fcfaf7] py-20">
       <div className="container mx-auto flex justify-center px-4">
@@ -112,7 +133,25 @@ const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={submitHandler} className="mt-8 space-y-5" noValidate>
+          {!twoFactorChallenge && (
+            <>
+              <div className="mt-8">
+                <GoogleSignInButton
+                  text="signin_with"
+                  disabled={googleLoading || loading}
+                  onCredential={handleGoogleCredential}
+                  onError={setError}
+                />
+              </div>
+              <div className="my-6 flex items-center gap-4 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
+                <span className="h-px flex-1 bg-gray-200" />
+                <span>or use email</span>
+                <span className="h-px flex-1 bg-gray-200" />
+              </div>
+            </>
+          )}
+
+          <form onSubmit={submitHandler} className={`${twoFactorChallenge ? 'mt-8' : ''} space-y-5`} noValidate>
             {!twoFactorChallenge ? (
               <>
                 <div>

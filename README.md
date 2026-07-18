@@ -83,6 +83,7 @@ Required:
 - `JWT_SECRET`
 - `NODE_ENV`
 - `FRONTEND_URL`
+- `GOOGLE_CLIENT_ID` (Google Identity Services web client ID)
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_CURRENCY`
@@ -109,6 +110,7 @@ Optional:
 ### Frontend (`frontend/.env`)
 
 - `VITE_API_URL` (required when frontend/backend are on different domains)
+- `VITE_GOOGLE_CLIENT_ID` (Google Identity Services web client ID)
 - `VITE_STRIPE_PUBLIC_KEY`
 - `VITE_APP_ENV` (optional)
 

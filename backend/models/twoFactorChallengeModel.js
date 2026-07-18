@@ -13,8 +13,13 @@ const twoFactorChallengeSchema = mongoose.Schema(
     },
     purpose: {
       type: String,
-      enum: ['admin-login', 'enable-2fa', 'disable-2fa'],
+      enum: ['admin-login', 'enable-2fa', 'disable-2fa', 'google-link'],
       default: 'admin-login',
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+      select: false,
     },
     attempts: {
       type: Number,

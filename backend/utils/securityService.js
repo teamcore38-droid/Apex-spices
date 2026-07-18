@@ -180,12 +180,13 @@ const registerSuccessfulLogin = async (req, user) => {
 const adminRequiresTwoFactor = (user) =>
   Boolean(user?.isAdmin || user?.isStaff || user?.role === 'owner' || user?.role === 'admin');
 
-const createTwoFactorChallenge = async (req, user, purpose = 'admin-login') => {
+const createTwoFactorChallenge = async (req, user, purpose = 'admin-login', metadata = {}) => {
   const code = `${crypto.randomInt(100000, 999999)}`;
   const challenge = await TwoFactorChallenge.create({
     user: user._id,
     codeHash: hashValue(code),
     purpose,
+    metadata,
     expiresAt: new Date(Date.now() + TWO_FACTOR_MINUTES * 60 * 1000),
     ipAddress: getRequestIp(req),
     userAgent: getUserAgent(req),
@@ -207,7 +208,9 @@ const verifyTwoFactorChallenge = async (req, { challengeId = '', code = '', purp
     purpose,
     consumedAt: null,
     expiresAt: { $gt: new Date() },
-  }).populate('user');
+  })
+    .select('+metadata')
+    .populate('user');
 
   if (!challenge) {
     return { ok: false, message: 'Two-factor challenge is invalid or expired' };
@@ -228,7 +231,7 @@ const verifyTwoFactorChallenge = async (req, { challengeId = '', code = '', purp
   await challenge.save();
   await recordSecurityEvent(req, '2fa.verify.success', challenge.user, { challengeId }, 'info');
 
-  return { ok: true, user: challenge.user };
+  return { ok: true, user: challenge.user, metadata: challenge.metadata || {} };
 };
 
 export {

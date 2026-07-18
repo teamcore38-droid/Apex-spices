@@ -163,6 +163,29 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential, rememberMe = false) => {
+    try {
+      const { data } = await axios.post(
+        '/api/users/google',
+        { credential, rememberMe },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          _skipAuthRefresh: true,
+        }
+      );
+
+      if (data.requiresTwoFactor) {
+        return data;
+      }
+
+      setUserInfo(data);
+      persistActivity();
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  }, []);
+
   const verifyTwoFactorLogin = useCallback(async ({ challengeId, code, rememberMe = false }) => {
     try {
       const config = { headers: { 'Content-Type': 'application/json' } };
@@ -352,13 +375,14 @@ export const AuthProvider = ({ children }) => {
     () => ({
       userInfo,
       login,
+      loginWithGoogle,
       verifyTwoFactorLogin,
       register,
       refreshSession,
       syncUserInfo,
       logout,
     }),
-    [login, logout, refreshSession, register, syncUserInfo, userInfo, verifyTwoFactorLogin]
+    [login, loginWithGoogle, logout, refreshSession, register, syncUserInfo, userInfo, verifyTwoFactorLogin]
   );
 
   const warningLabel = sessionExpiresAt

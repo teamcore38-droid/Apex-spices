@@ -13,6 +13,10 @@ import {
 import { sendPasswordResetEmail } from '../utils/emailService.js';
 import { getSupportedCurrencyForCountry, resolveSupportedCurrency } from '../utils/currencyService.js';
 import {
+  GoogleAuthenticationError,
+  verifyGoogleCredential,
+} from '../utils/googleAuthService.js';
+import {
   adminRequiresTwoFactor,
   clearRefreshCookie,
   createTwoFactorChallenge,
@@ -33,6 +37,24 @@ const MIN_PASSWORD_LENGTH = 6;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const sanitizePhone = (value = '') => value.toString().trim();
+
+const getAuthMethods = (user) => [
+  ...(user?.password ? ['password'] : []),
+  ...(user?.googleLinkedAt ? ['google'] : []),
+];
+
+const serializeProfile = (user) => {
+  const profile = user.toObject();
+  delete profile.password;
+  delete profile.googleSubject;
+  delete profile.googleEmail;
+
+  return {
+    ...profile,
+    authMethods: getAuthMethods(user),
+    permissions: getPermissionsForUser(user),
+  };
+};
 
 const serializeUser = (user) => {
   const accessToken = issueAccessToken(user._id);
@@ -59,12 +81,72 @@ const serializeUser = (user) => {
     },
     createdAt: user.createdAt,
     addresses: user.addresses || [],
+    authMethods: getAuthMethods(user),
     ...accessToken,
   };
 };
 
 const findUserByEmail = async (email) =>
   User.findOne({ email: String(email || '').trim().toLowerCase() });
+
+const findUserByGoogleSubject = async (subject) =>
+  User.findOne({ googleSubject: String(subject || '').trim() }).select('+googleSubject +googleEmail');
+
+const sendGoogleAuthenticationError = (res, error) => {
+  if (error instanceof GoogleAuthenticationError) {
+    return res.status(error.statusCode).json({ message: error.message, code: error.code });
+  }
+
+  console.error(error);
+  return res.status(500).json({ message: 'Server Error' });
+};
+
+const sendLockedAccountResponse = async (req, res, user) => {
+  await recordSecurityEvent(req, 'login.blocked.locked', user, {}, 'critical');
+  return res.status(423).json({
+    message: 'Account is temporarily locked after repeated failed login attempts.',
+    accountLockedUntil: user.security.accountLockedUntil,
+  });
+};
+
+const createAdminLoginChallengeResponse = async (req, res, user) => {
+  const challenge = await createTwoFactorChallenge(req, user, 'admin-login');
+  return res.json({
+    requiresTwoFactor: true,
+    challengeId: challenge.challengeId,
+    expiresAt: challenge.expiresAt,
+    developmentCode: challenge.developmentCode,
+    message: 'Admin verification code required',
+  });
+};
+
+const attachGoogleIdentity = async (req, user, identity) => {
+  const linkedUser = await findUserByGoogleSubject(identity.subject);
+
+  if (linkedUser && linkedUser._id.toString() !== user._id.toString()) {
+    const error = new Error('This Google account is already linked to another Apex Spices account');
+    error.statusCode = 409;
+    error.code = 'GOOGLE_ACCOUNT_ALREADY_LINKED';
+    throw error;
+  }
+
+  user.googleSubject = identity.subject;
+  user.googleEmail = identity.email;
+  user.googleLinkedAt = new Date();
+  try {
+    await user.save();
+  } catch (error) {
+    if (error?.code === 11000) {
+      const conflict = new Error('This Google account is already linked to another Apex Spices account');
+      conflict.statusCode = 409;
+      conflict.code = 'GOOGLE_ACCOUNT_ALREADY_LINKED';
+      throw conflict;
+    }
+    throw error;
+  }
+  await recordSecurityEvent(req, 'account.google.linked', user, { provider: 'google' });
+  return user;
+};
 
 const issueLoginResponse = async (req, res, user, statusCode = 200, options = {}) => {
   const rememberMe = Boolean(options.rememberMe);
@@ -150,11 +232,7 @@ const authUser = async (req, res) => {
     const user = await User.findOne({ email: normalizedEmail });
 
     if (user && isAccountLocked(user)) {
-      await recordSecurityEvent(req, 'login.blocked.locked', user, {}, 'critical');
-      return res.status(423).json({
-        message: 'Account is temporarily locked after repeated failed login attempts.',
-        accountLockedUntil: user.security.accountLockedUntil,
-      });
+      return sendLockedAccountResponse(req, res, user);
     }
 
     if (!user || !(await user.matchPassword(password))) {
@@ -163,20 +241,196 @@ const authUser = async (req, res) => {
     }
 
     if (adminRequiresTwoFactor(user) && user.security?.adminTwoFactorEnabled !== false) {
-      const challenge = await createTwoFactorChallenge(req, user, 'admin-login');
-      return res.json({
-        requiresTwoFactor: true,
-        challengeId: challenge.challengeId,
-        expiresAt: challenge.expiresAt,
-        developmentCode: challenge.developmentCode,
-        message: 'Admin verification code required',
-      });
+      return createAdminLoginChallengeResponse(req, res, user);
     }
 
     return issueLoginResponse(req, res, user, 200, { rememberMe });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// @desc    Register or sign in with a verified Google identity
+// @route   POST /api/users/google
+// @access  Public
+const authGoogleUser = async (req, res) => {
+  const { credential = '', rememberMe = false } = req.body;
+
+  try {
+    const identity = await verifyGoogleCredential(credential);
+    let user = await findUserByGoogleSubject(identity.subject);
+    let statusCode = 200;
+
+    if (!user) {
+      const emailAccount = await findUserByEmail(identity.email);
+
+      if (emailAccount) {
+        await recordSecurityEvent(
+          req,
+          'login.google.link-required',
+          emailAccount,
+          { provider: 'google' },
+          'warning'
+        );
+        return res.status(409).json({
+          code: 'ACCOUNT_LINK_REQUIRED',
+          message: 'An Apex Spices account already uses this email. Sign in with your password, then link Google from your profile.',
+        });
+      }
+
+      try {
+        user = await User.create({
+          name: identity.name,
+          email: identity.email,
+          googleSubject: identity.subject,
+          googleEmail: identity.email,
+          googleLinkedAt: new Date(),
+        });
+        statusCode = 201;
+        await recordSecurityEvent(req, 'account.registered.google', user, { provider: 'google' });
+      } catch (error) {
+        if (error?.code !== 11000) {
+          throw error;
+        }
+
+        user = await findUserByGoogleSubject(identity.subject);
+        if (!user) {
+          return res.status(409).json({
+            code: 'ACCOUNT_LINK_REQUIRED',
+            message: 'An Apex Spices account already uses this email. Sign in with your password, then link Google from your profile.',
+          });
+        }
+      }
+    } else if (user.googleEmail !== identity.email) {
+      user.googleEmail = identity.email;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    if (isAccountLocked(user)) {
+      return sendLockedAccountResponse(req, res, user);
+    }
+
+    if (adminRequiresTwoFactor(user) && user.security?.adminTwoFactorEnabled !== false) {
+      return createAdminLoginChallengeResponse(req, res, user);
+    }
+
+    await recordSecurityEvent(req, 'login.google.verified', user, { provider: 'google' });
+    return issueLoginResponse(req, res, user, statusCode, { rememberMe });
+  } catch (error) {
+    return sendGoogleAuthenticationError(res, error);
+  }
+};
+
+// @desc    Explicitly link Google to the authenticated account
+// @route   POST /api/users/google/link
+// @access  Private
+const linkGoogleAccount = async (req, res) => {
+  const { credential = '', currentPassword = '' } = req.body;
+
+  try {
+    const user = await User.findById(req.user._id).select('+googleSubject +googleEmail');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.googleLinkedAt || user.googleSubject) {
+      return res.status(409).json({
+        code: 'GOOGLE_ACCOUNT_ALREADY_LINKED',
+        message: 'A Google account is already linked to this Apex Spices account.',
+      });
+    }
+
+    if (!(await user.matchPassword(currentPassword))) {
+      await recordSecurityEvent(req, 'account.google.link.failed', user, { reason: 'invalid-password' }, 'warning');
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const identity = await verifyGoogleCredential(credential);
+    const linkedUser = await findUserByGoogleSubject(identity.subject);
+
+    if (linkedUser && linkedUser._id.toString() !== user._id.toString()) {
+      return res.status(409).json({
+        code: 'GOOGLE_ACCOUNT_ALREADY_LINKED',
+        message: 'This Google account is already linked to another Apex Spices account.',
+      });
+    }
+
+    if (adminRequiresTwoFactor(user) && user.security?.adminTwoFactorEnabled !== false) {
+      const challenge = await createTwoFactorChallenge(req, user, 'google-link', {
+        googleSubject: identity.subject,
+        googleEmail: identity.email,
+      });
+      return res.status(202).json({
+        requiresTwoFactor: true,
+        challengeId: challenge.challengeId,
+        expiresAt: challenge.expiresAt,
+        developmentCode: challenge.developmentCode,
+        message: 'Admin verification code required before Google can be linked.',
+      });
+    }
+
+    await attachGoogleIdentity(req, user, identity);
+    return res.json({
+      message: 'Google account linked successfully.',
+      authMethods: getAuthMethods(user),
+    });
+  } catch (error) {
+    if (error?.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message, code: error.code });
+    }
+    return sendGoogleAuthenticationError(res, error);
+  }
+};
+
+// @desc    Complete privileged Google linking after two-factor verification
+// @route   POST /api/users/google/link/2fa
+// @access  Private
+const verifyGoogleLinkTwoFactor = async (req, res) => {
+  const { challengeId = '', code = '' } = req.body;
+
+  try {
+    const result = await verifyTwoFactorChallenge(req, {
+      challengeId,
+      code,
+      purpose: 'google-link',
+    });
+
+    if (!result.ok) {
+      return res.status(400).json({ message: result.message });
+    }
+
+    if (result.user?._id?.toString() !== req.user._id.toString()) {
+      await recordSecurityEvent(req, 'account.google.link.failed', req.user, { reason: 'challenge-user-mismatch' }, 'critical');
+      return res.status(403).json({ message: 'This verification challenge does not belong to your account.' });
+    }
+
+    const identity = {
+      subject: String(result.metadata?.googleSubject || '').trim(),
+      email: String(result.metadata?.googleEmail || '').trim().toLowerCase(),
+    };
+
+    if (!identity.subject || !identity.email) {
+      return res.status(400).json({ message: 'Google linking challenge is invalid or expired.' });
+    }
+
+    const user = await User.findById(req.user._id).select('+googleSubject +googleEmail');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await attachGoogleIdentity(req, user, identity);
+    return res.json({
+      message: 'Google account linked successfully.',
+      authMethods: getAuthMethods(user),
+    });
+  } catch (error) {
+    if (error?.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message, code: error.code });
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Server Error' });
   }
 };
 
@@ -306,16 +560,13 @@ const updateAdminTwoFactor = async (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({
-      ...user.toObject(),
-      permissions: getPermissionsForUser(user),
-    });
+    res.json(serializeProfile(user));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
@@ -651,6 +902,9 @@ const resetPassword = async (req, res) => {
 
 export {
   authUser,
+  authGoogleUser,
+  linkGoogleAccount,
+  verifyGoogleLinkTwoFactor,
   verifyAdminTwoFactorLogin,
   refreshAccessToken,
   logoutUser,
