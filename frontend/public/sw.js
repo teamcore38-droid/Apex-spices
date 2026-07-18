@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-link-v3';
+const CACHE_NAME = 'apex-link-v4';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
@@ -68,23 +68,16 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchAndCache = () => fetch(request).then((response) => {
+    fetch(request, { cache: 'no-store' })
+      .then((response) => {
         if (isCacheableStaticResponse(response)) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
 
         return response;
-      });
-
-      if (cached) {
-        event.waitUntil(fetchAndCache().catch(() => undefined));
-        return cached;
-      }
-
-      return fetchAndCache();
-    })
+      })
+      .catch(() => caches.match(request))
   );
 });
 
