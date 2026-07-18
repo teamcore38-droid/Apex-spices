@@ -54,29 +54,24 @@ const Product = ({ product, compactOnMobile = false }) => {
         </div>
       </Link>
 
-      <div className={`flex flex-1 flex-col ${compactOnMobile ? 'p-3 sm:p-6' : 'p-6'}`}>
-        <div className={`flex items-center justify-between ${compactOnMobile ? 'mb-2 flex-wrap gap-1.5 sm:mb-3 sm:gap-3' : 'mb-3 gap-3'}`}>
-          <span className={`font-bold uppercase text-[#a07c16] ${compactOnMobile ? 'min-w-0 truncate text-[9px] tracking-[0.14em] sm:text-[11px] sm:tracking-[0.28em]' : 'text-[11px] tracking-[0.28em]'}`}>
-            {product.category}
-          </span>
-          {product.weight && (
-            <span className={`shrink-0 rounded-full bg-[#eef2f8] font-semibold text-[#2c4a73] ${compactOnMobile ? 'px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-[11px]' : 'px-3 py-1 text-[11px]'}`}>
-              {product.weight}
-            </span>
-          )}
-        </div>
+      <div className={`flex flex-1 flex-col ${compactOnMobile ? 'p-3 sm:p-5' : 'p-5'}`}>
+        <span className={`font-bold uppercase text-[#a07c16] ${compactOnMobile ? 'truncate text-[9px] tracking-[0.14em] sm:text-[11px] sm:tracking-[0.28em]' : 'text-[11px] tracking-[0.28em]'}`}>
+          {product.category}
+        </span>
 
-        <Link to={`/product/${product._id}`} className="block">
-          <h3 className={`font-serif font-bold text-[#081729] transition-colors duration-200 group-hover:text-[#a07c16] ${compactOnMobile ? 'line-clamp-2 text-base leading-5 sm:line-clamp-none sm:text-2xl sm:leading-normal' : 'text-2xl'}`}>
+        {product.weight && (
+          <span className={`mt-2 inline-flex w-fit rounded-full bg-[#eef2f8] font-semibold text-[#2c4a73] ${compactOnMobile ? 'px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-[11px]' : 'px-3 py-1 text-[11px]'}`}>
+            {product.weight}
+          </span>
+        )}
+
+        <Link to={`/product/${product._id}`} className={compactOnMobile ? 'mt-2 block sm:mt-3' : 'mt-3 block'}>
+          <h3 className={`line-clamp-2 font-serif font-bold text-[#081729] transition-colors duration-200 group-hover:text-[#a07c16] ${compactOnMobile ? 'text-base leading-5 sm:text-2xl sm:leading-tight' : 'text-2xl leading-tight'}`}>
             {product.name}
           </h3>
         </Link>
 
-        <p className={`line-clamp-2 text-gray-600 ${compactOnMobile ? 'mt-2 text-xs leading-5 sm:mt-3 sm:text-sm sm:leading-7' : 'mt-3 text-sm leading-7'}`}>
-          {product.shortDescription || product.description}
-        </p>
-
-        <div className={`${compactOnMobile ? 'mt-3 sm:mt-4' : 'mt-4'} flex items-center justify-between`}>
+        <div className={`${compactOnMobile ? 'mt-2 sm:mt-3' : 'mt-3'} flex items-center justify-between`}>
           <div className={`flex items-center text-[#c9a227] ${compactOnMobile ? 'min-w-0 flex-wrap' : ''}`}>
             {[...Array(5)].map((_, index) => (
               <Star
@@ -94,41 +89,41 @@ const Product = ({ product, compactOnMobile = false }) => {
           </div>
         </div>
 
-        <div className={`flex flex-col border-t border-[#e6ebf4] ${compactOnMobile ? 'mt-4 gap-3 pt-4 sm:mt-6 sm:gap-4 sm:pt-5' : 'mt-6 gap-4 pt-5'}`}>
+        <div className={`mt-auto flex flex-col border-t border-[#e6ebf4] ${compactOnMobile ? 'gap-3 pt-3 sm:gap-4 sm:pt-4' : 'gap-4 pt-4'}`}>
           <div>
             {product.compareAtPrice > product.price && (
               <p className={`${compactOnMobile ? 'text-xs sm:text-sm' : 'text-sm'} text-gray-400 line-through`}>
                 {formatPrice(product.compareAtPrice)}
               </p>
             )}
-            <p className={`break-words font-serif font-bold text-[#081729] ${compactOnMobile ? 'text-xl leading-tight sm:text-3xl sm:leading-normal' : 'text-3xl'}`}>
+            <p className={`break-words font-serif font-bold text-[#081729] ${compactOnMobile ? 'text-xl leading-tight sm:text-3xl sm:leading-tight' : 'text-3xl leading-tight'}`}>
               {formatPrice(product.price)}
             </p>
           </div>
 
-          <div className={`flex w-full items-stretch gap-2 ${compactOnMobile ? 'flex-col sm:flex-row sm:items-center' : 'items-center'}`}>
+          <div className="flex w-full items-center gap-2">
             <Link
               to={`/product/${product._id}`}
-              className={`inline-flex flex-1 items-center justify-center rounded-full border border-[#ccd8e8] font-bold uppercase text-[#2c4a73] transition-colors duration-200 hover:border-[#2c4a73] hover:bg-[#eef2f8] ${compactOnMobile ? 'px-3 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
+              className={`inline-flex flex-1 items-center justify-center rounded-full border border-[#ccd8e8] font-bold uppercase text-[#2c4a73] transition-colors duration-200 hover:border-[#2c4a73] hover:bg-[#eef2f8] ${compactOnMobile ? 'px-2 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
             >
-              View <ArrowRight size={13} className="ml-2" />
+              View <ArrowRight size={13} className="ml-1.5 sm:ml-2" />
             </Link>
 
             {product.countInStock === 0 ? (
               <button
                 type="button"
                 disabled
-                className={`inline-flex flex-1 items-center justify-center rounded-full bg-gray-200 font-bold uppercase text-gray-500 ${compactOnMobile ? 'px-3 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
+                className={`inline-flex flex-1 items-center justify-center rounded-full bg-gray-200 font-bold uppercase text-gray-500 ${compactOnMobile ? 'px-2 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
               >
-                <Lock size={13} className="mr-2" /> Sold Out
+                <Lock size={13} className="mr-1.5 sm:mr-2" /> Sold Out
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className={`inline-flex flex-1 items-center justify-center rounded-full bg-[#22406b] font-bold uppercase text-white transition-colors duration-200 hover:bg-[#081729] ${compactOnMobile ? 'px-3 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
+                className={`inline-flex flex-1 items-center justify-center rounded-full bg-[#22406b] font-bold uppercase text-white transition-colors duration-200 hover:bg-[#081729] ${compactOnMobile ? 'px-2 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
               >
-                <ShoppingCart size={13} className="mr-2" /> Add
+                <ShoppingCart size={13} className="mr-1.5 sm:mr-2" /> Add
               </button>
             )}
           </div>

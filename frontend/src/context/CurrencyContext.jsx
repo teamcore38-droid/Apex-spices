@@ -212,10 +212,11 @@ export const CurrencyProvider = ({ children }) => {
     const amount = Number(value || 0);
 
     try {
-      return `${new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: normalizedCurrency,
-      }).format(amount)} ${normalizedCurrency}`;
+      const formattedAmount = new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+      return `${normalizedCurrency} ${formattedAmount}`;
     } catch {
       return `${normalizedCurrency} ${amount.toFixed(2)}`;
     }
