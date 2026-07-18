@@ -68,11 +68,26 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
+const handleImageUpload = (req, res, next) => {
+  upload.single('image')(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      res.status(413).json({ message: 'Image size should be less than 5MB' });
+      return;
+    }
+
+    res.status(400).json({ message: error.message || 'Invalid image upload request' });
+  });
+};
 
 router.route('/upload').post(
   protect,
   requirePermission(PERMISSIONS.MEDIA_MANAGE),
-  upload.single('image'),
+  handleImageUpload,
   uploadImage
 );
 

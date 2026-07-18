@@ -20,6 +20,21 @@ import { recordAuditLog } from '../utils/auditService.js';
 
 const STAFF_SELECT = 'name email phone isAdmin isStaff role staffPermissions staffStatus isVendor vendorStatus createdAt';
 
+const CLOUDINARY_REQUIRED_ENV = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+
+const isCloudinaryConfigured = () => CLOUDINARY_REQUIRED_ENV.every((key) => Boolean(process.env[key]));
+
+const sanitizeCloudinaryFolder = (folder = 'general') => {
+  const cleanFolder = String(folder || 'general')
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/[^a-zA-Z0-9/_-]/g, '-')
+    .replace(/\/+/g, '/')
+    .replace(/^\/|\/$/g, '');
+
+  return cleanFolder || 'general';
+};
+
 const parseBoolean = (value, fallback = true) => {
   if (typeof value === 'boolean') {
     return value;
@@ -681,24 +696,54 @@ const uploadImage = async (req, res) => {
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  const uploadStream = cloudinary.uploader.upload_stream(
-    { folder: 'apex-spices' },
-    (error, result) => {
-      if (error) {
-        console.error('Cloudinary upload error:', error);
-        return res.status(500).json({ message: 'Cloudinary upload failed' });
-      }
-      res.status(200).json({
-        url: result.secure_url,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-        sizeBytes: result.bytes,
-      });
-    }
-  );
+  if (!isCloudinaryConfigured()) {
+    return res.status(503).json({
+      message:
+        'Image upload storage is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET on the backend.',
+    });
+  }
 
-  uploadStream.end(req.file.buffer);
+  const folder = sanitizeCloudinaryFolder(`apex-spices/${req.body.folder || 'general'}`);
+
+  try {
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          resource_type: 'image',
+        },
+        (error, uploadResult) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve(uploadResult);
+        }
+      );
+
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.status(200).json({
+      url: result.secure_url,
+      publicId: result.public_id,
+      width: result.width,
+      height: result.height,
+      sizeBytes: result.bytes,
+    });
+  } catch (error) {
+    console.error('Cloudinary upload error:', {
+      message: error.message,
+      httpCode: error.http_code,
+      name: error.name,
+    });
+
+    const statusCode = error.http_code && error.http_code >= 400 && error.http_code < 500 ? 400 : 502;
+    res.status(statusCode).json({
+      message: 'Cloudinary upload failed. Please verify the image file and Cloudinary backend settings.',
+    });
+  }
 };
 
 export {
