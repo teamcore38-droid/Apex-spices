@@ -116,7 +116,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="bg-[#fcfaf7] py-20">
+    <div className="bg-[#fcfaf7] pb-10 pt-6 sm:pb-12 sm:pt-8 lg:pb-14 lg:pt-10">
       <div className="container mx-auto flex justify-center px-4">
         <div className="w-full max-w-md rounded-[32px] bg-white p-8 shadow-[0_18px_40px_rgba(11,31,58,0.08)] border border-gray-100">
           <div className="text-center">
