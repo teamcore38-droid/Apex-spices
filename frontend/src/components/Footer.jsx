@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Globe } from 'lucide-react';
 import axios from 'axios';
@@ -7,6 +7,29 @@ const Footer = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCategories = async () => {
+      try {
+        const { data } = await axios.get('/api/categories');
+
+        if (isMounted) {
+          setCategories(Array.isArray(data) ? data.slice(0, 4) : []);
+        }
+      } catch (error) {
+        console.error('[footer] Unable to load categories', error);
+      }
+    };
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const subscribe = async (event) => {
     event.preventDefault();
@@ -87,16 +110,13 @@ const Footer = () => {
                 All Categories
               </Link>
             </li>
-            <li>
-              <Link to="/category/whole-spices" className="transition-colors hover:text-brand-accent">
-                Whole Spices
-              </Link>
-            </li>
-            <li>
-              <Link to="/category/dry-meat" className="transition-colors hover:text-brand-accent">
-                Dried Meat
-              </Link>
-            </li>
+            {categories.map((category) => (
+              <li key={category._id || category.slug}>
+                <Link to={`/category/${category.slug}`} className="transition-colors hover:text-brand-accent">
+                  {category.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 

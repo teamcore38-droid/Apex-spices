@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import products from './data/products.js';
-import categories from './data/categories.js';
 import users from './data/users.js';
 import Product from './models/productModel.js';
 import User from './models/userModel.js';
@@ -16,11 +15,10 @@ await connectDB({ strict: true });
 
 const importData = async () => {
   try {
-    console.warn('[seeder] WARNING: data:import is destructive and will delete existing users/products/categories/orders.');
+    console.warn('[seeder] WARNING: data:import is destructive and will delete existing users/products/orders. Categories are preserved.');
     await Order.deleteMany();
     await Review.deleteMany();
     await Product.deleteMany();
-    await Category.deleteMany();
     await User.deleteMany();
 
     const createdUsers = await User.insertMany(users);
@@ -31,8 +29,7 @@ const importData = async () => {
     });
 
     await Product.insertMany(sampleProducts);
-    await Category.insertMany(categories);
-    console.log('Data Imported!');
+    console.log('Data imported. Existing categories were preserved.');
     process.exit();
   } catch (error) {
     console.error(`Error: ${error.message}`);

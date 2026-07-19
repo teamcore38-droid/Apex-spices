@@ -55,9 +55,8 @@ npm run dev
 
 - `npm run dev` - start API with nodemon
 - `npm start` - production API start
-- `npm run data:import` - destructive full seed import
+- `npm run data:import` - destructive user/product/order seed import; preserves categories
 - `npm run data:destroy` - destructive wipe
-- `npm run data:seed-categories` - safe category seed (non-destructive for existing slugs)
 - `npm test` - backend automated tests
 - `npm run test:e2e` - checkout E2E smoke test using `E2E_BASE_URL`
 - `npm run openapi:check` - validate OpenAPI documentation

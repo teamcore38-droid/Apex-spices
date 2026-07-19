@@ -17,8 +17,7 @@
     "marketing:send-abandoned": "node scripts/sendAbandonedCartEmails.js",
     "reviews:sync-integrity": "node scripts/syncReviewIntegrity.js",
     "data:import": "node seeder.js",
-    "data:destroy": "node seeder.js -d",
-    "data:seed-categories": "node seedCategories.js"
+    "data:destroy": "node seeder.js -d"
   },
   "keywords": [],
   "author": "",

@@ -6,7 +6,6 @@ import RecentlyViewed from '../models/recentlyViewedModel.js';
 import SupportTicket from '../models/supportTicketModel.js';
 import User from '../models/userModel.js';
 import { LoyaltyAccount, LoyaltyTransaction } from '../models/loyaltyModel.js';
-import fallbackCategories from '../data/categories.js';
 import fallbackProducts from '../data/products.js';
 import logger from '../utils/logger.js';
 import { activeProductFilter, getPersonalizedRecommendations } from '../utils/recommendationService.js';
@@ -21,11 +20,6 @@ const getSessionId = (req) =>
 const normalizeFallbackProduct = (product) => ({
   ...product,
   _id: product._id || product.slug,
-});
-
-const normalizeFallbackCategory = (category) => ({
-  ...category,
-  _id: category._id || category.slug,
 });
 
 const hydrateProductReviewStats = async (products = []) => {
@@ -124,11 +118,7 @@ const getFallbackBestSellers = () =>
     .slice(0, 4)
     .map(normalizeFallbackProduct);
 
-const getFallbackCategories = () =>
-  fallbackCategories
-    .filter((category) => category.isActive !== false)
-    .slice(0, 3)
-    .map(normalizeFallbackCategory);
+const getEmptyCategories = () => [];
 
 const resolveHomeSection = async (req, section, queryFn, fallbackFn) => {
   if (mongoose.connection.readyState !== 1) {
@@ -203,7 +193,7 @@ const getHomePageData = async (req, res) => {
       req,
       'categories',
       () => Category.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).limit(3).lean(),
-      getFallbackCategories
+      getEmptyCategories
     ),
   ]);
 

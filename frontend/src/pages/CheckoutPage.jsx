@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   CheckCircle2,
+  ChevronDown,
   CreditCard,
   Home,
   Loader2,
@@ -185,6 +186,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [shippingRateId, setShippingRateId] = useState('');
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [isPaymentInfoExpanded, setIsPaymentInfoExpanded] = useState(false);
   const guestCheckoutEnabled = true;
 
   useEffect(() => {
@@ -1179,21 +1181,41 @@ const CheckoutInner = ({ payhereEnabled }) => {
           </form>
 
           <section className="order-3 overflow-hidden rounded-[28px] border border-brand-accent/20 bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)] md:order-2 lg:col-start-1 lg:row-start-2">
-              <div className="bg-gradient-to-br from-[#2a1007] via-[#4a2518] to-[#8f6b2b] p-6 text-white sm:p-8">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-accent/35 bg-white/10 text-brand-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
-                    <CreditCard size={20} />
+              <button
+                type="button"
+                aria-expanded={isPaymentInfoExpanded}
+                aria-controls="payhere-payment-information"
+                onClick={() => setIsPaymentInfoExpanded((isExpanded) => !isExpanded)}
+                className="flex w-full items-center gap-3 bg-gradient-to-br from-[#2a1007] via-[#4a2518] to-[#8f6b2b] px-4 py-4 text-left text-white transition-[filter] duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-brand-accent/70 sm:px-6 sm:py-5"
+              >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-brand-accent/35 bg-white/10 text-brand-accent shadow-[0_10px_30px_rgba(0,0,0,0.22)] sm:h-11 sm:w-11">
+                    <CreditCard size={19} />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-accent">Payment Method</p>
-                    <h2 className="font-serif text-2xl font-bold">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-accent sm:text-xs">Payment Method</p>
+                    <h2 className="font-serif text-lg font-bold leading-tight sm:text-xl">
                       {payhereEnabled ? 'Secure PayHere Checkout' : 'Development payment mode'}
                     </h2>
                   </div>
-                </div>
-              </div>
+                  <ChevronDown
+                    size={22}
+                    aria-hidden="true"
+                    className={`shrink-0 text-brand-accent transition-transform duration-300 ease-in-out ${
+                      isPaymentInfoExpanded ? 'rotate-180' : 'rotate-0'
+                    }`}
+                  />
+              </button>
 
-              <div className="p-6 sm:p-8">
+              <div
+                id="payhere-payment-information"
+                aria-hidden={!isPaymentInfoExpanded}
+                inert={!isPaymentInfoExpanded}
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none ${
+                  isPaymentInfoExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="p-6 sm:p-8">
                 {payhereEnabled ? (
                   <div className="rounded-[24px] border border-brand-accent/20 bg-[#fffaf2] p-5 shadow-sm">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -1242,6 +1264,8 @@ const CheckoutInner = ({ payhereEnabled }) => {
                     </label>
                   </div>
                 )}
+                  </div>
+                </div>
               </div>
           </section>
 

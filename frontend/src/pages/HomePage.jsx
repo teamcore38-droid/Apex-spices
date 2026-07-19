@@ -7,33 +7,6 @@ import { Truck, ShieldCheck, Globe, Award, ChevronRight, ChevronLeft } from 'luc
 import { getCategoryImageCandidates } from '../utils/categoryUi';
 import { getCloudinarySrcSet, getOptimizedImageUrl } from '../utils/imageUi';
 
-const fallbackCategories = [
-  {
-    _id: 'fallback-whole-spices',
-    slug: 'whole-spices',
-    name: 'Whole Spices',
-    description: 'Premium hand-picked whole spices sourced from the finest global estates.',
-    image:
-      'https://images.pexels.com/photos/2802527/pexels-photo-2802527.jpeg?auto=compress&cs=tinysrgb&w=1400',
-  },
-  {
-    _id: 'fallback-ground-spices',
-    slug: 'ground-spices',
-    name: 'Ground Spices',
-    description: 'Finely ground, aromatic spices processed under strict hygienic standards.',
-    image:
-      'https://images.pexels.com/photos/6784136/pexels-photo-6784136.jpeg?auto=compress&cs=tinysrgb&w=1400',
-  },
-  {
-    _id: 'fallback-spicy-blends',
-    slug: 'spicy-blends',
-    name: 'Spicy Blends',
-    description: 'Artisanal spice blends crafted to elevate your traditional and modern recipes.',
-    image:
-      'https://images.pexels.com/photos/6157053/pexels-photo-6157053.jpeg?auto=compress&cs=tinysrgb&w=1400',
-  },
-];
-
 const HOME_DATA_CACHE_MS = 60 * 1000;
 let cachedHomeData = null;
 let homeDataRequest = null;
@@ -173,11 +146,7 @@ const HomePage = () => {
           ? homeData.featuredProducts
           : [];
         const nextBestSellers = Array.isArray(homeData.bestSellers) ? homeData.bestSellers : [];
-        let nextCategories = Array.isArray(homeData.categories) ? homeData.categories : [];
-
-        if (nextCategories.length === 0) {
-          nextCategories = fallbackCategories;
-        }
+        const nextCategories = Array.isArray(homeData.categories) ? homeData.categories : [];
 
         setFeaturedProducts(nextFeaturedProducts);
         setBestSellers(nextBestSellers);
@@ -192,7 +161,7 @@ const HomePage = () => {
 
         setFeaturedProducts([]);
         setBestSellers([]);
-        setCategories(fallbackCategories);
+        setCategories([]);
         setError(null);
         setLoading(false);
       }

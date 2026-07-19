@@ -170,16 +170,14 @@ Development fallback:
 Scripts:
 
 - `npm run data:import`
-  - destructive: deletes users/products/categories/orders first
+  - destructive: deletes users/products/orders first; existing categories are preserved
 - `npm run data:destroy`
   - destructive wipe
-- `npm run data:seed-categories`
-  - safer category-only seed (non-destructive to existing slugs)
 
 Staging recommendation:
 
 1. Use `data:import` only on fresh staging databases.
-2. Use `data:seed-categories` for incremental category bootstrap.
+2. Create and maintain categories through the admin dashboard or category API.
 
 Production recommendation:
 
