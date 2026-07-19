@@ -64,7 +64,7 @@ const ContactPage = () => {
       {
         icon: Mail,
         title: 'Email Support',
-        body: 'apexlinkimportandexport@gmail.com',
+        body: 'info@apexspices.lk',
       },
     ],
     []
