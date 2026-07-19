@@ -64,6 +64,17 @@ const resolveBackendBaseUrl = (req = null) => {
     return explicitUrl;
   }
 
+  const vercelUrl = normalizeBaseUrl(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || ''
+  );
+  if (vercelUrl) {
+    return /^https?:\/\//i.test(vercelUrl) ? vercelUrl : `https://${vercelUrl}`;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    return '';
+  }
+
   if (req) {
     const forwardedProtocol = String(req.headers?.['x-forwarded-proto'] || '')
       .split(',')[0]
@@ -77,17 +88,26 @@ const resolveBackendBaseUrl = (req = null) => {
     }
   }
 
-  const vercelUrl = normalizeBaseUrl(
-    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || ''
-  );
-  if (vercelUrl) {
-    return /^https?:\/\//i.test(vercelUrl) ? vercelUrl : `https://${vercelUrl}`;
-  }
-
   return normalizeBaseUrl(process.env.PAYHERE_NOTIFY_URL || '').replace(
     /\/api\/payments\/payhere\/notify$/i,
     ''
   );
+};
+
+const isValidQstashWorkerUrl = (value) => {
+  try {
+    const url = new URL(String(value || '').trim());
+    return (
+      url.protocol === 'https:' &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash &&
+      url.pathname.replace(/\/+$/, '') === WORKER_PATH
+    );
+  } catch {
+    return false;
+  }
 };
 
 const resolveWorkerUrl = (req = null) => {
@@ -203,6 +223,11 @@ const buildLegacyPublishFailureFilter = () => ({
   lastError: LEGACY_UNSAFE_DEDUPLICATION_ERROR,
 });
 
+const getReconciliationAction = (record = {}) =>
+  record.status === 'failed' && record.failureStage === 'process'
+    ? 'process'
+    : 'publish';
+
 const sanitizePublishLogError = (error) =>
   serializeError(error, 'QStash publish failed')
     .replace(/Bearer\s+[^\s]+/gi, 'Bearer [redacted]')
@@ -292,7 +317,7 @@ const publishOutboxRecord = async (outboxId) => {
   }
 
   try {
-    if (!record.workerUrl || !/^https:\/\//i.test(record.workerUrl)) {
+    if (!isValidQstashWorkerUrl(record.workerUrl)) {
       throw new Error('A public HTTPS QStash worker URL is required');
     }
 
@@ -678,8 +703,8 @@ const reconcileNotificationOutbox = async ({ limit = MAX_RECONCILE_BATCH } = {})
       {
         $set: {
           status: 'failed',
-          failureStage: 'publish',
-          lastError: 'Republishing a stale QStash delivery',
+          failureStage: 'process',
+          lastError: 'Processing a stale QStash delivery through reconciliation',
           nextAttemptAt: now,
         },
       }
@@ -687,24 +712,42 @@ const reconcileNotificationOutbox = async ({ limit = MAX_RECONCILE_BATCH } = {})
   ]);
 
   const records = await NotificationOutbox.find({
-    status: { $in: ['pending', 'failed'] },
+    $or: [
+      { status: 'pending' },
+      { status: 'failed', failureStage: 'publish' },
+      { status: 'failed', failureStage: 'process' },
+    ],
     nextAttemptAt: { $lte: now },
   })
     .sort({ createdAt: 1 })
     .limit(batchSize)
-    .select('_id eventKey');
+    .select('_id eventKey status failureStage');
 
   const settled = await Promise.allSettled(
-    records.map((record) => publishOutboxRecord(record._id))
+    records.map((record) =>
+      getReconciliationAction(record) === 'process'
+        ? processOutboxRecord(record._id)
+        : publishOutboxRecord(record._id)
+    )
   );
+
+  const actions = records.map(getReconciliationAction);
 
   return {
     examined: records.length,
-    published: settled.filter((result) => result.status === 'fulfilled' && !result.value.skipped).length,
+    published: settled.filter(
+      (result, index) =>
+        actions[index] === 'publish' && result.status === 'fulfilled' && !result.value.skipped
+    ).length,
+    processed: settled.filter(
+      (result, index) =>
+        actions[index] === 'process' && result.status === 'fulfilled' && result.value.completed
+    ).length,
     failed: settled.filter((result) => result.status === 'rejected').length,
     results: settled.map((result, index) => ({
       outboxId: String(records[index]._id),
       eventKey: records[index].eventKey,
+      action: actions[index],
       status: result.status,
       error: result.status === 'rejected' ? serializeError(result.reason) : '',
     })),
@@ -721,8 +764,10 @@ export {
   createOrderOutboxEvent,
   endpointHash,
   getAuthorizedOrderAdmins,
+  getReconciliationAction,
   getQstashConfiguration,
   isQstashConfigured,
+  isValidQstashWorkerUrl,
   processOutboxRecord,
   publishOutboxToQstash,
   publishOutboxInBackground,

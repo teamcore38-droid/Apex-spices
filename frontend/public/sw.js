@@ -20,6 +20,19 @@ const isStaticAssetRequest = (request, url) =>
   (url.pathname.startsWith('/assets/') ||
     ['font', 'image', 'manifest', 'script', 'style'].includes(request.destination));
 
+const getSafeAdminNotificationTarget = (value) => {
+  try {
+    const target = new URL(value || '/admin', self.location.origin);
+    if (target.origin === self.location.origin && /^\/admin(?:\/|$)/.test(target.pathname)) {
+      return target.href;
+    }
+  } catch {
+    // Invalid push URLs fall back to the protected admin dashboard.
+  }
+
+  return new URL('/admin', self.location.origin).href;
+};
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
@@ -112,8 +125,6 @@ self.addEventListener('push', (event) => {
       windowClients.forEach((client) => {
         client.postMessage({
           type: 'ADMIN_NOTIFICATIONS_UPDATED',
-          eventKey: data.eventKey || '',
-          orderId: data.orderId || '',
         });
       });
     });
@@ -128,7 +139,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
+  const targetUrl = getSafeAdminNotificationTarget(event.notification.data?.url);
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
@@ -136,6 +147,21 @@ self.addEventListener('notificationclick', (event) => {
 
       if (matchingClient) {
         return matchingClient.focus();
+      }
+
+      const existingAppClient = clients.find((client) => {
+        try {
+          return new URL(client.url).origin === self.location.origin;
+        } catch {
+          return false;
+        }
+      });
+
+      if (existingAppClient && 'navigate' in existingAppClient) {
+        return existingAppClient
+          .navigate(targetUrl)
+          .then((navigatedClient) => (navigatedClient || existingAppClient).focus())
+          .catch(() => self.clients.openWindow(targetUrl));
       }
 
       return self.clients.openWindow(targetUrl);

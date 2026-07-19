@@ -3,6 +3,7 @@ import {
   processOutboxRecord,
   reconcileNotificationOutbox,
 } from '../utils/notificationOutboxService.js';
+import { logNotificationError } from '../utils/notificationLogging.js';
 
 const processAdminNotificationOutbox = async (req, res) => {
   const outboxId = String(req.body?.outboxId || '').trim();
@@ -14,7 +15,12 @@ const processAdminNotificationOutbox = async (req, res) => {
     const result = await processOutboxRecord(outboxId);
     return res.status(result.processing ? 202 : 200).json(result);
   } catch (error) {
-    console.error(`[notificationWorker:process:${outboxId}]`, error);
+    logNotificationError({
+      scope: 'notification-worker',
+      action: 'process',
+      outboxId,
+      error,
+    });
     if (error.code === 'OUTBOX_NOT_FOUND') {
       return res.status(404).json({ message: error.message });
     }
@@ -30,7 +36,11 @@ const reconcileAdminNotificationOutbox = async (req, res) => {
     const result = await reconcileNotificationOutbox({ limit: req.body?.limit });
     res.json(result);
   } catch (error) {
-    console.error('[notificationWorker:reconcile]', error);
+    logNotificationError({
+      scope: 'notification-worker',
+      action: 'reconcile',
+      error,
+    });
     res.status(500).json({ message: 'Notification outbox reconciliation failed' });
   }
 };

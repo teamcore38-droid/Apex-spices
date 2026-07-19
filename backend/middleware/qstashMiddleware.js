@@ -1,4 +1,5 @@
 import { Receiver } from '@upstash/qstash';
+import { logNotificationError } from '../utils/notificationLogging.js';
 
 let receiverSignature = '';
 let receiver = null;
@@ -54,7 +55,11 @@ const verifyQstashSignature = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('[qstashMiddleware:verify]', error);
+    logNotificationError({
+      scope: 'qstash-signature',
+      action: 'verify',
+      error,
+    });
     const status = error.code === 'QSTASH_SIGNING_KEYS_MISSING' ? 503 : 401;
     return res.status(status).json({
       message: status === 503 ? error.message : 'Invalid QStash signature',

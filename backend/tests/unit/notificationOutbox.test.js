@@ -11,7 +11,10 @@ import {
   buildOutboxPayload,
   buildQstashDeduplicationId,
   endpointHash,
+  getReconciliationAction,
+  isValidQstashWorkerUrl,
   publishOutboxToQstash,
+  resolveBackendBaseUrl,
 } from '../../utils/notificationOutboxService.js';
 import { getRequestPublicUrl } from '../../middleware/qstashMiddleware.js';
 
@@ -81,6 +84,52 @@ test('QStash publish keeps the MongoDB event key and uses the safe deduplication
   assert.doesNotMatch(publishRequest.deduplicationId, /:/);
 });
 
+test('QStash worker destinations require the exact secure internal worker route', () => {
+  assert.equal(
+    isValidQstashWorkerUrl('https://api.apexspices.lk/api/workers/admin-notifications'),
+    true
+  );
+  assert.equal(
+    isValidQstashWorkerUrl('https://api.apexspices.lk/api/workers/admin-notifications?token=x'),
+    false
+  );
+  assert.equal(isValidQstashWorkerUrl('https://evil.example/collect'), false);
+  assert.equal(isValidQstashWorkerUrl('http://api.apexspices.lk/api/workers/admin-notifications'), false);
+});
+
+test('production backend URL resolution does not trust request host headers', () => {
+  const names = [
+    'NODE_ENV',
+    'BACKEND_PUBLIC_URL',
+    'API_PUBLIC_URL',
+    'VERCEL_PROJECT_PRODUCTION_URL',
+    'VERCEL_URL',
+  ];
+  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+
+  try {
+    process.env.NODE_ENV = 'production';
+    names.slice(1).forEach((name) => delete process.env[name]);
+
+    assert.equal(
+      resolveBackendBaseUrl({
+        headers: { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'evil.example' },
+        protocol: 'https',
+        get: () => 'evil.example',
+      }),
+      ''
+    );
+  } finally {
+    names.forEach((name) => {
+      if (previous[name] === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = previous[name];
+      }
+    });
+  }
+});
+
 test('legacy failed QStash publishes are selected for immediate reconciliation', () => {
   const filter = buildLegacyPublishFailureFilter();
 
@@ -88,6 +137,18 @@ test('legacy failed QStash publishes are selected for immediate reconciliation',
   assert.equal(filter.failureStage, 'publish');
   assert.equal(filter.lastError.test("Error: Upstash-DeduplicationId cannot contain ':'"), true);
   assert.equal(filter.lastError.test('Push delivery failed'), false);
+});
+
+test('reconciliation republishes publish failures and directly resumes process failures', () => {
+  assert.equal(
+    getReconciliationAction({ status: 'failed', failureStage: 'publish' }),
+    'publish'
+  );
+  assert.equal(
+    getReconciliationAction({ status: 'failed', failureStage: 'process' }),
+    'process'
+  );
+  assert.equal(getReconciliationAction({ status: 'pending', failureStage: '' }), 'publish');
 });
 
 test('admin push content includes required order and payment details', () => {
@@ -124,9 +185,17 @@ test('outbox and history schemas enforce event idempotency', () => {
   const historyEventIndex = AdminNotification.schema.indexes().find(
     ([fields]) => fields.user === 1 && fields.sourceEventKey === 1
   );
+  const publishLeaseIndex = NotificationOutbox.schema.indexes().find(
+    ([fields]) => fields.status === 1 && fields.publishLockedUntil === 1
+  );
+  const stalePublishedIndex = NotificationOutbox.schema.indexes().find(
+    ([fields]) => fields.status === 1 && fields.publishedAt === 1
+  );
 
   assert.equal(outboxEventIndex?.[1]?.unique, true);
   assert.equal(historyEventIndex?.[1]?.unique, true);
+  assert.ok(publishLeaseIndex);
+  assert.ok(stalePublishedIndex);
   assert.equal(NotificationOutbox.schema.paths.status.options.default, 'pending');
   assert.equal(AdminNotification.schema.paths.sourceEventKey.options.default, '');
   assert.equal(endpointHash('https://push.example/device'), endpointHash('https://push.example/device'));
@@ -167,6 +236,8 @@ test('Phase 3 worker is signed, retry-safe, and deactivates expired devices', as
   assert.match(serviceSource, /sourceEventKey: outbox\.eventKey/);
   assert.match(serviceSource, /buildLegacyPublishFailureFilter\(\)/);
   assert.match(serviceSource, /\{ \$set: \{ nextAttemptAt: now \} \}/);
+  assert.match(serviceSource, /failureStage: 'process'/);
+  assert.match(serviceSource, /processOutboxRecord\(record\._id\)/);
   assert.doesNotMatch(notificationRoutes, /\/test/);
   assert.match(orderSource, /createOrderOutboxEvent\(createdOrder, 'order\.created'/);
   assert.match(orderSource, /runCheckoutNotificationsInBackground\('order-created'/);

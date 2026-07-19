@@ -141,6 +141,8 @@ const notificationOutboxSchema = mongoose.Schema(
 notificationOutboxSchema.index({ status: 1, nextAttemptAt: 1, createdAt: 1 });
 notificationOutboxSchema.index({ order: 1, eventType: 1 });
 notificationOutboxSchema.index({ status: 1, processingLockedUntil: 1 });
+notificationOutboxSchema.index({ status: 1, publishLockedUntil: 1 });
+notificationOutboxSchema.index({ status: 1, publishedAt: 1 });
 
 const NotificationOutbox = mongoose.model('NotificationOutbox', notificationOutboxSchema);
 

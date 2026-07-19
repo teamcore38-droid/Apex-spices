@@ -12,7 +12,7 @@ QSTASH_NEXT_SIGNING_KEY=...
 BACKEND_PUBLIC_URL=https://api.apexspices.lk
 ```
 
-The four `QSTASH_*` values are required. `BACKEND_PUBLIC_URL` is strongly recommended; when it is absent, the order request host is used to build the worker destination.
+The four `QSTASH_*` values are required. `BACKEND_PUBLIC_URL` is strongly recommended. On Vercel, the trusted `VERCEL_PROJECT_PRODUCTION_URL`/`VERCEL_URL` is used as a fallback. Other production deployments fail closed when no trusted backend URL is configured; request host headers are used only during local development.
 
 `QSTASH_WORKER_URL` is optional. When set, it must be the complete public HTTPS URL:
 
@@ -43,7 +43,7 @@ Use a schedule of every 2 to 5 minutes and body:
 {"limit":50}
 ```
 
-QStash signs scheduled deliveries automatically. Reconciliation republishes pending and failed records and recovers expired publish/processing leases. QStash delivery retries remain the first line of recovery.
+QStash signs scheduled deliveries automatically. Reconciliation publishes pending and publish-failed records, while process-failed or stale-published records are processed directly under the same MongoDB lease and per-device delivery protections. This avoids QStash suppressing recovery messages because deduplication IDs are retained for 90 days. QStash delivery retries remain the first line of recovery.
 
 ## Production verification
 

@@ -5,6 +5,7 @@ import {
   isVapidConfigured,
   sendWebPushNotification,
 } from '../utils/pushService.js';
+import { logNotificationError } from '../utils/notificationLogging.js';
 
 const ADMIN_PUSH_PURPOSE = 'admin-orders';
 
@@ -169,7 +170,11 @@ const sendAdminTestNotification = async (req, res) => {
       return res.status(410).json({ message: 'This browser subscription expired. Enable notifications again.' });
     }
 
-    console.error('[adminPushController:sendAdminTestNotification]', error);
+    logNotificationError({
+      scope: 'admin-push',
+      action: 'send-test',
+      error,
+    });
     return res.status(502).json({ message: 'The push service could not deliver the test notification' });
   }
 };

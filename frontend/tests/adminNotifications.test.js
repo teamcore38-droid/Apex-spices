@@ -45,12 +45,22 @@ test('notification panel uses Mongo-backed count and read APIs', async () => {
   assert.match(source, /Mark All Read/);
 });
 
-test('service worker refreshes open admin clients after push delivery', async () => {
+test('service worker refreshes clients without exposing order identifiers', async () => {
   const source = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
 
   assert.match(source, /client\.postMessage/);
   assert.match(source, /ADMIN_NOTIFICATIONS_UPDATED/);
-  assert.match(source, /eventKey/);
+  assert.doesNotMatch(source, /eventKey: data\.eventKey/);
+  assert.doesNotMatch(source, /orderId: data\.orderId/);
+});
+
+test('service worker notification clicks stay on admin routes and reuse an app window', async () => {
+  const source = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
+
+  assert.match(source, /target\.origin === self\.location\.origin/);
+  assert.match(source, /\^\\\/admin/);
+  assert.match(source, /\.navigate\(targetUrl\)/);
+  assert.match(source, /self\.clients\.openWindow\(targetUrl\)/);
 });
 
 test('admin notifications have a protected dedicated page and dashboard navigation', async () => {
