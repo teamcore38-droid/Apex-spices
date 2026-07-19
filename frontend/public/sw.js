@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-link-v5';
+const CACHE_NAME = 'apex-link-v6';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',

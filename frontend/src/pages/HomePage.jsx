@@ -316,33 +316,47 @@ const HomePage = () => {
             <div className="mx-auto h-1 w-24 bg-brand-accent"></div>
           </div>
 
-          <div className="mx-auto flex max-w-full flex-wrap justify-center gap-8">
+          <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-6 lg:gap-8">
             {categories.slice(0, 3).map((category) => (
-              <Link key={category._id} to={`/category/${category.slug}`} className="group relative h-80 w-full cursor-pointer overflow-hidden rounded-lg shadow-lg sm:basis-[calc((100%-2rem)/2)] lg:basis-[calc((100%-4rem)/3)]">
-                {isCategoryImageFailed(category) ? (
-                  <div className="h-full w-full bg-gradient-to-br from-[#23120a] via-[#3d251e] to-[#1f0e07]" />
-                ) : (
-                  <img
-                    src={getCategoryCardImage(category)}
-                    alt={category.name}
-                    loading="lazy"
-                    decoding="async"
-                    onError={() => onCategoryImageError(category)}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                )}
-                <div
-                  className={`absolute inset-0 transition-all duration-300 ${
-                    isCategoryImageFailed(category)
-                      ? 'bg-black/25 group-hover:bg-black/20'
-                      : 'bg-black/40 group-hover:bg-black/30'
-                  }`}
-                ></div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                  <h3 className="mb-2 font-serif text-3xl font-bold drop-shadow-md">{category.name}</h3>
-                  <p className="max-w-xs text-sm text-white/85">{category.description}</p>
-                  <span className="mt-4 translate-y-4 border-b-2 border-brand-accent pb-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    Shop Now
+              <Link
+                key={category._id}
+                to={`/category/${category.slug}`}
+                className="group flex w-full max-w-[360px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_44px_rgba(11,31,58,0.08)] transition-transform duration-300 hover:-translate-y-1 sm:w-[calc((100%_-_1.5rem)/2)] lg:w-[calc((100%_-_4rem)/3)]"
+              >
+                <div className="relative h-52 overflow-hidden sm:h-60">
+                  {isCategoryImageFailed(category) ? (
+                    <div className="h-full w-full bg-gradient-to-br from-[#23120a] via-[#3d251e] to-[#1f0e07]" />
+                  ) : (
+                    <img
+                      src={getCategoryCardImage(category)}
+                      alt={category.name}
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => onCategoryImageError(category)}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/85 via-brand-dark/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                    <div className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] backdrop-blur-sm">
+                      <Globe size={12} className="mr-2 text-brand-accent" /> Premium Collection
+                    </div>
+                    <h3 className="mt-3 font-serif text-2xl font-bold leading-tight sm:text-3xl">{category.name}</h3>
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <p
+                    className="min-h-[3.5rem] overflow-hidden text-sm leading-7 text-gray-600"
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
+                    {category.description || 'Explore a carefully curated collection of premium products.'}
+                  </p>
+                  <span className="mt-5 inline-flex items-center text-xs font-bold uppercase tracking-[0.2em] text-brand-primary">
+                    Explore Category <ChevronRight size={16} className="ml-2 transition-transform duration-200 group-hover:translate-x-1" />
                   </span>
                 </div>
               </Link>
