@@ -192,8 +192,8 @@ const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) =>
   };
 
   return (
-    <section className="mb-6 rounded-lg border border-gray-100 bg-white shadow-sm" aria-labelledby="admin-notification-history-heading">
-      <div className="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="mb-6 flex h-[460px] flex-col overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm sm:h-[480px]" aria-labelledby="admin-notification-history-heading">
+      <div className="shrink-0 flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-primary">
             <BellRing size={19} aria-hidden="true" />
@@ -235,7 +235,13 @@ const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) =>
         </div>
       </div>
 
-      <div aria-busy={loading} aria-live="polite">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
+        aria-busy={loading}
+        aria-live="polite"
+        tabIndex={notifications.length > 0 ? 0 : undefined}
+        aria-label="Admin notification history"
+      >
         {loading ? (
           <div className="flex min-h-36 items-center justify-center p-6 text-sm text-gray-500" role="status">
             <Loader2 size={18} className="mr-2 animate-spin" /> Loading notifications...
@@ -284,24 +290,23 @@ const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) =>
             })}
           </ul>
         )}
+        {hasMore && !loading && (
+          <div className="border-t border-gray-100 p-3 text-center">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={Boolean(action)}
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {action === 'load-more' ? <Loader2 size={15} className="mr-2 animate-spin" /> : <ChevronDown size={15} className="mr-2" />}
+              Load More
+            </button>
+          </div>
+        )}
+
+        {success && <p className="border-t border-gray-100 px-4 py-3 text-sm font-medium text-green-700" role="status">{success}</p>}
+        {error && <p className="border-t border-gray-100 px-4 py-3 text-sm font-medium text-red-700" role="alert">{error}</p>}
       </div>
-
-      {hasMore && !loading && (
-        <div className="border-t border-gray-100 p-3 text-center">
-          <button
-            type="button"
-            onClick={loadMore}
-            disabled={Boolean(action)}
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {action === 'load-more' ? <Loader2 size={15} className="mr-2 animate-spin" /> : <ChevronDown size={15} className="mr-2" />}
-            Load More
-          </button>
-        </div>
-      )}
-
-      {success && <p className="border-t border-gray-100 px-4 py-3 text-sm font-medium text-green-700" role="status">{success}</p>}
-      {error && <p className="border-t border-gray-100 px-4 py-3 text-sm font-medium text-red-700" role="alert">{error}</p>}
     </section>
   );
 };
