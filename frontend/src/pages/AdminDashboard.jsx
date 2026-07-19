@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
+  Bell,
+  BellOff,
   ChevronLeft,
   ChevronRight,
   Edit,
@@ -14,6 +16,7 @@ import {
   Store,
   RotateCcw,
   Search,
+  Send,
   ShoppingBag,
   Star,
   Trash2,
@@ -41,6 +44,11 @@ import {
   getPaymentBadgeClass,
   getPaymentLabel,
 } from '../utils/orderStatus';
+import {
+  enableAdminPush,
+  getAdminPushEnvironment,
+  getExistingPushSubscription,
+} from '../utils/adminPush';
 
 const INITIAL_PRODUCT_FILTERS = {
   keyword: '',
@@ -195,12 +203,80 @@ const AdminDashboard = () => {
   const [orderRefreshToken, setOrderRefreshToken] = useState(0);
   const [activeQuickAction, setActiveQuickAction] = useState('');
   const canAccessAdmin = Boolean(userInfo?.isAdmin || userInfo?.isStaff || userInfo?.permissions?.length);
+  const canReadOrders = Boolean(
+    userInfo?.isAdmin ||
+      userInfo?.permissions?.includes('orders:read') ||
+      userInfo?.permissions?.includes('*')
+  );
+  const [pushState, setPushState] = useState(() => ({
+    ...getAdminPushEnvironment(),
+    enabled: false,
+    subscriptionId: '',
+    endpoint: '',
+    loading: true,
+    action: '',
+    message: '',
+    error: '',
+  }));
 
   useEffect(() => {
     if (!userInfo || !canAccessAdmin) {
       navigate('/login');
     }
   }, [canAccessAdmin, navigate, userInfo]);
+
+  useEffect(() => {
+    if (!userInfo?.token || !canReadOrders) {
+      setPushState((current) => ({ ...current, loading: false }));
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPushState = async () => {
+      const environment = getAdminPushEnvironment();
+
+      try {
+        const browserSubscription = environment.supported
+          ? await getExistingPushSubscription()
+          : null;
+        const { data } = await axios.get('/api/admin/push/subscriptions', {
+          headers: { Authorization: `Bearer ${userInfo.token}` },
+        });
+        const registeredSubscription = data.subscriptions?.find(
+          (subscription) => subscription.endpoint === browserSubscription?.endpoint
+        );
+
+        if (!cancelled) {
+          setPushState((current) => ({
+            ...current,
+            ...environment,
+            publicKeyConfigured: environment.publicKeyConfigured && data.configured !== false,
+            enabled: Boolean(registeredSubscription),
+            subscriptionId: registeredSubscription?.id || '',
+            endpoint: browserSubscription?.endpoint || '',
+            loading: false,
+          }));
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setPushState((current) => ({
+            ...current,
+            ...environment,
+            loading: false,
+            error: error.response?.data?.message || 'Unable to check notification status.',
+          }));
+        }
+      }
+    };
+
+    loadPushState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canReadOrders, userInfo?.token]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -524,6 +600,91 @@ const AdminDashboard = () => {
     }
   };
 
+  const enableOrderNotifications = async () => {
+    setPushState((current) => ({ ...current, action: 'enable', message: '', error: '' }));
+
+    try {
+      const { subscription, payload } = await enableAdminPush();
+      const { data } = await axios.post('/api/admin/push/subscriptions', payload, {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      });
+
+      setPushState((current) => ({
+        ...current,
+        ...getAdminPushEnvironment(),
+        enabled: true,
+        subscriptionId: data.subscription.id,
+        endpoint: subscription.endpoint,
+        action: '',
+        message: 'Order notifications are enabled on this device.',
+        error: '',
+      }));
+    } catch (error) {
+      console.error(error);
+      setPushState((current) => ({
+        ...current,
+        ...getAdminPushEnvironment(),
+        action: '',
+        message: '',
+        error: error.response?.data?.message || error.message || 'Unable to enable notifications.',
+      }));
+    }
+  };
+
+  const disableOrderNotifications = async () => {
+    if (!pushState.subscriptionId) {
+      return;
+    }
+
+    setPushState((current) => ({ ...current, action: 'disable', message: '', error: '' }));
+
+    try {
+      await axios.delete(`/api/admin/push/subscriptions/${pushState.subscriptionId}`, {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      });
+      setPushState((current) => ({
+        ...current,
+        enabled: false,
+        subscriptionId: '',
+        action: '',
+        message: 'Order notifications are disabled on this device.',
+      }));
+    } catch (error) {
+      console.error(error);
+      setPushState((current) => ({
+        ...current,
+        action: '',
+        error: error.response?.data?.message || 'Unable to disable notifications.',
+      }));
+    }
+  };
+
+  const sendTestNotification = async () => {
+    setPushState((current) => ({ ...current, action: 'test', message: '', error: '' }));
+
+    try {
+      const browserSubscription = await getExistingPushSubscription();
+      if (!browserSubscription || browserSubscription.endpoint !== pushState.endpoint) {
+        throw new Error('This browser subscription is no longer active. Enable notifications again.');
+      }
+
+      const { data } = await axios.post(
+        '/api/admin/push/test',
+        { endpoint: browserSubscription.endpoint },
+        { headers: { Authorization: `Bearer ${userInfo.token}` } }
+      );
+      setPushState((current) => ({ ...current, action: '', message: data.message, error: '' }));
+    } catch (error) {
+      console.error(error);
+      setPushState((current) => ({
+        ...current,
+        action: '',
+        message: '',
+        error: error.response?.data?.message || error.message || 'Unable to send the test notification.',
+      }));
+    }
+  };
+
   const productPaginationPages = getPaginationRange(productMeta.currentPage, productMeta.totalPages);
   const orderPaginationPages = getPaginationRange(orderMeta.currentPage, orderMeta.totalPages);
   const showProductSkeleton = productLoading && products.length === 0;
@@ -539,6 +700,77 @@ const AdminDashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-8 text-3xl font-serif font-bold text-brand-dark">Admin Dashboard</h1>
+
+      {canReadOrders && (
+        <section className="mb-6 rounded-lg border border-brand-accent/20 bg-white p-4 shadow-sm" aria-labelledby="order-notifications-heading">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-primary">
+                <Bell size={19} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 id="order-notifications-heading" className="font-serif text-lg font-bold text-brand-dark">
+                  Order notifications
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {pushState.loading
+                    ? 'Checking this device...'
+                    : pushState.enabled
+                      ? 'Enabled for this browser.'
+                      : pushState.permission === 'denied'
+                        ? 'Blocked in this browser. Update the site permission to enable alerts.'
+                        : 'Enable secure Web Push alerts for this browser.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              {pushState.enabled ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={sendTestNotification}
+                    disabled={Boolean(pushState.action)}
+                    className="inline-flex min-h-10 items-center justify-center rounded-md bg-brand-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {pushState.action === 'test' ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Send size={16} className="mr-2" />}
+                    Send Test
+                  </button>
+                  <button
+                    type="button"
+                    onClick={disableOrderNotifications}
+                    disabled={Boolean(pushState.action)}
+                    className="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-brand-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {pushState.action === 'disable' ? <Loader2 size={16} className="mr-2 animate-spin" /> : <BellOff size={16} className="mr-2" />}
+                    Disable
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={enableOrderNotifications}
+                  disabled={pushState.loading || Boolean(pushState.action) || !pushState.supported || !pushState.publicKeyConfigured}
+                  className="inline-flex min-h-10 items-center justify-center rounded-md bg-brand-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {pushState.action === 'enable' ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Bell size={16} className="mr-2" />}
+                  Enable Order Notifications
+                </button>
+              )}
+            </div>
+          </div>
+
+          {!pushState.loading && (!pushState.supported || !pushState.publicKeyConfigured) && (
+            <p className="mt-3 text-sm font-medium text-amber-700">
+              {!pushState.supported
+                ? 'Web Push is unavailable in this browser. On iPhone, install the PWA to the Home Screen first.'
+                : 'Web Push configuration is incomplete for this deployment.'}
+            </p>
+          )}
+          {pushState.message && <p className="mt-3 text-sm font-medium text-green-700" role="status">{pushState.message}</p>}
+          {pushState.error && <p className="mt-3 text-sm font-medium text-red-700" role="alert">{pushState.error}</p>}
+        </section>
+      )}
 
       <div className="flex flex-col gap-8 md:flex-row">
         <div className="md:w-1/4">

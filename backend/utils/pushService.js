@@ -1,5 +1,63 @@
+import webPush from 'web-push';
 import PushNotificationLog from '../models/pushNotificationLogModel.js';
 import PushSubscription from '../models/pushSubscriptionModel.js';
+
+let configuredVapidSignature = '';
+
+const getVapidConfiguration = () => ({
+  publicKey: String(process.env.VAPID_PUBLIC_KEY || '').trim(),
+  privateKey: String(process.env.VAPID_PRIVATE_KEY || '').trim(),
+  subject: String(process.env.VAPID_SUBJECT || '').trim(),
+});
+
+const isVapidConfigured = () => {
+  const { publicKey, privateKey, subject } = getVapidConfiguration();
+  return Boolean(publicKey && privateKey && /^(mailto:|https:\/\/)/i.test(subject));
+};
+
+const configureWebPush = () => {
+  const configuration = getVapidConfiguration();
+
+  if (!isVapidConfigured()) {
+    const error = new Error('Web Push is not configured on the backend');
+    error.code = 'VAPID_NOT_CONFIGURED';
+    throw error;
+  }
+
+  const signature = `${configuration.subject}:${configuration.publicKey}:${configuration.privateKey}`;
+  if (signature !== configuredVapidSignature) {
+    webPush.setVapidDetails(
+      configuration.subject,
+      configuration.publicKey,
+      configuration.privateKey
+    );
+    configuredVapidSignature = signature;
+  }
+
+  return configuration;
+};
+
+const sendWebPushNotification = async (subscription, payload) => {
+  configureWebPush();
+
+  return webPush.sendNotification(
+    {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subscription.keys?.p256dh || '',
+        auth: subscription.keys?.auth || '',
+      },
+    },
+    JSON.stringify(payload),
+    {
+      TTL: 60,
+      urgency: 'high',
+    }
+  );
+};
+
+const isExpiredPushSubscriptionError = (error) =>
+  [404, 410].includes(Number(error?.statusCode || error?.status));
 
 const getFrontendUrl = () =>
   String(process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
@@ -97,4 +155,11 @@ const notifyOrderEvent = async (order, event, details = {}) => {
   }
 };
 
-export { notifyOrderEvent };
+export {
+  configureWebPush,
+  getVapidConfiguration,
+  isExpiredPushSubscriptionError,
+  isVapidConfigured,
+  notifyOrderEvent,
+  sendWebPushNotification,
+};

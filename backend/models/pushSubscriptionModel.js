@@ -23,6 +23,11 @@ const pushSubscriptionSchema = mongoose.Schema(
       enum: ['web', 'ios', 'android'],
       default: 'web',
     },
+    purpose: {
+      type: String,
+      enum: ['customer', 'admin-orders'],
+      default: 'customer',
+    },
     endpoint: {
       type: String,
       default: '',
@@ -47,6 +52,18 @@ const pushSubscriptionSchema = mongoose.Schema(
       default: '',
       trim: true,
     },
+    deviceLabel: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 120,
+    },
+    userAgent: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 500,
+    },
     preferences: {
       orderUpdates: { type: Boolean, default: true },
       promotions: { type: Boolean, default: false },
@@ -69,6 +86,11 @@ const pushSubscriptionSchema = mongoose.Schema(
 pushSubscriptionSchema.index({ user: 1, endpoint: 1 });
 pushSubscriptionSchema.index({ user: 1, token: 1 });
 pushSubscriptionSchema.index({ guestEmail: 1, sessionId: 1 });
+pushSubscriptionSchema.index({ user: 1, purpose: 1, isActive: 1, updatedAt: -1 });
+pushSubscriptionSchema.index(
+  { endpoint: 1, purpose: 1 },
+  { unique: true, partialFilterExpression: { purpose: 'admin-orders' } }
+);
 
 const PushSubscription = mongoose.model('PushSubscription', pushSubscriptionSchema);
 

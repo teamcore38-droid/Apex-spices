@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-spices-v7';
+const CACHE_NAME = 'apex-spices-v8';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
@@ -87,12 +87,20 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : {};
+  let data;
+
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data?.text() || 'You have a new Apex Spices update.' };
+  }
+
   const title = data.title || 'Apex Spices';
   const options = {
     body: data.body || 'You have a new Apex Spices update.',
     icon: '/android-chrome-192x192.png?v=20260719',
     badge: '/android-chrome-192x192.png?v=20260719',
+    tag: data.tag || data.type || 'apex-spices-update',
     data: {
       url: data.url || '/'
     }
@@ -103,17 +111,17 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
+  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      const matchingClient = clients.find((client) => client.url.endsWith(url));
+      const matchingClient = clients.find((client) => client.url === targetUrl);
 
       if (matchingClient) {
         return matchingClient.focus();
       }
 
-      return self.clients.openWindow(url);
+      return self.clients.openWindow(targetUrl);
     })
   );
 });

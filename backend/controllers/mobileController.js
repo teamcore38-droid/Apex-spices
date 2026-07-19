@@ -31,7 +31,7 @@ const getMobileConfig = (_req, res) => {
       trackOrder: 'apex://track-order',
     },
     push: {
-      webPushPublicKey: process.env.WEB_PUSH_PUBLIC_KEY || '',
+      webPushPublicKey: process.env.VAPID_PUBLIC_KEY || process.env.WEB_PUSH_PUBLIC_KEY || '',
       iosBundleId: process.env.IOS_BUNDLE_ID || 'com.apexlinkgroup.app',
       androidPackage: process.env.ANDROID_PACKAGE || 'com.apexlinkgroup.app',
     },
