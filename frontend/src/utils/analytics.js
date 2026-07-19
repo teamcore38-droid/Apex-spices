@@ -1,6 +1,17 @@
 import axios from 'axios';
 
 const SESSION_KEY = 'apexMarketingSessionId';
+const CONSENT_KEY = 'apexCookieConsent';
+const CONSENT_EVENT = 'apex:consent-updated';
+let consentListenerInstalled = false;
+
+const getStoredConsent = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null') || {};
+  } catch {
+    return {};
+  }
+};
 
 const getMarketingSessionId = () => {
   const existing = localStorage.getItem(SESSION_KEY);
@@ -28,12 +39,18 @@ const loadScript = (id, src, body) => {
 };
 
 const installAdTracking = () => {
+  if (!consentListenerInstalled) {
+    window.addEventListener(CONSENT_EVENT, installAdTracking);
+    consentListenerInstalled = true;
+  }
+
+  const consent = getStoredConsent();
   const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
   const metaPixelId = import.meta.env.VITE_META_PIXEL_ID;
   const tiktokPixelId = import.meta.env.VITE_TIKTOK_PIXEL_ID;
   const linkedinPartnerId = import.meta.env.VITE_LINKEDIN_PARTNER_ID;
 
-  if (gaId) {
+  if (gaId && consent.analytics) {
     loadScript('ga4-loader', `https://www.googletagmanager.com/gtag/js?id=${gaId}`);
     window.dataLayer = window.dataLayer || [];
     window.gtag = window.gtag || function gtag() { window.dataLayer.push(arguments); };
@@ -41,26 +58,38 @@ const installAdTracking = () => {
     window.gtag('config', gaId);
   }
 
-  if (metaPixelId) {
+  if (metaPixelId && consent.marketing) {
     window.fbq = window.fbq || function fbq() { (window.fbq.queue = window.fbq.queue || []).push(arguments); };
     loadScript('meta-pixel-loader', 'https://connect.facebook.net/en_US/fbevents.js');
     window.fbq('init', metaPixelId);
     window.fbq('track', 'PageView');
   }
 
-  if (tiktokPixelId) {
+  if (tiktokPixelId && consent.marketing) {
     loadScript('tiktok-pixel-loader', 'https://analytics.tiktok.com/i18n/pixel/events.js');
     window.ttq = window.ttq || { track: () => {}, page: () => {}, load: () => {} };
     window.ttq.load?.(tiktokPixelId);
     window.ttq.page?.();
   }
 
-  if (linkedinPartnerId) {
+  if (linkedinPartnerId && consent.marketing) {
     window._linkedin_partner_id = linkedinPartnerId;
     window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
     window._linkedin_data_partner_ids.push(linkedinPartnerId);
     loadScript('linkedin-insight-loader', 'https://snap.licdn.com/li.lms-analytics/insight.min.js');
   }
+};
+
+const trackPageView = (pathname) => {
+  if (!window.gtag || !getStoredConsent().analytics) {
+    return;
+  }
+
+  window.gtag('event', 'page_view', {
+    page_path: pathname,
+    page_location: window.location.href,
+    page_title: document.title,
+  });
 };
 
 const trackAdPlatforms = (eventName, properties = {}) => {
@@ -114,4 +143,5 @@ export {
   getMarketingSessionId,
   installAdTracking,
   trackEvent,
+  trackPageView,
 };

@@ -16,7 +16,7 @@ const buildOrderPushPayload = (order, event, details = {}) => {
   };
 
   return {
-    title: titleMap[event] || 'Apex Link Group update',
+    title: titleMap[event] || 'Apex Spices update',
     body:
       details.message ||
       (orderLabel

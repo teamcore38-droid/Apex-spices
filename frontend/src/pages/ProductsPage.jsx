@@ -77,10 +77,10 @@ const ProductsPage = () => {
 
   useEffect(() => {
     applySeo({
-      title: 'Shop Premium Products',
-      description: 'Browse Apex Link Group products across textiles, food, technology, industrial equipment, and more.',
-      keywords: ['global marketplace', 'premium products', 'Apex Link Group'],
-      canonicalUrl: `${window.location.origin}/products`,
+      title: 'Shop Premium Sri Lankan Spices Online',
+      description: 'Browse premium whole spices, Ceylon cinnamon, cardamom, black pepper, cloves, turmeric, spice blends, and dried foods from Apex Spices.',
+      keywords: ['buy spices online Sri Lanka', 'premium spices online', 'whole spices', 'Ceylon cinnamon'],
+      canonicalUrl: 'https://www.apexspices.lk/products',
       type: 'website',
     });
 
@@ -319,6 +319,9 @@ const ProductsPage = () => {
 
       <div className="relative z-10 container mx-auto max-w-7xl px-4">
         <div className="rounded-[30px] bg-white p-4 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:p-6">
+          <h1 className="mb-4 font-serif text-2xl font-bold text-brand-dark sm:text-3xl">
+            Shop Premium Sri Lankan Spices
+          </h1>
           <div className="hidden flex-col gap-6 lg:flex lg:flex-row lg:items-end lg:justify-between">
             <div className="relative w-full lg:max-w-md">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
@@ -578,7 +581,7 @@ const ProductsPage = () => {
                 <BadgeCheck className="text-brand-primary" size={20} />
               </div>
               <div>
-                <h4 className="mb-1 text-sm font-bold text-[#081729]">{title}</h4>
+                <h2 className="mb-1 text-sm font-bold text-[#081729]">{title}</h2>
                 <p className="text-xs leading-6 text-gray-500">{subtitle}</p>
               </div>
             </div>

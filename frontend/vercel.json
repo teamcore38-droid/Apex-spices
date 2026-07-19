@@ -1,9 +1,33 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "headers": [
     {
-      "source": "/assets/:path*",
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/seo/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(png|jpg|jpeg|webp|gif|svg|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=2592000" },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]
     },
@@ -16,20 +40,61 @@
       ]
     },
     {
-      "source": "/((?!assets/).*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-      ]
+      "source": "/admin",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/vendor/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/(account|cart|checkout|customer-experience|forgot-password|login|order|orders|privacy-center|profile|register|reset-password|rfq|thank-you|track-order)(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     }
   ],
   "redirects": [
     { "source": "/shop", "destination": "/products", "permanent": true },
-    { "source": "/shop/:path*", "destination": "/products", "permanent": true }
+    { "source": "/shop/:path*", "destination": "/products", "permanent": true },
+    { "source": "/pages/refund-policy", "destination": "/returns", "permanent": true },
+    { "source": "/pages/privacy-policy", "destination": "/privacy", "permanent": true },
+    { "source": "/pages/terms-and-conditions", "destination": "/terms", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/((?!assets/|sw\\.js$|manifest\\.webmanifest$|offline\\.html$|.*\\.[^/]+$).*)", "destination": "/index.html" }
+    { "source": "/sitemap.xml", "destination": "https://api.apexspices.lk/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "https://api.apexspices.lk/robots.txt" },
+    { "source": "/product/:id", "destination": "/api/seo-page?type=product&id=:id" },
+    { "source": "/category/:slug", "destination": "/api/seo-page?type=category&id=:slug" },
+    { "source": "/products", "destination": "/seo/products.html" },
+    { "source": "/categories", "destination": "/seo/categories.html" },
+    { "source": "/about", "destination": "/seo/about.html" },
+    { "source": "/contact", "destination": "/seo/contact.html" },
+    { "source": "/faq", "destination": "/seo/faq.html" },
+    { "source": "/shipping", "destination": "/seo/shipping.html" },
+    { "source": "/returns", "destination": "/seo/returns.html" },
+    { "source": "/privacy", "destination": "/seo/privacy.html" },
+    { "source": "/terms", "destination": "/seo/terms.html" },
+    { "source": "/cart", "destination": "/index.html" },
+    { "source": "/checkout", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/register", "destination": "/index.html" },
+    { "source": "/forgot-password", "destination": "/index.html" },
+    { "source": "/reset-password/:token", "destination": "/index.html" },
+    { "source": "/profile", "destination": "/index.html" },
+    { "source": "/account", "destination": "/index.html" },
+    { "source": "/track-order", "destination": "/index.html" },
+    { "source": "/rfq", "destination": "/index.html" },
+    { "source": "/customer-experience", "destination": "/index.html" },
+    { "source": "/vendor/:path*", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/:path*", "destination": "/index.html" },
+    { "source": "/thank-you", "destination": "/index.html" },
+    { "source": "/order/:id/confirm", "destination": "/index.html" },
+    { "source": "/orders/:id/invoice", "destination": "/index.html" },
+    { "source": "/orders/:id", "destination": "/index.html" },
+    { "source": "/privacy-center", "destination": "/index.html" }
   ]
 }

@@ -756,6 +756,9 @@ const uploadImage = async (req, res) => {
         {
           folder,
           resource_type: 'image',
+          use_filename: true,
+          unique_filename: true,
+          overwrite: false,
         },
         (error, uploadResult) => {
           if (error) {

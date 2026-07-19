@@ -23,6 +23,7 @@ import { slugifyCategoryName } from '../utils/categoryUi';
 import { trackEvent } from '../utils/analytics';
 import { applySeo, buildProductStructuredData } from '../utils/seo';
 import { getProductImages, getStockPresentation, normalizeProductPayload } from '../utils/productUi';
+import { getCloudinarySrcSet, getOptimizedImageUrl } from '../utils/imageUi';
 
 const TRUST_POINTS = [
   ['Verified Authentic', 'Every product checked against strict quality standards.'],
@@ -93,12 +94,12 @@ const ProductPage = () => {
             data.shortDescription ||
             data.description?.slice(0, 160),
           keywords: data.seo?.keywords || [data.category, data.brand, data.sku].filter(Boolean),
-          canonicalUrl: data.seo?.canonicalUrl || window.location.href,
+          canonicalUrl: `https://www.apexspices.lk/product/${data._id}`,
           ogImage: data.seo?.ogImage || data.image,
           type: 'product',
           structuredData: buildProductStructuredData(data),
         });
-        setImageReady(false);
+        setImageReady(true);
         setSelectedImage(getProductImages(data)[0] || data.image);
         setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
         setQty(1);
@@ -135,7 +136,7 @@ const ProductPage = () => {
                 data.shortDescription ||
                 data.description?.slice(0, 160),
               keywords: seoData.keywords || data.seo?.keywords || [data.category, data.brand, data.sku].filter(Boolean),
-              canonicalUrl: seoData.canonicalUrl || data.seo?.canonicalUrl || window.location.href,
+              canonicalUrl: seoData.canonicalUrl || `https://www.apexspices.lk/product/${data._id}`,
               ogImage: seoData.ogImage || data.seo?.ogImage || data.image,
               type: 'product',
               structuredData: seoData.structuredData || buildProductStructuredData(data),
@@ -319,22 +320,41 @@ const ProductPage = () => {
   return (
     <div className="bg-[#f7f9fc] pb-8 lg:pb-10">
       <div className="container mx-auto max-w-7xl px-4 pb-8 pt-4 sm:pt-5 lg:pb-10 lg:pt-6">
-        <Link
-          to="/products"
-          className="inline-flex items-center text-sm font-semibold text-gray-600 transition-colors duration-200 hover:text-brand-primary"
-        >
-          <ArrowLeft size={16} className="mr-2" /> Back to Shop
-        </Link>
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-600">
+          <Link to="/" className="transition-colors hover:text-brand-primary">Home</Link>
+          <span aria-hidden="true">/</span>
+          <Link to="/products" className="inline-flex items-center transition-colors hover:text-brand-primary">
+            <ArrowLeft size={15} className="mr-1.5" /> Shop
+          </Link>
+          <span aria-hidden="true">/</span>
+          <Link
+            to={`/category/${slugifyCategoryName(product.category)}`}
+            className="transition-colors hover:text-brand-primary"
+          >
+            {product.category}
+          </Link>
+          <span aria-hidden="true">/</span>
+          <span className="max-w-full truncate text-brand-dark" aria-current="page">{product.name}</span>
+        </nav>
 
         <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] lg:items-start xl:gap-8">
           <section className="space-y-4">
             <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_24px_70px_rgba(11,31,58,0.10)]">
               <img
-                src={selectedImage || product.image}
+                src={getOptimizedImageUrl(selectedImage || product.image, 1200)}
+                srcSet={getCloudinarySrcSet(selectedImage || product.image, [600, 900, 1200, 1600])}
+                sizes="(max-width: 1023px) 92vw, 55vw"
                 alt={product.name}
+                width="1200"
+                height="900"
                 decoding="async"
                 fetchPriority="high"
                 onLoad={() => setImageReady(true)}
+                onError={(event) => {
+                  event.currentTarget.removeAttribute('srcset');
+                  event.currentTarget.src = selectedImage || product.image;
+                  setImageReady(true);
+                }}
                 className={`h-[420px] w-full object-cover transition duration-300 ease-out sm:h-[500px] lg:h-[520px] ${
                   imageReady ? 'scale-100 opacity-100' : 'scale-[1.01] opacity-0'
                 }`}
@@ -343,7 +363,7 @@ const ProductPage = () => {
 
             {productImages.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
-                {productImages.map((image) => (
+                {productImages.map((image, index) => (
                   <button
                     key={image}
                     type="button"
@@ -358,8 +378,10 @@ const ProductPage = () => {
                     }`}
                   >
                     <img
-                      src={image}
-                      alt={`${product.name} gallery`}
+                      src={getOptimizedImageUrl(image, 320)}
+                      alt={`${product.name} - image ${index + 1}`}
+                      width="320"
+                      height="224"
                       loading="lazy"
                       decoding="async"
                       className="h-24 w-full object-cover sm:h-28"
@@ -637,7 +659,7 @@ const ProductPage = () => {
         <section className="mt-6 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-8 sm:p-7">
           <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Trust & Quality</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Why customers choose Apex Link Group</h2>
+            <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Why customers choose Apex Spices</h2>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 md:gap-5 xl:grid-cols-4">

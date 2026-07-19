@@ -5,6 +5,7 @@ import FeaturedProductCarousel from '../components/FeaturedProductCarousel';
 import { Link } from 'react-router-dom';
 import { Truck, ShieldCheck, Globe, Award, ChevronRight, ChevronLeft } from 'lucide-react';
 import { getCategoryImageCandidates } from '../utils/categoryUi';
+import { getCloudinarySrcSet, getOptimizedImageUrl } from '../utils/imageUi';
 
 const fallbackCategories = [
   {
@@ -84,19 +85,19 @@ const HomePage = () => {
       id: 1,
       name: 'Sarah Jenkins',
       role: 'Procurement Director',
-      text: 'Apex Link Group has become our single sourcing partner across three product categories. The consistency, documentation, and delivery reliability are unmatched.',
+      text: 'Apex Spices has become our trusted source for carefully selected spices. The consistency, packaging, and delivery reliability stand out.',
     },
     {
       id: 2,
       name: 'Michael Chen',
       role: 'Restaurant Group Owner',
-      text: 'We source both our specialty food ingredients and our kitchen equipment through Apex Link Group. One trusted platform, premium quality across the board.',
+      text: 'We source our specialty spices through Apex Spices. The ordering experience is simple and the product quality is consistently strong.',
     },
     {
       id: 3,
       name: 'Elena Rodriguez',
       role: 'Operations Manager',
-      text: 'From office IT hardware to textile supplies, every order arrives exactly as specified. Their quality verification process gives us complete confidence.',
+      text: 'Every spice order arrives carefully packed and exactly as specified. Their attention to quality gives us confidence when ordering again.',
     },
   ];
 
@@ -253,12 +254,12 @@ const HomePage = () => {
           );
         })}
         <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent opacity-85"></div>
-        <div className="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center md:py-0">
+        <div className="relative z-10 mx-auto w-screen min-w-0 max-w-[100vw] px-4 py-16 text-center md:w-full md:max-w-4xl md:py-0">
           <span className="mb-3 block text-[11px] font-bold uppercase tracking-[0.26em] text-brand-accent md:mb-4 md:text-sm md:tracking-[0.3em]">
             Organic · Fresh · Hand-Picked
           </span>
-          <h1 className="mb-4 font-serif text-4xl font-bold leading-tight text-brand-light drop-shadow-lg sm:text-5xl md:mb-6 md:text-7xl">
-            Elevate Your Culinary Experience
+          <h1 className="mb-4 max-w-full whitespace-normal break-words text-balance font-serif text-3xl font-bold leading-tight text-brand-light drop-shadow-lg sm:text-5xl md:mb-6 md:text-7xl">
+            Premium Sri Lankan Spices
           </h1>
           <p className="mx-auto mb-7 max-w-2xl text-base font-light leading-8 text-gray-100 drop-shadow-md md:mb-10 md:text-xl">
             Sourced directly from the finest farm estates of the globe, our authentic spices bring rich flavor, natural aroma, and unparalleled quality to every dish.
@@ -281,28 +282,28 @@ const HomePage = () => {
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <Truck size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">100% Sri Lankan</h4>
+              <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">100% Sri Lankan</h2>
               <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Proudly local, always.</p>
             </div>
             <div className="group rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-4 text-center shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-[1.5px] transition hover:bg-white/[0.08] md:px-4 md:py-5">
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <Globe size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">100% Organic</h4>
+              <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">100% Organic</h2>
               <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Certified farm sources</p>
             </div>
             <div className="group rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-4 text-center shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-[1.5px] transition hover:bg-white/[0.08] md:px-4 md:py-5">
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <ShieldCheck size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">No Artificial Additives</h4>
+              <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">No Artificial Additives</h2>
               <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Pure and natural.</p>
             </div>
             <div className="group rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-4 text-center shadow-[0_10px_28px_rgba(0,0,0,0.14)] backdrop-blur-[1.5px] transition hover:bg-white/[0.08] md:px-4 md:py-5">
               <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full border border-brand-accent/55 bg-[#23120a] text-brand-accent md:mb-3 md:h-11 md:w-11">
                 <Award size={19} />
               </div>
-              <h4 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">Supporting Local Farmers</h4>
+              <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-[#f3f6fc] md:text-sm">Supporting Local Farmers</h2>
               <p className="mt-1 text-[11px] text-[#c8d5e8] md:text-xs">Better for farmers, better for you.</p>
             </div>
           </div>
@@ -328,8 +329,12 @@ const HomePage = () => {
                     <div className="h-full w-full bg-gradient-to-br from-[#23120a] via-[#3d251e] to-[#1f0e07]" />
                   ) : (
                     <img
-                      src={getCategoryCardImage(category)}
-                      alt={category.name}
+                      src={getOptimizedImageUrl(getCategoryCardImage(category), 900)}
+                      srcSet={getCloudinarySrcSet(getCategoryCardImage(category), [480, 720, 900, 1200])}
+                      sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 360px"
+                      alt={`${category.name} collection`}
+                      width="1200"
+                      height="800"
                       loading="lazy"
                       decoding="async"
                       onError={() => onCategoryImageError(category)}
@@ -405,7 +410,7 @@ const HomePage = () => {
           ) : featuredProducts.length === 0 ? (
             <div className="rounded-xl border border-brand-accent/25 bg-[#f2f5fa] px-6 py-10 text-center text-brand-primary">
               <p className="font-serif text-2xl font-bold text-brand-dark">No featured products yet</p>
-              <p className="mt-2 text-sm">Explore the full marketplace while our team curates featured highlights.</p>
+              <p className="mt-2 text-sm">Explore the full spice collection while our team curates featured highlights.</p>
               <Link
                 to="/products"
                 className="mt-5 inline-flex items-center rounded-md border border-brand-primary px-5 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
@@ -466,6 +471,8 @@ const HomePage = () => {
                 <img
                   src="/about-home-bottom-desktop.webp"
                   alt="Flat lay of organic culinary spices"
+                  width="1200"
+                  height="1000"
                   className="relative z-10 h-[500px] w-full rounded-lg object-cover shadow-2xl"
                   loading="lazy"
                   decoding="async"
@@ -502,6 +509,7 @@ const HomePage = () => {
           }}
         ></div>
         <div className="container relative z-10 mx-auto px-4">
+          <h2 className="sr-only">Customer stories</h2>
           <div className="mb-4 flex items-center justify-center gap-3 text-brand-accent/90 md:mb-5">
             <span className="h-px w-10 bg-brand-accent/50 md:w-16"></span>
             <Globe size={16} />
@@ -553,9 +561,9 @@ const HomePage = () => {
                           .slice(0, 2)}
                       </div>
                       <div className="text-center md:text-left">
-                        <h4 className="font-serif text-lg font-bold text-brand-accent md:text-xl">
+                        <h3 className="font-serif text-lg font-bold text-brand-accent md:text-xl">
                           {testimonial.name}
-                        </h4>
+                        </h3>
                         <p className="mt-0.5 text-xs text-brand-accent/80">
                           {testimonial.role}
                         </p>

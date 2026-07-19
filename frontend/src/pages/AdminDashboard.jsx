@@ -146,7 +146,7 @@ const buildProductUpdatePayload = (product, overrides = {}) => ({
   description: product.description || '',
   origin: product.origin || '',
   ingredients: product.ingredients || '',
-  brand: product.brand || 'Apex Link Group',
+  brand: product.brand || 'Apex Spices',
   sku: product.sku || '',
   isFeatured: Boolean(product.isFeatured),
   isActive: product.isActive ?? true,

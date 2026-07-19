@@ -6,6 +6,7 @@ import {
   getProductStatusBadge,
   getStockPresentation,
 } from '../utils/productUi';
+import { getCloudinarySrcSet, getOptimizedImageUrl } from '../utils/imageUi';
 
 const preloadProductPage = () => import('../pages/ProductPage');
 
@@ -36,8 +37,12 @@ const Product = ({ product, compactOnMobile = false }) => {
       >
         <div className={`relative overflow-hidden bg-[#ecf0f7] ${compactOnMobile ? 'h-36 sm:h-72' : 'h-72'}`}>
           <img
-            src={product.image}
+            src={getOptimizedImageUrl(product.image, 600)}
+            srcSet={getCloudinarySrcSet(product.image, [320, 480, 600, 900])}
+            sizes={compactOnMobile ? '(max-width: 639px) 44vw, (max-width: 1279px) 45vw, 360px' : '(max-width: 767px) 90vw, 360px'}
             alt={product.name}
+            width="1200"
+            height="800"
             loading="lazy"
             decoding="async"
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"

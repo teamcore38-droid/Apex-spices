@@ -8,12 +8,6 @@ const PrivacyPage = () => {
     <PolicyPageLayout
       {...policy}
       relatedLinks={getPolicyRelatedLinks('privacy')}
-      seo={{
-        title: policy.seoTitle,
-        description: policy.seoDescription,
-        keywords: ['Apex Spices privacy policy', 'PayHere privacy policy', 'customer data Sri Lanka'],
-        type: 'article',
-      }}
       cta={{
         eyebrow: 'Privacy questions?',
         title: 'Contact Apex Spices customer care',

@@ -37,6 +37,7 @@ const CookieConsentBanner = () => {
     };
 
     localStorage.setItem(CONSENT_KEY, JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent('apex:consent-updated', { detail: payload }));
     setVisible(false);
 
     try {
@@ -58,8 +59,8 @@ const CookieConsentBanner = () => {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-gray-200 bg-white shadow-[0_-14px_40px_rgba(8,23,41,0.16)]">
-      <div className="container mx-auto flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-3xl">
+      <div className="container mx-auto flex w-screen min-w-0 max-w-[100vw] flex-col gap-4 overflow-hidden px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 max-w-3xl">
           <p className="flex items-center text-sm font-bold uppercase tracking-[0.18em] text-brand-dark">
             <ShieldCheck size={18} className="mr-2 text-brand-accent" /> Privacy Preferences
           </p>
@@ -85,25 +86,25 @@ const CookieConsentBanner = () => {
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 lg:flex lg:w-auto lg:flex-wrap">
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center rounded-md border border-gray-200 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-brand-dark"
+            className="inline-flex min-w-0 items-center justify-center rounded-md border border-gray-200 px-2 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-brand-dark sm:px-4 sm:text-xs sm:tracking-[0.14em]"
           >
             <Settings size={15} className="mr-2" /> Customize
           </button>
           <button
             type="button"
             onClick={() => saveConsent({ analytics: false, marketing: false, personalization: false })}
-            className="rounded-md border border-brand-primary/20 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-brand-primary"
+            className="min-w-0 rounded-md border border-brand-primary/20 px-2 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-brand-primary sm:px-4 sm:text-xs sm:tracking-[0.14em]"
           >
             Necessary Only
           </button>
           <button
             type="button"
             onClick={() => saveConsent(expanded ? preferences : { analytics: true, marketing: true, personalization: true })}
-            className="rounded-md bg-brand-primary px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white"
+            className="col-span-2 rounded-md bg-brand-primary px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white lg:col-span-1"
           >
             {expanded ? 'Save Choices' : 'Accept All'}
           </button>

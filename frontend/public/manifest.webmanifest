@@ -1,7 +1,7 @@
 {
-  "name": "Apex Link Group Marketplace",
-  "short_name": "Apex Link",
-  "description": "Multi-industry marketplace for products, RFQs, order tracking, and customer support.",
+  "name": "Apex Spices",
+  "short_name": "Apex Spices",
+  "description": "Shop premium Sri Lankan spices, dried foods, and pantry products online.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "background_color": "#f7f9fc",
   "theme_color": "#081729",
   "orientation": "portrait-primary",
-  "categories": ["shopping", "business", "productivity"],
+  "categories": ["shopping", "food"],
   "icons": [
     {
       "src": "/android-chrome-192x192.png?v=20260719",

@@ -6,7 +6,7 @@ const ShippingPage = () => {
     <PolicyPageLayout
       eyebrow="Shipping Policy"
       title="Protective shipping designed for premium products"
-      intro="Every Apex Link Group order is packed to protect its quality, condition, and value. Our shipping policy is built to keep your business and home supplied quickly while preserving the premium experience from shelf to doorstep."
+      intro="Every Apex Spices order is packed to protect its quality, condition, and value. Our shipping policy is built to keep your business and home supplied quickly while preserving the premium experience from shelf to doorstep."
       highlights={[
         {
           icon: Truck,
@@ -63,8 +63,8 @@ const ShippingPage = () => {
         },
       ]}
       relatedLinks={[
-        { to: '/pages/refund-policy', label: 'Refund Policy' },
-        { to: '/pages/privacy-policy', label: 'Privacy Policy' },
+        { to: '/returns', label: 'Refund Policy' },
+        { to: '/privacy', label: 'Privacy Policy' },
         { to: '/faq', label: 'FAQ' },
       ]}
       cta={{

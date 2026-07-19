@@ -109,7 +109,7 @@ const productSchema = mongoose.Schema(
     },
     brand: {
       type: String,
-      default: 'Apex Link Group',
+      default: 'Apex Spices',
       trim: true,
     },
     category: {

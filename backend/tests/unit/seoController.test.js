@@ -20,7 +20,10 @@ test('buildProductSeo creates product structured data', () => {
   };
 
   const seo = buildProductSeo(product);
+  const productSchema = seo.structuredData['@graph'].find((entry) => entry['@type'] === 'Product');
 
-  assert.equal(seo.structuredData['@type'], 'Product');
-  assert.equal(seo.structuredData.offers.availability, 'https://schema.org/InStock');
+  assert.equal(productSchema['@type'], 'Product');
+  assert.equal(productSchema.offers.availability, 'https://schema.org/InStock');
+  assert.equal(productSchema.offers.priceCurrency, 'LKR');
+  assert.equal(seo.canonicalUrl, 'https://www.apexspices.lk/product/product-id');
 });

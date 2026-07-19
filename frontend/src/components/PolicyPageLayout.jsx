@@ -102,7 +102,7 @@ const PolicyPageLayout = ({
           <aside className="space-y-6">
             <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Need more help?</p>
-              <h2 className="mt-3 font-serif text-2xl font-bold text-brand-dark">Speak with the Apex Link Group team</h2>
+              <h2 className="mt-3 font-serif text-2xl font-bold text-brand-dark">Speak with the Apex Spices team</h2>
               <p className="mt-3 text-sm leading-7 text-gray-600">
                 If you need clarity on shipping, returns, privacy, or wholesale support, our team is happy to help.
               </p>

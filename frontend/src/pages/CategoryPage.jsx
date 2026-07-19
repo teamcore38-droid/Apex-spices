@@ -58,8 +58,8 @@ const CategoryPage = () => {
         applySeo({
           title: data.seo?.title || data.name,
           description: data.seo?.description || data.description,
-          keywords: data.seo?.keywords || [data.name, 'Apex Link Group'],
-          canonicalUrl: data.seo?.canonicalUrl || window.location.href,
+          keywords: data.seo?.keywords || [data.name, 'Sri Lankan spices', 'Apex Spices'],
+          canonicalUrl: `https://www.apexspices.lk/category/${data.slug}`,
           ogImage: data.seo?.ogImage || data.image,
           type: 'website',
           structuredData: buildCategoryStructuredData(data),
@@ -77,8 +77,8 @@ const CategoryPage = () => {
             applySeo({
               title: seoData.title || data.seo?.title || data.name,
               description: seoData.description || data.seo?.description || data.description,
-              keywords: seoData.keywords || data.seo?.keywords || [data.name, 'Apex Link Group'],
-              canonicalUrl: seoData.canonicalUrl || data.seo?.canonicalUrl || window.location.href,
+              keywords: seoData.keywords || data.seo?.keywords || [data.name, 'Sri Lankan spices', 'Apex Spices'],
+              canonicalUrl: seoData.canonicalUrl || `https://www.apexspices.lk/category/${data.slug}`,
               ogImage: seoData.ogImage || data.seo?.ogImage || data.image,
               type: 'website',
               structuredData: seoData.structuredData || buildCategoryStructuredData(data),
@@ -176,17 +176,20 @@ const CategoryPage = () => {
     <div className="bg-[#f4f7fb] pb-8 sm:pb-10">
       <div className="container mx-auto max-w-7xl px-4 pt-3 sm:pt-4 lg:pt-5">
         <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.06)]">
-          <Link
-            to="/categories"
-            className="mb-5 inline-flex items-center text-xs font-bold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:text-brand-dark"
-          >
-            <ArrowLeft size={14} className="mr-2" /> All Categories
-          </Link>
+          <nav aria-label="Breadcrumb" className="mb-5 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary">
+            <Link to="/" className="transition-colors hover:text-brand-dark">Home</Link>
+            <span aria-hidden="true">/</span>
+            <Link to="/categories" className="inline-flex items-center transition-colors hover:text-brand-dark">
+              <ArrowLeft size={14} className="mr-2" /> Categories
+            </Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-brand-dark" aria-current="page">{category?.name}</span>
+          </nav>
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Category Collection</p>
-              <h2 className="mt-2 font-serif text-2xl font-bold text-brand-dark">Discover products in {category?.name}</h2>
+              <h1 className="mt-2 font-serif text-2xl font-bold text-brand-dark">Discover products in {category?.name}</h1>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_260px] lg:w-[620px]">
@@ -253,7 +256,7 @@ const CategoryPage = () => {
               <div className="rounded-3xl border border-dashed border-brand-accent/30 bg-[#f4f7fb] px-6 py-10 text-center">
                 <p className="font-serif text-2xl font-bold text-brand-dark">No products found in this category</p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Try adjusting your search or continue browsing the full marketplace.
+                  Try adjusting your search or continue browsing the full spice collection.
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <button

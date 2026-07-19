@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowRight, Globe, Sparkles } from 'lucide-react';
 import { getCategoryImage } from '../utils/categoryUi';
+import { getCloudinarySrcSet, getOptimizedImageUrl } from '../utils/imageUi';
 
 const CategoriesPage = () => {
   const [categories, setCategories] = useState([]);
@@ -89,8 +90,12 @@ const CategoriesPage = () => {
                 >
                   <div className="relative h-72 overflow-hidden">
                     <img
-                      src={getCategoryImage(category)}
-                      alt={category.name}
+                      src={getOptimizedImageUrl(getCategoryImage(category), 900)}
+                      srcSet={getCloudinarySrcSet(getCategoryImage(category), [480, 720, 900, 1200])}
+                      sizes="(max-width: 767px) 92vw, (max-width: 1279px) 46vw, 380px"
+                      alt={`${category.name} collection`}
+                      width="1200"
+                      height="800"
                       loading="lazy"
                       decoding="async"
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"

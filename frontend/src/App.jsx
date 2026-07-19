@@ -5,6 +5,8 @@ import Footer from './components/Footer'
 import RouteLoadingScreen from './components/RouteLoadingScreen'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import CookieConsentBanner from './components/CookieConsentBanner'
+import SeoRouteManager from './components/SeoRouteManager'
+import AnalyticsRouteTracker from './components/AnalyticsRouteTracker'
 import { lazyWithChunkRecovery } from './utils/chunkLoadRecovery'
 
 const HomePage = lazyWithChunkRecovery(() => import('./pages/HomePage'))
@@ -73,6 +75,8 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
+      <SeoRouteManager />
+      <AnalyticsRouteTracker />
       <Header />
       <main className="flex-grow">
         <RouteErrorBoundary locationKey={location.key}>
@@ -104,9 +108,9 @@ function App() {
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/privacy-center" element={<PrivacyCenterPage />} />
               <Route path="/returns" element={<ReturnsPage />} />
-              <Route path="/pages/refund-policy" element={<ReturnsPage />} />
-              <Route path="/pages/privacy-policy" element={<PrivacyPage />} />
-              <Route path="/pages/terms-and-conditions" element={<TermsPage />} />
+              <Route path="/pages/refund-policy" element={<Navigate to="/returns" replace />} />
+              <Route path="/pages/privacy-policy" element={<Navigate to="/privacy" replace />} />
+              <Route path="/pages/terms-and-conditions" element={<Navigate to="/terms" replace />} />
               <Route path="/shipping" element={<ShippingPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/categories" element={<AdminCategoriesPage />} />

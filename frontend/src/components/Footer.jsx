@@ -93,13 +93,8 @@ const Footer = () => {
               </Link>
             </li>
             <li>
-              <Link to="/category/ground-spices" className="transition-colors hover:text-brand-accent">
-                Ground Spices
-              </Link>
-            </li>
-            <li>
-              <Link to="/category/spicy-blends" className="transition-colors hover:text-brand-accent">
-                Spicy Blends
+              <Link to="/category/dry-meat" className="transition-colors hover:text-brand-accent">
+                Dried Meat
               </Link>
             </li>
           </ul>
@@ -109,17 +104,17 @@ const Footer = () => {
           <h4 className="mb-4 font-semibold uppercase tracking-wider">Policies</h4>
           <ul className="space-y-2 text-sm text-gray-300">
             <li>
-              <Link to="/pages/refund-policy" className="transition-colors hover:text-brand-accent">
+              <Link to="/returns" className="transition-colors hover:text-brand-accent">
                 Refund Policy
               </Link>
             </li>
             <li>
-              <Link to="/pages/privacy-policy" className="transition-colors hover:text-brand-accent">
+              <Link to="/privacy" className="transition-colors hover:text-brand-accent">
                 Privacy Policy
               </Link>
             </li>
             <li>
-              <Link to="/pages/terms-and-conditions" className="transition-colors hover:text-brand-accent">
+              <Link to="/terms" className="transition-colors hover:text-brand-accent">
                 Terms & Conditions
               </Link>
             </li>

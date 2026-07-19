@@ -8,12 +8,6 @@ const ReturnsPage = () => {
     <PolicyPageLayout
       {...policy}
       relatedLinks={getPolicyRelatedLinks('refund')}
-      seo={{
-        title: policy.seoTitle,
-        description: policy.seoDescription,
-        keywords: ['Apex Spices refund policy', 'Apex Spices returns', 'Sri Lanka refund policy'],
-        type: 'article',
-      }}
       cta={{
         eyebrow: 'Need return support?',
         title: 'Contact customer care with your order number',

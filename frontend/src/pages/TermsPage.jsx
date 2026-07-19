@@ -8,12 +8,6 @@ const TermsPage = () => {
     <PolicyPageLayout
       {...policy}
       relatedLinks={getPolicyRelatedLinks('terms')}
-      seo={{
-        title: policy.seoTitle,
-        description: policy.seoDescription,
-        keywords: ['Apex Spices terms and conditions', 'Apex Spices terms', 'Sri Lanka ecommerce terms'],
-        type: 'article',
-      }}
       cta={{
         eyebrow: 'Need clarification?',
         title: 'Ask before placing an order',

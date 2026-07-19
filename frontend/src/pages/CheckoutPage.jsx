@@ -695,7 +695,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
           </div>
           <h2 className="mt-6 font-serif text-4xl font-bold text-brand-dark">Order Placed Successfully!</h2>
           <p className="mt-3 text-lg text-gray-600">
-            Thank you for choosing Apex Link Group for your next order.
+            Thank you for choosing Apex Spices for your next order.
           </p>
           <p className="mt-2 text-sm text-green-700">
             You will be redirected to your order confirmation page shortly.

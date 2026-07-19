@@ -376,9 +376,9 @@ export const policyContent = {
 
 export const getPolicyRelatedLinks = (currentKey) =>
   [
-    { key: 'refund', to: '/pages/refund-policy', label: 'Refund Policy' },
-    { key: 'privacy', to: '/pages/privacy-policy', label: 'Privacy Policy' },
-    { key: 'terms', to: '/pages/terms-and-conditions', label: 'Terms & Conditions' },
+    { key: 'refund', to: '/returns', label: 'Refund Policy' },
+    { key: 'privacy', to: '/privacy', label: 'Privacy Policy' },
+    { key: 'terms', to: '/terms', label: 'Terms & Conditions' },
   ].filter((link) => link.key !== currentKey);
 
 export { BUSINESS_CONTACT };

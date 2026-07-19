@@ -1,8 +1,8 @@
-const CACHE_NAME = 'apex-link-v6';
+const CACHE_NAME = 'apex-spices-v7';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
-  '/logo.webp?v=20260716'
+  '/logo-96.webp?v=20260719'
 ];
 
 const HTML_CONTENT_TYPE = 'text/html';
@@ -88,11 +88,11 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'Apex Link Group';
+  const title = data.title || 'Apex Spices';
   const options = {
-    body: data.body || 'You have a new marketplace update.',
-    icon: '/logo.webp?v=20260716',
-    badge: '/logo.webp?v=20260716',
+    body: data.body || 'You have a new Apex Spices update.',
+    icon: '/android-chrome-192x192.png?v=20260719',
+    badge: '/android-chrome-192x192.png?v=20260719',
     data: {
       url: data.url || '/'
     }
