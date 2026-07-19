@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
 import axios from 'axios';
-import { Loader2, Mail, MapPin, MessageSquareText, Phone } from 'lucide-react';
+import {
+  BadgeCheck,
+  Loader2,
+  Mail,
+  MapPin,
+  MessageSquareText,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  Truck,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const createInitialForm = (userInfo) => ({
@@ -55,6 +65,32 @@ const ContactPage = () => {
         icon: Mail,
         title: 'Email Support',
         body: 'apexlinkimportandexport@gmail.com',
+      },
+    ],
+    []
+  );
+
+  const trustQualityCards = useMemo(
+    () => [
+      {
+        icon: BadgeCheck,
+        title: 'Verified Authentic',
+        body: 'Every product checked against strict quality standards.',
+      },
+      {
+        icon: Sparkles,
+        title: 'Premium Grade',
+        body: 'Sourced from certified, audited manufacturers.',
+      },
+      {
+        icon: ShieldCheck,
+        title: 'Ethically Sourced',
+        body: 'Chosen from trusted producers and origin partners.',
+      },
+      {
+        icon: Truck,
+        title: 'Fast Delivery',
+        body: 'Packed with care and shipped promptly worldwide.',
       },
     ],
     []
@@ -140,7 +176,7 @@ const ContactPage = () => {
         </section>
 
         <div className="apex-section-gap grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-          <aside className="space-y-6">
+          <aside className="order-2 space-y-4 sm:order-none sm:space-y-6">
             <div className="rounded-[24px] bg-white p-5 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:rounded-[28px] sm:p-6">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Customer Care</p>
               <h2 className="mt-2 font-serif text-2xl font-bold text-brand-dark sm:text-3xl">How we can help</h2>
@@ -153,19 +189,48 @@ const ContactPage = () => {
               {contactCards.map(({ icon: Icon, title, body }) => (
                 <article
                   key={title}
-                  className="rounded-[24px] bg-white p-5 shadow-[0_14px_32px_rgba(11,31,58,0.07)] sm:p-4 xl:p-5"
+                  className="flex min-h-[104px] items-start gap-4 rounded-[22px] bg-white p-4 shadow-[0_14px_32px_rgba(11,31,58,0.07)] sm:block sm:min-h-0 sm:rounded-[24px] sm:p-4 xl:p-5"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-light text-brand-primary">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-primary sm:h-11 sm:w-11">
                     <Icon size={18} />
                   </div>
-                  <h3 className="mt-3 font-serif text-xl font-bold text-brand-dark xl:text-2xl">{title}</h3>
-                  <div className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-gray-600">{body}</div>
+                  <div className="min-w-0">
+                    <h3 className="font-serif text-lg font-bold leading-tight text-brand-dark sm:mt-3 sm:text-xl xl:text-2xl">{title}</h3>
+                    <div className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-gray-600 sm:mt-2">{body}</div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="grid gap-3 sm:hidden">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Trust & Quality</p>
+              {trustQualityCards.map(({ icon: Icon, title, body }) => (
+                <article
+                  key={title}
+                  className="flex min-h-[84px] items-center gap-3 rounded-[20px] bg-white p-4 shadow-[0_12px_28px_rgba(11,31,58,0.06)]"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-primary">
+                    <Icon size={17} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-serif text-base font-bold leading-tight text-brand-dark">{title}</h3>
+                    <p
+                      className="mt-1 overflow-hidden text-sm leading-5 text-gray-600"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {body}
+                    </p>
+                  </div>
                 </article>
               ))}
             </div>
           </aside>
 
-          <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
+          <section className="order-1 rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:order-none sm:p-8">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand-primary">
                 <MessageSquareText size={20} />
