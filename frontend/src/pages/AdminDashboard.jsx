@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
+import AdminNotificationsPanel from '../components/AdminNotificationsPanel';
 import {
   ADMIN_PRODUCT_PAGE_SIZE,
   ADMIN_PRODUCT_SORT_OPTIONS,
@@ -218,6 +219,7 @@ const AdminDashboard = () => {
     message: '',
     error: '',
   }));
+  const [adminNotificationUnreadCount, setAdminNotificationUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!userInfo || !canAccessAdmin) {
@@ -709,9 +711,16 @@ const AdminDashboard = () => {
                 <Bell size={19} aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <h2 id="order-notifications-heading" className="font-serif text-lg font-bold text-brand-dark">
-                  Order notifications
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 id="order-notifications-heading" className="font-serif text-lg font-bold text-brand-dark">
+                    Order notifications
+                  </h2>
+                  {adminNotificationUnreadCount > 0 && (
+                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-xs font-bold text-white" aria-label={`${adminNotificationUnreadCount} unread admin notifications`}>
+                      {adminNotificationUnreadCount > 99 ? '99+' : adminNotificationUnreadCount}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-sm text-gray-500">
                   {pushState.loading
                     ? 'Checking this device...'
@@ -770,6 +779,14 @@ const AdminDashboard = () => {
           {pushState.message && <p className="mt-3 text-sm font-medium text-green-700" role="status">{pushState.message}</p>}
           {pushState.error && <p className="mt-3 text-sm font-medium text-red-700" role="alert">{pushState.error}</p>}
         </section>
+      )}
+
+      {canReadOrders && userInfo?.token && (
+        <AdminNotificationsPanel
+          token={userInfo.token}
+          unreadCount={adminNotificationUnreadCount}
+          onUnreadCountChange={setAdminNotificationUnreadCount}
+        />
       )}
 
       <div className="flex flex-col gap-8 md:flex-row">
