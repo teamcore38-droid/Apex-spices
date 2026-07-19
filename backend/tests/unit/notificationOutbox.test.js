@@ -7,8 +7,11 @@ import NotificationOutbox from '../../models/notificationOutboxModel.js';
 import {
   buildAdminNotificationContent,
   buildEventKey,
+  buildLegacyPublishFailureFilter,
   buildOutboxPayload,
+  buildQstashDeduplicationId,
   endpointHash,
+  publishOutboxToQstash,
 } from '../../utils/notificationOutboxService.js';
 import { getRequestPublicUrl } from '../../middleware/qstashMiddleware.js';
 
@@ -27,6 +30,7 @@ test('order notification event keys and payloads are deterministic', () => {
   };
   const payload = buildOutboxPayload(order, 'order.paid');
 
+  assert.equal(buildEventKey('order.created', orderId), `order.created:${orderId}`);
   assert.equal(buildEventKey('order.paid', orderId), `order.paid:${orderId}`);
   assert.equal(payload.orderId, String(orderId));
   assert.equal(payload.orderNumber, String(orderId).slice(-8).toUpperCase());
@@ -34,6 +38,56 @@ test('order notification event keys and payloads are deterministic', () => {
   assert.equal(payload.total, 3500.99);
   assert.equal(payload.currency, 'LKR');
   assert.equal(payload.adminUrl, `/admin/orders/${orderId}`);
+});
+
+test('QStash deduplication IDs are safe and deterministic for order events', () => {
+  const createdEventKey = `order.created:${orderId}`;
+  const paidEventKey = `order.paid:${orderId}`;
+  const createdDeduplicationId = buildQstashDeduplicationId(createdEventKey);
+  const paidDeduplicationId = buildQstashDeduplicationId(paidEventKey);
+
+  assert.equal(createdDeduplicationId, buildQstashDeduplicationId(createdEventKey));
+  assert.equal(paidDeduplicationId, buildQstashDeduplicationId(paidEventKey));
+  assert.notEqual(createdDeduplicationId, paidDeduplicationId);
+  assert.match(createdDeduplicationId, /^[A-Za-z0-9_-]+$/);
+  assert.match(paidDeduplicationId, /^[A-Za-z0-9_-]+$/);
+  assert.doesNotMatch(createdDeduplicationId, /:/);
+  assert.doesNotMatch(paidDeduplicationId, /:/);
+});
+
+test('QStash publish keeps the MongoDB event key and uses the safe deduplication ID', async () => {
+  const eventKey = `order.created:${orderId}`;
+  let publishRequest;
+  const result = await publishOutboxToQstash(
+    {
+      _id: orderId,
+      eventKey,
+      workerUrl: 'https://api.apexspices.lk/api/workers/admin-notifications',
+    },
+    {
+      client: {
+        publishJSON: async (request) => {
+          publishRequest = request;
+          return { messageId: 'qstash-message-1' };
+        },
+      },
+    }
+  );
+
+  assert.equal(result.messageId, 'qstash-message-1');
+  assert.equal(result.deduplicationId, buildQstashDeduplicationId(eventKey));
+  assert.equal(publishRequest.body.eventKey, eventKey);
+  assert.equal(publishRequest.deduplicationId, result.deduplicationId);
+  assert.doesNotMatch(publishRequest.deduplicationId, /:/);
+});
+
+test('legacy failed QStash publishes are selected for immediate reconciliation', () => {
+  const filter = buildLegacyPublishFailureFilter();
+
+  assert.equal(filter.status, 'failed');
+  assert.equal(filter.failureStage, 'publish');
+  assert.equal(filter.lastError.test("Error: Upstash-DeduplicationId cannot contain ':'"), true);
+  assert.equal(filter.lastError.test('Push delivery failed'), false);
 });
 
 test('admin push content includes required order and payment details', () => {
@@ -111,6 +165,8 @@ test('Phase 3 worker is signed, retry-safe, and deactivates expired devices', as
   assert.match(serviceSource, /isExpiredPushSubscriptionError/);
   assert.match(serviceSource, /isActive: false/);
   assert.match(serviceSource, /sourceEventKey: outbox\.eventKey/);
+  assert.match(serviceSource, /buildLegacyPublishFailureFilter\(\)/);
+  assert.match(serviceSource, /\{ \$set: \{ nextAttemptAt: now \} \}/);
   assert.doesNotMatch(notificationRoutes, /\/test/);
   assert.match(orderSource, /createOrderOutboxEvent\(createdOrder, 'order\.created'/);
   assert.match(orderSource, /runCheckoutNotificationsInBackground\('order-created'/);

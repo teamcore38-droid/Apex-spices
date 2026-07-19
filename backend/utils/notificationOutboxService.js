@@ -16,6 +16,8 @@ const PUBLISH_LEASE_MS = 60 * 1000;
 const PROCESSING_LEASE_MS = 5 * 60 * 1000;
 const STALE_PUBLISHED_MS = 15 * 60 * 1000;
 const MAX_RECONCILE_BATCH = 50;
+const QSTASH_DEDUPLICATION_PREFIX = 'admin-order-';
+const LEGACY_UNSAFE_DEDUPLICATION_ERROR = /Upstash-DeduplicationId cannot contain ':'/i;
 
 let qstashClientSignature = '';
 let qstashClient = null;
@@ -185,6 +187,77 @@ const getRetryDate = (attempts = 1) => {
 const serializeError = (error, fallback = 'Notification delivery failed') =>
   String(error?.message || error?.body || fallback).slice(0, 500);
 
+const buildQstashDeduplicationId = (eventKey) => {
+  const normalizedEventKey = String(eventKey || '').trim();
+  if (!normalizedEventKey) {
+    throw new Error('An event key is required for QStash deduplication');
+  }
+
+  const digest = crypto.createHash('sha256').update(normalizedEventKey).digest('hex');
+  return `${QSTASH_DEDUPLICATION_PREFIX}${digest}`;
+};
+
+const buildLegacyPublishFailureFilter = () => ({
+  status: 'failed',
+  failureStage: 'publish',
+  lastError: LEGACY_UNSAFE_DEDUPLICATION_ERROR,
+});
+
+const sanitizePublishLogError = (error) =>
+  serializeError(error, 'QStash publish failed')
+    .replace(/Bearer\s+[^\s]+/gi, 'Bearer [redacted]')
+    .replace(/https?:\/\/[^\s]+/gi, '[url]')
+    .slice(0, 300);
+
+const logPublishResult = ({
+  level = 'info',
+  outboxId,
+  eventType = '',
+  status,
+  publishAttempts = 0,
+  messageId = '',
+  error = null,
+}) => {
+  const entry = {
+    scope: 'notification-outbox',
+    action: 'qstash-publish',
+    outboxId: String(outboxId || ''),
+    eventType: String(eventType || ''),
+    status: String(status || ''),
+    publishAttempts: Number(publishAttempts) || 0,
+    ...(messageId ? { qstashMessageId: String(messageId) } : {}),
+    ...(error
+      ? {
+          errorName: String(error?.name || 'Error'),
+          errorCode: String(error?.code || ''),
+          error: sanitizePublishLogError(error),
+        }
+      : {}),
+  };
+
+  const logger = level === 'error' ? console.error : console.info;
+  logger('[notificationOutbox]', JSON.stringify(entry));
+};
+
+const publishOutboxToQstash = async (record, { client = getQstashClient() } = {}) => {
+  const deduplicationId = buildQstashDeduplicationId(record.eventKey);
+  const response = await client.publishJSON({
+    url: record.workerUrl,
+    body: {
+      outboxId: String(record._id),
+      eventKey: record.eventKey,
+    },
+    deduplicationId,
+    retries: 5,
+    retryDelay: 'max(1000, pow(2, retried) * 1000)',
+  });
+
+  return {
+    deduplicationId,
+    messageId: String(response?.messageId || '').trim(),
+  };
+};
+
 const publishOutboxRecord = async (outboxId) => {
   if (!mongoose.isValidObjectId(outboxId)) {
     throw new Error('Invalid notification outbox id');
@@ -223,18 +296,7 @@ const publishOutboxRecord = async (outboxId) => {
       throw new Error('A public HTTPS QStash worker URL is required');
     }
 
-    const response = await getQstashClient().publishJSON({
-      url: record.workerUrl,
-      body: {
-        outboxId: String(record._id),
-        eventKey: record.eventKey,
-      },
-      deduplicationId: `${record.eventKey}:publish:${record.publishAttempts}`,
-      retries: 5,
-      retryDelay: 'max(1000, pow(2, retried) * 1000)',
-    });
-
-    const messageId = String(response?.messageId || '').trim();
+    const { messageId } = await publishOutboxToQstash(record);
     await NotificationOutbox.updateOne(
       { _id: record._id, status: 'publishing' },
       {
@@ -247,6 +309,14 @@ const publishOutboxRecord = async (outboxId) => {
         ...(messageId ? { $addToSet: { qstashMessageIds: messageId } } : {}),
       }
     );
+
+    logPublishResult({
+      outboxId: record._id,
+      eventType: record.eventType,
+      status: 'published',
+      publishAttempts: record.publishAttempts,
+      messageId,
+    });
 
     return { skipped: false, messageId };
   } catch (error) {
@@ -262,6 +332,15 @@ const publishOutboxRecord = async (outboxId) => {
         },
       }
     );
+    logPublishResult({
+      level: 'error',
+      outboxId: record._id,
+      eventType: record.eventType,
+      status: 'failed',
+      publishAttempts: record.publishAttempts,
+      error,
+    });
+    error.outboxPublishLogged = true;
     throw error;
   }
 };
@@ -270,7 +349,14 @@ const publishOutboxInBackground = (outboxId) => {
   Promise.resolve()
     .then(() => publishOutboxRecord(outboxId))
     .catch((error) => {
-      console.error(`[notificationOutbox:publish:${outboxId}]`, error);
+      if (!error?.outboxPublishLogged) {
+        logPublishResult({
+          level: 'error',
+          outboxId,
+          status: mongoose.isValidObjectId(outboxId) ? 'publish-start-failed' : 'invalid-outbox-id',
+          error,
+        });
+      }
     });
 };
 
@@ -557,6 +643,10 @@ const reconcileNotificationOutbox = async ({ limit = MAX_RECONCILE_BATCH } = {})
 
   await Promise.all([
     NotificationOutbox.updateMany(
+      buildLegacyPublishFailureFilter(),
+      { $set: { nextAttemptAt: now } }
+    ),
+    NotificationOutbox.updateMany(
       { status: 'processing', processingLockedUntil: { $lte: now } },
       {
         $set: {
@@ -625,13 +715,16 @@ export {
   WORKER_PATH,
   buildAdminNotificationContent,
   buildEventKey,
+  buildLegacyPublishFailureFilter,
   buildOutboxPayload,
+  buildQstashDeduplicationId,
   createOrderOutboxEvent,
   endpointHash,
   getAuthorizedOrderAdmins,
   getQstashConfiguration,
   isQstashConfigured,
   processOutboxRecord,
+  publishOutboxToQstash,
   publishOutboxInBackground,
   publishOutboxRecord,
   reconcileNotificationOutbox,
