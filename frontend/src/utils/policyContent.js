@@ -1,7 +1,7 @@
 import { BadgeCheck, Database, FileText, Gavel, Lock, PackageSearch, Receipt, RefreshCcw, Scale, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react';
 
 const BUSINESS_CONTACT = {
-  email: 'apexlinkimportandexport@gmail.com',
+  email: 'info@apexspices.lk',
   phone: '+94 76 566 9961',
   website: 'https://www.apexspices.lk',
   address: '580/12, Moque Lane, Nawala, Rajagiriya, Sri Lanka',
