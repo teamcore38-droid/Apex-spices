@@ -1,5 +1,122 @@
 @import "tailwindcss";
 
+@keyframes apex-preloader-logo {
+  0%, 100% { transform: translateY(0) scale(0.96); opacity: 0.78; }
+  50% { transform: translateY(-5px) scale(1.04); opacity: 1; }
+}
+
+@keyframes apex-preloader-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes apex-preloader-progress {
+  0% { transform: translateX(-115%); }
+  55% { transform: translateX(15%); }
+  100% { transform: translateX(115%); }
+}
+
+.apex-route-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  background: rgba(31, 14, 7, 0.86);
+  backdrop-filter: blur(18px) saturate(0.8);
+  -webkit-backdrop-filter: blur(18px) saturate(0.8);
+  opacity: 1;
+  transition: opacity 420ms ease, visibility 420ms ease;
+}
+
+.apex-route-preloader--exiting {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.apex-route-preloader__content {
+  width: min(100%, 320px);
+  text-align: center;
+  color: #f6efe5;
+}
+
+.apex-route-preloader__logo-stage {
+  position: relative;
+  display: grid;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto;
+  place-items: center;
+}
+
+.apex-route-preloader__ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(197, 168, 128, 0.22);
+  border-top-color: rgba(197, 168, 128, 0.92);
+  border-right-color: rgba(197, 168, 128, 0.5);
+  border-radius: 50%;
+  animation: apex-preloader-ring 1.7s linear infinite;
+}
+
+.apex-route-preloader__logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.28));
+  animation: apex-preloader-logo 1.45s ease-in-out infinite;
+}
+
+.apex-route-preloader__brand {
+  margin-top: 20px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: #c5a880;
+}
+
+.apex-route-preloader__caption {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: rgba(246, 239, 229, 0.72);
+}
+
+.apex-route-preloader__progress {
+  display: block;
+  width: 156px;
+  height: 2px;
+  margin: 24px auto 0;
+  overflow: hidden;
+  background: rgba(246, 239, 229, 0.14);
+}
+
+.apex-route-preloader__progress > span {
+  display: block;
+  width: 72%;
+  height: 100%;
+  background: #c5a880;
+  animation: apex-preloader-progress 1.35s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-route-preloader,
+  .apex-route-preloader__logo,
+  .apex-route-preloader__ring,
+  .apex-route-preloader__progress > span {
+    animation: none;
+    transition-duration: 1ms;
+  }
+}
+
 @theme {
   --color-brand-dark: #1f0e07;
   --color-brand-light: #f8f5f0;

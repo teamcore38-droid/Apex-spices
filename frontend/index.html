@@ -10,6 +10,7 @@
     <link rel="manifest" href="/site.webmanifest?v=20260719" />
     <link rel="preload" as="image" href="/hero-background-mobile.webp" media="(max-width: 767px)" fetchpriority="high" />
     <link rel="preload" as="image" href="/hero-background.webp" media="(min-width: 768px)" fetchpriority="high" />
+    <link rel="preload" as="image" href="/logo-96.webp?v=20260719" fetchpriority="high" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="theme-color" content="#081729" />
@@ -27,8 +28,18 @@
     <meta property="og:image" content="https://www.apexspices.lk/logo.webp?v=20260716" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="description" content="Shop premium Sri Lankan whole spices, Ceylon cinnamon, cardamom, black pepper, cloves, turmeric, and dried foods online." />
+    <style>
+      #apex-boot-preloader{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(31,14,7,.94);color:#f6efe5;font-family:Arial,sans-serif;text-align:center}#apex-boot-preloader img{width:96px;height:96px;object-fit:contain;animation:apex-boot-pulse 1.45s ease-in-out infinite}#apex-boot-preloader strong{display:block;margin-top:18px;font-family:Georgia,serif;font-size:24px;letter-spacing:0;text-transform:uppercase;color:#c5a880}#apex-boot-preloader small{display:block;margin-top:7px;font-size:10px;font-weight:700;letter-spacing:0;text-transform:uppercase;color:rgba(246,239,229,.7)}@keyframes apex-boot-pulse{0%,100%{transform:scale(.94);opacity:.72}50%{transform:scale(1.04);opacity:1}}@media(prefers-reduced-motion:reduce){#apex-boot-preloader img{animation:none}}
+    </style>
   </head>
   <body>
+    <div id="apex-boot-preloader" role="status" aria-label="Loading Apex Spices">
+      <div>
+        <img src="/logo-96.webp?v=20260719" width="96" height="96" alt="" />
+        <strong>Apex Spices</strong>
+        <small>Premium Spices &amp; Herbs</small>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

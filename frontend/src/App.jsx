@@ -7,7 +7,9 @@ import RouteErrorBoundary from './components/RouteErrorBoundary'
 import CookieConsentBanner from './components/CookieConsentBanner'
 import SeoRouteManager from './components/SeoRouteManager'
 import AnalyticsRouteTracker from './components/AnalyticsRouteTracker'
+import RoutePreloader, { RouteReadyBoundary } from './components/RoutePreloader'
 import { lazyWithChunkRecovery } from './utils/chunkLoadRecovery'
+import { normalizeRoutePreloadKey } from './utils/routePreloader'
 
 const HomePage = lazyWithChunkRecovery(() => import('./pages/HomePage'))
 const ProductsPage = lazyWithChunkRecovery(() => import('./pages/ProductsPage'))
@@ -72,17 +74,20 @@ const ScrollToTop = () => {
 
 function App() {
   const location = useLocation()
+  const routePreloadKey = normalizeRoutePreloadKey(location.pathname)
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <ScrollToTop />
-      <SeoRouteManager />
-      <AnalyticsRouteTracker />
-      <Header />
-      <main className="flex-grow">
-        <RouteErrorBoundary locationKey={location.key}>
-          <Suspense fallback={<RouteLoadingScreen />}>
-            <Routes>
+    <RoutePreloader>
+      <div className="flex flex-col min-h-screen">
+        <ScrollToTop />
+        <SeoRouteManager />
+        <AnalyticsRouteTracker />
+        <Header />
+        <main className="flex-grow">
+          <RouteErrorBoundary locationKey={location.key}>
+            <Suspense fallback={<RouteLoadingScreen />}>
+              <RouteReadyBoundary routeKey={routePreloadKey}>
+                <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/shop/*" element={<ShopRedirect />} />
               <Route path="/products" element={<ProductsPage />} />
@@ -132,13 +137,15 @@ function App() {
               <Route path="/admin/orders/:id/invoice" element={<OrderInvoicePage />} />
               <Route path="/admin/orders/:id/packing-slip" element={<AdminPackingSlipPage />} />
               <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </Suspense>
-        </RouteErrorBoundary>
-      </main>
-      <Footer />
-      <CookieConsentBanner />
-    </div>
+                </Routes>
+              </RouteReadyBoundary>
+            </Suspense>
+          </RouteErrorBoundary>
+        </main>
+        <Footer />
+        <CookieConsentBanner />
+      </div>
+    </RoutePreloader>
   )
 }
 
