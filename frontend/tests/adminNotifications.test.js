@@ -43,3 +43,16 @@ test('notification panel uses Mongo-backed count and read APIs', async () => {
   assert.match(source, /\/api\/admin\/notifications\/test/);
   assert.match(source, /Mark All Read/);
 });
+
+test('admin notifications have a protected dedicated page and dashboard navigation', async () => {
+  const [appSource, dashboardSource, pageSource] = await Promise.all([
+    readFile(new URL('../src/App.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/pages/AdminDashboard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/pages/AdminNotificationsPage.jsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(appSource, /path="\/admin\/notifications"/);
+  assert.match(dashboardSource, /navigate\('\/admin\/notifications'\)/);
+  assert.match(pageSource, /permissions\?\.includes\('orders:read'\)/);
+  assert.match(pageSource, /displayMode="page"/);
+});

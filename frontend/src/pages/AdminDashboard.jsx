@@ -786,6 +786,7 @@ const AdminDashboard = () => {
           token={userInfo.token}
           unreadCount={adminNotificationUnreadCount}
           onUnreadCountChange={setAdminNotificationUnreadCount}
+          showViewAll
         />
       )}
 
@@ -807,6 +808,22 @@ const AdminDashboard = () => {
               }`}
             >
               <ShoppingBag size={20} className="mr-3" /> Orders
+            </button>
+            <button
+              onClick={() => navigate('/admin/notifications')}
+              className="flex items-center justify-between rounded p-3 text-left font-medium transition-colors hover:bg-gray-100"
+            >
+              <span className="flex min-w-0 items-center">
+                <Bell size={20} className="mr-3 shrink-0" /> Notifications
+              </span>
+              {adminNotificationUnreadCount > 0 && (
+                <span
+                  className="ml-2 inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-xs font-bold text-white"
+                  aria-label={`${adminNotificationUnreadCount} unread notifications`}
+                >
+                  {adminNotificationUnreadCount > 99 ? '99+' : adminNotificationUnreadCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => navigate('/admin/categories')}

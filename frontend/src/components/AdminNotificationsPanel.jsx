@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   BellRing,
@@ -17,8 +17,15 @@ import {
 
 const PAGE_SIZE = 10;
 
-const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) => {
+const AdminNotificationsPanel = ({
+  token,
+  unreadCount,
+  onUnreadCountChange,
+  displayMode = 'dashboard',
+  showViewAll = false,
+}) => {
   const navigate = useNavigate();
+  const isFullPage = displayMode === 'page';
   const [notifications, setNotifications] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
@@ -192,7 +199,12 @@ const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) =>
   };
 
   return (
-    <section className="mb-6 flex h-[460px] flex-col overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm sm:h-[480px]" aria-labelledby="admin-notification-history-heading">
+    <section
+      className={isFullPage
+        ? 'flex min-h-[540px] flex-col overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm'
+        : 'mb-6 flex h-[460px] flex-col overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm sm:h-[480px]'}
+      aria-labelledby="admin-notification-history-heading"
+    >
       <div className="shrink-0 flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand-primary">
@@ -214,6 +226,15 @@ const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) =>
         </div>
 
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          {showViewAll && (
+            <Link
+              to="/admin/notifications"
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-dark transition-colors hover:bg-gray-50"
+            >
+              <ExternalLink size={15} className="mr-2" aria-hidden="true" />
+              View All
+            </Link>
+          )}
           <button
             type="button"
             onClick={createSample}
@@ -236,7 +257,9 @@ const AdminNotificationsPanel = ({ token, unreadCount, onUnreadCountChange }) =>
       </div>
 
       <div
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
+        className={isFullPage
+          ? 'min-h-0 flex-1'
+          : 'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]'}
         aria-busy={loading}
         aria-live="polite"
         tabIndex={notifications.length > 0 ? 0 : undefined}
