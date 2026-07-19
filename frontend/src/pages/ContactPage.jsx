@@ -129,22 +129,22 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfaf7] pt-6 pb-16">
+    <div className="min-h-screen bg-[#fcfaf7] apex-page-shell">
       <div className="container mx-auto max-w-6xl px-4">
-        <section className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Contact Apex Spices</p>
-          <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">Let’s make your next order effortless</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
+        <section className="apex-hero-card">
+          <p className="apex-hero-eyebrow">Contact Apex Spices</p>
+          <h1 className="apex-hero-title">Let’s make your next order effortless</h1>
+          <p className="apex-hero-copy">
             Reach out for order support, wholesale inquiries, gifting help, or product questions. We aim to respond with the same care we bring to every product in our collection.
           </p>
         </section>
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[0.8fr_1.2fr]">
+        <div className="apex-section-gap grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
           <aside className="space-y-6">
-            <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
+            <div className="rounded-[24px] bg-white p-5 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:rounded-[28px] sm:p-6">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Customer Care</p>
-              <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">How we can help</h2>
-              <p className="mt-3 text-sm leading-7 text-gray-600">
+              <h2 className="mt-2 font-serif text-2xl font-bold text-brand-dark sm:text-3xl">How we can help</h2>
+              <p className="mt-2 text-sm leading-6 text-gray-600 sm:leading-7">
                 Use the form for order issues, shipping questions, gifting requests, and wholesale conversations. If your request is time-sensitive, include your order number in the message.
               </p>
             </div>

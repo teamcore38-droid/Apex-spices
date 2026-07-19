@@ -22,15 +22,15 @@ const PolicyPageLayout = ({
   }, [seo]);
 
   return (
-    <div className="bg-[#f7f9fc] py-16">
+    <div className="bg-[#f7f9fc] apex-page-shell">
       <div className="container mx-auto max-w-6xl px-4">
-        <section className="overflow-hidden rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">{eyebrow}</p>
-          <h1 className="mt-4 max-w-4xl font-serif text-4xl font-bold sm:text-5xl">{title}</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">{intro}</p>
+        <section className="apex-hero-card">
+          <p className="apex-hero-eyebrow">{eyebrow}</p>
+          <h1 className="apex-hero-title max-w-4xl">{title}</h1>
+          <p className="apex-hero-copy">{intro}</p>
 
           {relatedLinks.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               {relatedLinks.map((link) => (
                 <Link
                   key={link.to}
@@ -45,7 +45,7 @@ const PolicyPageLayout = ({
         </section>
 
         {highlights.length > 0 && (
-          <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <section className="apex-section-gap grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {highlights.map(({ icon: Icon, title: cardTitle, body }) => (
               <article
                 key={cardTitle}
@@ -61,7 +61,7 @@ const PolicyPageLayout = ({
           </section>
         )}
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
+        <section className="apex-section-gap grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
           <div className="rounded-[32px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
             <div className="space-y-8">
               {sections.map((section) => (

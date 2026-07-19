@@ -190,7 +190,7 @@ const OrderSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f7f9fc] px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
       <div className="mx-auto max-w-5xl">
         {!isConfirmation && (
           <div className="mb-6">
@@ -203,29 +203,29 @@ const OrderSuccessPage = () => {
           </div>
         )}
 
-        <div className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="apex-hero-card">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">
+              <p className="apex-hero-eyebrow">
                 {isConfirmation ? 'Order Confirmed' : 'Order Details'}
               </p>
-              <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">
+              <h1 className="apex-hero-title">
                 {isConfirmation ? 'Your premium order is confirmed' : 'Track your order details'}
               </h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
+              <p className="apex-hero-copy">
                 {isConfirmation
                   ? `Thank you for your purchase, ${customerContact.fullName}. Your order is now moving into careful fulfillment.`
                   : 'Review fulfillment progress, payment details, delivery notes, and your complete order summary from one place.'}
               </p>
             </div>
 
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/15 bg-white/10">
-              {isConfirmation ? <CheckCircle2 size={40} /> : <Package size={40} />}
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 sm:h-16 sm:w-16">
+              {isConfirmation ? <CheckCircle2 size={32} /> : <Package size={32} />}
             </div>
           </div>
         </div>
 
-        <div className="mt-8 overflow-hidden rounded-[32px] bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
+        <div className="apex-section-gap overflow-hidden rounded-[32px] bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
           <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
             <div className="space-y-8">
               <section className="rounded-[28px] border border-gray-100 bg-[#fafbfd] p-5">

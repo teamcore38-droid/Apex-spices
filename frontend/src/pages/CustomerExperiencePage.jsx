@@ -218,17 +218,17 @@ const CustomerExperiencePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] py-10">
+    <div className="min-h-screen bg-[#f7f9fc] apex-page-shell">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="rounded-lg bg-brand-dark px-6 py-10 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-brand-accent">Customer Experience</p>
-          <h1 className="mt-3 font-serif text-4xl font-bold">Rewards, Support, Preferences, Recommendations</h1>
+        <div className="apex-hero-card rounded-[24px] sm:rounded-[28px]">
+          <p className="apex-hero-eyebrow">Customer Experience</p>
+          <h1 className="apex-hero-title">Rewards, Support, Preferences, Recommendations</h1>
         </div>
 
         {error && <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {message && <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{message}</div>}
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-2">
+        <div className="apex-section-gap grid gap-6 xl:grid-cols-2">
           <section className="rounded-lg bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center font-serif text-2xl font-bold text-brand-dark">
               <Gift className="mr-2 text-brand-accent" /> Loyalty & Rewards

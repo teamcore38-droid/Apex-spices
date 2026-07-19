@@ -694,23 +694,23 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] py-12">
+    <div className="min-h-screen bg-[#f7f9fc] apex-page-shell">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="apex-hero-card">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Customer Account</p>
-              <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">Welcome back, {profile.name}</h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
+              <p className="apex-hero-eyebrow">Customer Account</p>
+              <h1 className="apex-hero-title">Welcome back, {profile.name}</h1>
+              <p className="apex-hero-copy">
                 Manage profile details, delivery addresses, orders, and password settings from one polished dashboard.
               </p>
             </div>
 
-            <div className="w-full rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur lg:max-w-md">
+            <div className="w-full rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur lg:max-w-md">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">Account Summary</p>
-              <div className="mt-4 grid grid-cols-3 items-start gap-2 text-center sm:gap-3">
+              <div className="mt-3 grid grid-cols-3 items-start gap-2 text-center sm:gap-3">
                 <div className="min-w-0 px-1">
-                  <p className="truncate font-serif text-2xl font-bold">{orders.length}</p>
+                  <p className="truncate font-serif text-xl font-bold sm:text-2xl">{orders.length}</p>
                   <p className="text-xs uppercase tracking-[0.15em] text-white/65">Orders</p>
                 </div>
                 <div className="min-w-0 px-1">
@@ -727,7 +727,7 @@ const ProfilePage = () => {
                   <p className="text-xs uppercase tracking-[0.15em] text-white/65">Spent</p>
                 </div>
                 <div className="min-w-0 px-1">
-                  <p className="truncate font-serif text-2xl font-bold">{profile.addresses?.length || 0}</p>
+                  <p className="truncate font-serif text-xl font-bold sm:text-2xl">{profile.addresses?.length || 0}</p>
                   <p className="text-xs uppercase tracking-[0.15em] text-white/65">Addresses</p>
                 </div>
               </div>
@@ -735,7 +735,7 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="apex-section-gap grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="space-y-6">
             <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
               <div className="text-center">

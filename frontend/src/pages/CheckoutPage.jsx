@@ -707,17 +707,17 @@ const CheckoutInner = ({ payhereEnabled }) => {
 
   if (!userInfo && !guestCheckoutEnabled) {
     return (
-      <div className="min-h-screen bg-[#f7f9fc] py-16">
+      <div className="min-h-screen bg-[#f7f9fc] apex-page-shell">
         <div className="container mx-auto max-w-4xl px-4">
-          <div className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Checkout</p>
-            <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">Sign in to continue checkout</h1>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
+          <div className="apex-hero-card">
+            <p className="apex-hero-eyebrow">Checkout</p>
+            <h1 className="apex-hero-title">Sign in to continue checkout</h1>
+            <p className="apex-hero-copy">
               Your cart is ready. Sign in to use saved addresses, keep your order history in one place, and complete your purchase securely.
             </p>
           </div>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="apex-section-gap grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-brand-primary">
                 <LogIn size={24} />
@@ -817,12 +817,12 @@ const CheckoutInner = ({ payhereEnabled }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] pt-6 pb-12">
+    <div className="min-h-screen bg-[#f7f9fc] apex-page-shell">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="rounded-[32px] bg-brand-dark px-6 py-12 text-white shadow-2xl sm:px-10">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Checkout</p>
-          <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">Complete your premium order</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
+        <div className="apex-hero-card">
+          <p className="apex-hero-eyebrow">Checkout</p>
+          <h1 className="apex-hero-title">Complete your premium order</h1>
+          <p className="apex-hero-copy">
             Confirm your contact details, choose the right delivery address, and complete payment with a secure, polished flow.
           </p>
         </div>
@@ -841,10 +841,10 @@ const CheckoutInner = ({ payhereEnabled }) => {
           </div>
         )}
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="apex-section-gap grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
           <form
             onSubmit={placeOrderHandler}
-            className="order-1 space-y-8 lg:col-start-1 lg:row-start-1"
+            className="order-1 space-y-6 lg:col-start-1 lg:row-start-1"
           >
             <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
               <div className="flex items-center gap-3">

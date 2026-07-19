@@ -255,17 +255,17 @@ const TrackOrderPage = () => {
   ) : null;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7f9fc] pt-6 pb-16">
+    <div className="min-h-screen overflow-x-hidden bg-[#f7f9fc] apex-page-shell">
       <div className="container mx-auto max-w-6xl px-3 sm:px-4">
-        <div className="rounded-[28px] bg-brand-dark px-5 py-10 text-white shadow-2xl sm:rounded-[32px] sm:px-10 sm:py-12">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">Track Order</p>
-          <h1 className="mt-4 font-serif text-4xl font-bold sm:text-5xl">Follow your shipment with confidence</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-white/80 sm:text-base">
+        <div className="apex-hero-card">
+          <p className="apex-hero-eyebrow">Track Order</p>
+          <h1 className="apex-hero-title">Follow your shipment with confidence</h1>
+          <p className="apex-hero-copy">
             Check order progress, payment status, delivery updates, and tracking details from one polished screen.
           </p>
         </div>
 
-        <div className="mt-8 flex min-w-0 flex-col gap-8 xl:grid xl:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="apex-section-gap flex min-w-0 flex-col gap-6 xl:grid xl:grid-cols-[380px_minmax(0,1fr)]">
           <section className={`min-w-0 rounded-[28px] bg-white p-4 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-6 ${result ? 'order-2 xl:order-none' : 'order-1 xl:order-none'}`}>
             <div className={result ? 'hidden xl:block' : 'block'}>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Tracking Lookup</p>
