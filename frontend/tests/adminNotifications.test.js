@@ -40,8 +40,17 @@ test('notification panel uses Mongo-backed count and read APIs', async () => {
 
   assert.match(source, /\/api\/admin\/notifications\/unread-count/);
   assert.match(source, /\/api\/admin\/notifications\/read-all/);
-  assert.match(source, /\/api\/admin\/notifications\/test/);
+  assert.doesNotMatch(source, /\/api\/admin\/notifications\/test/);
+  assert.match(source, /ADMIN_NOTIFICATIONS_UPDATED/);
   assert.match(source, /Mark All Read/);
+});
+
+test('service worker refreshes open admin clients after push delivery', async () => {
+  const source = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
+
+  assert.match(source, /client\.postMessage/);
+  assert.match(source, /ADMIN_NOTIFICATIONS_UPDATED/);
+  assert.match(source, /eventKey/);
 });
 
 test('admin notifications have a protected dedicated page and dashboard navigation', async () => {

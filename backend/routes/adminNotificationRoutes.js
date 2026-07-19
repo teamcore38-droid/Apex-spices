@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-  createSampleAdminNotification,
   getAdminNotificationUnreadCount,
   listAdminNotifications,
   markAdminNotificationRead,
@@ -15,7 +14,6 @@ router.use(protect, requirePermission(PERMISSIONS.ORDERS_READ));
 router.route('/').get(listAdminNotifications);
 router.route('/unread-count').get(getAdminNotificationUnreadCount);
 router.route('/read-all').patch(markAllAdminNotificationsRead);
-router.route('/test').post(createSampleAdminNotification);
 router.route('/:id/read').patch(markAdminNotificationRead);
 
 export default router;

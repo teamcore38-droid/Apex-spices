@@ -29,6 +29,7 @@ import seoRoutes from './routes/seoRoutes.js';
 import currencyRoutes from './routes/currencyRoutes.js';
 import adminPushRoutes from './routes/adminPushRoutes.js';
 import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
+import notificationWorkerRoutes from './routes/notificationWorkerRoutes.js';
 import { sanitizeRequest } from './middleware/sanitizeMiddleware.js';
 import { requestContext } from './middleware/requestContextMiddleware.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
@@ -95,7 +96,12 @@ app.use(
 app.use(cors(corsOptions));
 // Stripe webhook signature verification needs raw body on this path.
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({
+  limit: '1mb',
+  verify: (req, _res, buffer) => {
+    req.rawBody = buffer.toString('utf8');
+  },
+}));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sanitizeRequest);
 
@@ -130,6 +136,7 @@ app.use('/api/admin/pro', proAdminRoutes);
 app.use('/api/admin/webhooks', webhookRoutes);
 app.use('/api/admin/push', adminPushRoutes);
 app.use('/api/admin/notifications', adminNotificationRoutes);
+app.use('/api/workers/admin-notifications', notificationWorkerRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/customer', customerExperienceRoutes);
 app.use('/api/privacy', privacyRoutes);

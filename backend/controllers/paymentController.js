@@ -28,6 +28,10 @@ import { recordAuditLog } from '../utils/auditService.js';
 import { notifyOrderEvent } from '../utils/pushService.js';
 import { emitWebhookEvent } from '../utils/webhookService.js';
 import {
+  createOrderOutboxEvent,
+  publishOutboxInBackground,
+} from '../utils/notificationOutboxService.js';
+import {
   assessOrderFraud,
   recordFraudSignal,
   shouldBlockPayment,
@@ -785,6 +789,10 @@ const handlePayhereNotify = async (req, res) => {
       }
 
       if (order.isPaid) {
+        const paidOutbox = await createOrderOutboxEvent(order, 'order.paid', {
+          request: req,
+        });
+        publishOutboxInBackground(paidOutbox._id);
         return res.status(200).json({ received: true, alreadyProcessed: true });
       }
 
@@ -816,6 +824,10 @@ const handlePayhereNotify = async (req, res) => {
       await awardOrderLoyaltyPoints(order, actor);
 
       const updatedOrder = await order.save();
+      const paidOutbox = await createOrderOutboxEvent(updatedOrder, 'order.paid', {
+        request: req,
+      });
+      publishOutboxInBackground(paidOutbox._id);
       await syncVendorOrdersForOrder(updatedOrder);
       await notifyOrderEvent(updatedOrder, 'order.paid');
       await emitWebhookEvent('order.paid', updatedOrder.toObject(), {

@@ -36,6 +36,10 @@ import { awardOrderLoyaltyPoints } from '../utils/loyaltyService.js';
 import { notifyOrderEvent } from '../utils/pushService.js';
 import { emitWebhookEvent } from '../utils/webhookService.js';
 import {
+  createOrderOutboxEvent,
+  publishOutboxInBackground,
+} from '../utils/notificationOutboxService.js';
+import {
   assessOrderFraud,
   buildCheckoutIntegrity,
   recordFraudSignal,
@@ -64,6 +68,16 @@ const VALID_PAYMENT_STATUSES = [
 const VALID_SORT_OPTIONS = ['newest', 'oldest', 'total-high', 'total-low'];
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const sanitizePhone = (value = '') => value.toString().replace(/\s+/g, '');
+
+const runCheckoutNotificationsInBackground = (label, tasks = []) => {
+  Promise.allSettled(tasks.map((task) => Promise.resolve().then(task))).then((results) => {
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`[orderController:${label}:${index}]`, result.reason);
+      }
+    });
+  });
+};
 
 const getEstimatedDelivery = (createdAt) => {
   const orderDate = new Date(createdAt);
@@ -500,6 +514,10 @@ const addOrderItems = async (req, res) => {
 
     await applyReservation({ order, actor: req.user });
     const createdOrder = await order.save();
+    const createdOutbox = await createOrderOutboxEvent(createdOrder, 'order.created', {
+      request: req,
+    });
+    publishOutboxInBackground(createdOutbox._id);
     if (checkoutIntegrity.tamperDetected) {
       await recordFraudSignal(req, createdOrder, 'checkout.tamper.detected', order.fraudRisk);
     }
@@ -526,15 +544,17 @@ const addOrderItems = async (req, res) => {
       }
     }
 
+    const notificationTasks = [
+      () => notifyOrderEvent(populatedOrder, 'order.created'),
+      () => emitWebhookEvent('order.created', populatedOrder.toObject(), {
+        resourceType: 'Order',
+        resourceId: populatedOrder._id.toString(),
+      }),
+    ];
     if (normalizedPaymentProvider !== 'Stripe' && normalizedPaymentProvider !== 'PayHere') {
-      await sendOrderConfirmationEmail(populatedOrder);
+      notificationTasks.push(() => sendOrderConfirmationEmail(populatedOrder));
     }
-
-    await notifyOrderEvent(populatedOrder, 'order.created');
-    await emitWebhookEvent('order.created', populatedOrder.toObject(), {
-      resourceType: 'Order',
-      resourceId: populatedOrder._id.toString(),
-    });
+    runCheckoutNotificationsInBackground('order-created', notificationTasks);
 
     res.status(201).json(populatedOrder);
   } catch (error) {
@@ -631,18 +651,25 @@ const addGuestOrderItems = async (req, res) => {
       actor: { name: guestCustomer.name, email: guestCustomer.email },
     });
     const createdOrder = await order.save();
+    const createdOutbox = await createOrderOutboxEvent(createdOrder, 'order.created', {
+      request: req,
+    });
+    publishOutboxInBackground(createdOutbox._id);
     if (checkoutIntegrity.tamperDetected) {
       await recordFraudSignal(req, createdOrder, 'checkout.tamper.detected', order.fraudRisk);
     }
     await syncVendorOrdersForOrder(createdOrder);
+    const notificationTasks = [
+      () => notifyOrderEvent(createdOrder, 'order.created'),
+      () => emitWebhookEvent('order.created', createdOrder.toObject(), {
+        resourceType: 'Order',
+        resourceId: createdOrder._id.toString(),
+      }),
+    ];
     if (createdOrder.paymentProvider !== 'Stripe' && createdOrder.paymentProvider !== 'PayHere') {
-      await sendOrderConfirmationEmail(createdOrder);
+      notificationTasks.push(() => sendOrderConfirmationEmail(createdOrder));
     }
-    await notifyOrderEvent(createdOrder, 'order.created');
-    await emitWebhookEvent('order.created', createdOrder.toObject(), {
-      resourceType: 'Order',
-      resourceId: createdOrder._id.toString(),
-    });
+    runCheckoutNotificationsInBackground('guest-order-created', notificationTasks);
 
     res.status(201).json({
       ...createdOrder.toObject(),

@@ -42,6 +42,12 @@ const adminNotificationSchema = mongoose.Schema(
       trim: true,
       match: /^\/admin\/orders\/[a-f\d]{24}$/i,
     },
+    sourceEventKey: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 180,
+    },
     isRead: {
       type: Boolean,
       default: false,
@@ -58,6 +64,13 @@ const adminNotificationSchema = mongoose.Schema(
 
 adminNotificationSchema.index({ user: 1, createdAt: -1, _id: -1 });
 adminNotificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+adminNotificationSchema.index(
+  { user: 1, sourceEventKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { sourceEventKey: { $type: 'string', $gt: '' } },
+  }
+);
 
 const AdminNotification = mongoose.model('AdminNotification', adminNotificationSchema);
 

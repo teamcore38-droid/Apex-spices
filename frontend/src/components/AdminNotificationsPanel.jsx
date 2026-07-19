@@ -6,7 +6,6 @@ import {
   CheckCheck,
   ChevronDown,
   ExternalLink,
-  FlaskConical,
   Loader2,
 } from 'lucide-react';
 import {
@@ -33,6 +32,7 @@ const AdminNotificationsPanel = ({
   const [action, setAction] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const config = useCallback(
     () => ({ headers: { Authorization: `Bearer ${token}` } }),
@@ -45,6 +45,23 @@ const AdminNotificationsPanel = ({
     onUnreadCountChange(nextCount);
     return nextCount;
   }, [config, onUnreadCountChange]);
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) {
+      return undefined;
+    }
+
+    const handleServiceWorkerMessage = (event) => {
+      if (event.data?.type === 'ADMIN_NOTIFICATIONS_UPDATED') {
+        setRefreshToken((current) => current + 1);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +102,7 @@ const AdminNotificationsPanel = ({
     return () => {
       cancelled = true;
     };
-  }, [config, onUnreadCountChange]);
+  }, [config, onUnreadCountChange, refreshToken]);
 
   const loadMore = async () => {
     if (!nextCursor || action) {
@@ -176,28 +193,6 @@ const AdminNotificationsPanel = ({
     }
   };
 
-  const createSample = async () => {
-    if (action) {
-      return;
-    }
-
-    setAction('sample');
-    setError('');
-    setSuccess('');
-
-    try {
-      const { data } = await axios.post('/api/admin/notifications/test', {}, config());
-      setNotifications((current) => mergeAdminNotifications([data.notification], current));
-      await refreshUnreadCount();
-      setSuccess('Sample notification created for this admin account.');
-    } catch (requestError) {
-      console.error(requestError);
-      setError(requestError.response?.data?.message || 'Unable to create a sample notification.');
-    } finally {
-      setAction('');
-    }
-  };
-
   return (
     <section
       className={isFullPage
@@ -235,15 +230,6 @@ const AdminNotificationsPanel = ({
               View All
             </Link>
           )}
-          <button
-            type="button"
-            onClick={createSample}
-            disabled={Boolean(action)}
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-brand-accent/30 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary transition-colors hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {action === 'sample' ? <Loader2 size={15} className="mr-2 animate-spin" /> : <FlaskConical size={15} className="mr-2" />}
-            Create Sample
-          </button>
           <button
             type="button"
             onClick={markAllRead}

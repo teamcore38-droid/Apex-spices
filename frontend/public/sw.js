@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-spices-v8';
+const CACHE_NAME = 'apex-spices-v9';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
@@ -106,7 +106,24 @@ self.addEventListener('push', (event) => {
     }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  const updateOpenAdminClients = self.clients
+    .matchAll({ type: 'window', includeUncontrolled: true })
+    .then((windowClients) => {
+      windowClients.forEach((client) => {
+        client.postMessage({
+          type: 'ADMIN_NOTIFICATIONS_UPDATED',
+          eventKey: data.eventKey || '',
+          orderId: data.orderId || '',
+        });
+      });
+    });
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      updateOpenAdminClients,
+    ])
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {

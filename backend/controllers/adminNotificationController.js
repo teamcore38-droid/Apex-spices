@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import AdminNotification from '../models/adminNotificationModel.js';
-import Order from '../models/orderModel.js';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
@@ -143,40 +142,9 @@ const markAllAdminNotificationsRead = async (req, res) => {
   });
 };
 
-const createSampleAdminNotification = async (req, res) => {
-  const requestedOrderId = String(req.body?.orderId || '').trim();
-
-  if (requestedOrderId && !mongoose.isValidObjectId(requestedOrderId)) {
-    return res.status(400).json({ message: 'Invalid sample order id' });
-  }
-
-  const order = requestedOrderId
-    ? await Order.findById(requestedOrderId).select('_id orderStatus createdAt')
-    : await Order.findOne({}).sort({ createdAt: -1 }).select('_id orderStatus createdAt');
-
-  if (!order) {
-    return res.status(404).json({ message: 'Create an order before generating a sample notification' });
-  }
-
-  const orderNumber = buildOrderNumber(order);
-  const notification = await AdminNotification.create({
-    user: req.user._id,
-    type: 'order.test',
-    title: `Sample order notification #${orderNumber}`,
-    message: `This is a test notification for order #${orderNumber}. Open it to verify the order details link.`,
-    order: order._id,
-    orderNumber,
-    adminUrl: buildSecureAdminOrderUrl(order._id),
-    isRead: false,
-  });
-
-  res.status(201).json({ notification: presentAdminNotification(notification) });
-};
-
 export {
   buildOrderNumber,
   buildSecureAdminOrderUrl,
-  createSampleAdminNotification,
   decodeNotificationCursor,
   encodeNotificationCursor,
   getAdminNotificationUnreadCount,
