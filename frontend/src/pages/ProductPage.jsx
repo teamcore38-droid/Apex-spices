@@ -541,18 +541,22 @@ const ProductPage = () => {
                   {effectiveStock === 0 ? 'Currently Out of Stock' : 'Add to Cart'}
                 </button>
 
-                <div className="order-3 rounded-2xl border border-[#1fae5b]/20 bg-[#f3fbf6] p-3 lg:contents">
+                <p className="hidden text-xs font-semibold leading-5 text-[#116b3a] lg:col-start-1 lg:row-start-2 lg:block lg:self-center">
+                  Need bulk quantities? Inquire using WhatsApp.
+                </p>
+
+                <div className="order-3 rounded-2xl border border-[#1fae5b]/20 bg-[#f3fbf6] p-3 lg:order-none lg:col-start-2 lg:row-start-2 lg:border-0 lg:bg-transparent lg:p-0">
                   <a
                     href={whatsappInquiryUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_product_inquiry', { productId: product._id, name: product.name })}
-                    className="inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:col-start-2 lg:row-start-2 lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
+                    className="inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
                   >
                     <MessageSquareText size={16} className="mr-2" />
                     WhatsApp Inquiry
                   </a>
-                  <p className="mt-3 text-center text-xs font-semibold leading-5 text-[#116b3a] lg:col-start-1 lg:row-start-2 lg:mt-0 lg:self-center lg:text-left">
+                  <p className="mt-3 text-center text-xs font-semibold leading-5 text-[#116b3a] lg:hidden">
                     Need bulk quantities? Inquire using WhatsApp.
                   </p>
                 </div>
