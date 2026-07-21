@@ -5,8 +5,6 @@ import {
   ArrowLeft,
   BadgeCheck,
   ChevronDown,
-  Heart,
-  Loader2,
   MessageSquareText,
   Minus,
   Plus,
@@ -65,7 +63,6 @@ const ProductPage = () => {
   const [imageReady, setImageReady] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
-  const [wishlistSaving, setWishlistSaving] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
@@ -284,32 +281,6 @@ const ProductPage = () => {
       if (shareError.name !== 'AbortError') {
         setReviewMessage('Unable to share this product right now.');
       }
-    }
-  };
-
-  const addToWishlist = async () => {
-    if (!userInfo?.token) {
-      navigate(`/login?redirect=/product/${id}`);
-      return;
-    }
-
-    setWishlistSaving(true);
-
-    try {
-      await axios.post(
-        '/api/wishlist',
-        { productId: product._id },
-        {
-          headers: {
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-        }
-      );
-      setReviewMessage('Saved to your wishlist.');
-    } catch (wishlistError) {
-      setReviewMessage(wishlistError.response?.data?.message || 'Unable to update wishlist.');
-    } finally {
-      setWishlistSaving(false);
     }
   };
 
@@ -534,7 +505,7 @@ const ProductPage = () => {
                 </div>
               )}
 
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_190px] lg:items-end lg:gap-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-end lg:gap-4">
                 <div className="order-1 lg:order-none lg:col-start-1 lg:row-start-2">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
                   <div className="mt-3 inline-flex h-14 items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-1">
@@ -570,30 +541,25 @@ const ProductPage = () => {
                   {effectiveStock === 0 ? 'Currently Out of Stock' : 'Add to Cart'}
                 </button>
 
-                <a
-                  href={whatsappInquiryUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackEvent('whatsapp_product_inquiry', { productId: product._id, name: product.name })}
-                  className="order-3 inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:order-none lg:col-start-2 lg:row-start-2 lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
-                >
-                  <MessageSquareText size={16} className="mr-2" />
-                  WhatsApp Inquiry
-                </a>
-
-                <button
-                  type="button"
-                  onClick={addToWishlist}
-                  disabled={wishlistSaving}
-                  className="order-4 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60 lg:order-none lg:col-start-2 lg:row-start-1"
-                >
-                  {wishlistSaving ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Heart size={16} className="mr-2" />}
-                  Save
-                </button>
+                <div className="order-3 rounded-2xl border border-[#1fae5b]/20 bg-[#f3fbf6] p-3 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1">
+                  <a
+                    href={whatsappInquiryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackEvent('whatsapp_product_inquiry', { productId: product._id, name: product.name })}
+                    className="inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
+                  >
+                    <MessageSquareText size={16} className="mr-2" />
+                    WhatsApp Inquiry
+                  </a>
+                  <p className="mt-3 text-center text-xs font-semibold leading-5 text-[#116b3a]">
+                    Need bulk quantities? Inquire using WhatsApp.
+                  </p>
+                </div>
 
                 <Link
                   to="/products"
-                  className="order-5 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-span-2 lg:row-start-3 lg:px-4"
+                  className="order-4 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-span-2 lg:row-start-3 lg:px-4"
                 >
                   Continue Shopping
                 </Link>
