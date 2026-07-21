@@ -29,6 +29,7 @@ test('order notification event keys and payloads are deterministic', () => {
     paymentProvider: 'PayHere',
     paymentStatus: 'Paid',
     paidAt: new Date('2026-07-19T10:30:00.000Z'),
+    orderNumber: 'AXS-000100',
     shippingAddress: { fullName: 'Sam Customer' },
   };
   const payload = buildOutboxPayload(order, 'order.paid');
@@ -36,7 +37,7 @@ test('order notification event keys and payloads are deterministic', () => {
   assert.equal(buildEventKey('order.created', orderId), `order.created:${orderId}`);
   assert.equal(buildEventKey('order.paid', orderId), `order.paid:${orderId}`);
   assert.equal(payload.orderId, String(orderId));
-  assert.equal(payload.orderNumber, String(orderId).slice(-8).toUpperCase());
+  assert.equal(payload.orderNumber, 'AXS-000100');
   assert.equal(payload.customerName, 'Sam Customer');
   assert.equal(payload.total, 3500.99);
   assert.equal(payload.currency, 'LKR');

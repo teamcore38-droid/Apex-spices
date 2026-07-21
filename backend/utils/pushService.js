@@ -64,7 +64,7 @@ const getFrontendUrl = () =>
 
 const buildOrderPushPayload = (order, event, details = {}) => {
   const orderId = order?._id?.toString?.() || String(order?._id || '');
-  const orderLabel = orderId ? orderId.slice(-6).toUpperCase() : '';
+  const orderLabel = String(order?.orderNumber || '').trim() || (orderId ? orderId.slice(-6).toUpperCase() : '');
   const titleMap = {
     'order.created': 'Order received',
     'order.paid': 'Payment confirmed',

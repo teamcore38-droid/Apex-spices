@@ -61,6 +61,7 @@ import {
   restoreDefaultManifest,
   subscribeToAdminPwaInstallState,
 } from '../utils/adminPwaInstall';
+import { getDisplayOrderNumber } from '../utils/orderUi';
 
 const INITIAL_PRODUCT_FILTERS = {
   keyword: '',
@@ -662,7 +663,7 @@ const AdminDashboard = () => {
         config
       );
 
-      setOrderSuccess(`Order ${order._id.slice(-6).toUpperCase()} marked as ${nextStatus}.`);
+      setOrderSuccess(`Order ${getDisplayOrderNumber(order)} marked as ${nextStatus}.`);
       setOrderRefreshToken((currentValue) => currentValue + 1);
     } catch (error) {
       console.error(error);
@@ -1605,7 +1606,7 @@ const AdminDashboard = () => {
                             <div className="flex items-start justify-between gap-4">
                               <div>
                                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Order ID</p>
-                                <p className="mt-1 break-all font-mono text-xs text-brand-primary">{order._id}</p>
+                                <p className="mt-1 break-all font-mono text-xs text-brand-primary">{getDisplayOrderNumber(order)}</p>
                                 <p className="mt-3 font-serif text-lg font-bold text-brand-dark">
                                   {order.user?.name || order.user?.email || 'Guest'}
                                 </p>
@@ -1695,7 +1696,7 @@ const AdminDashboard = () => {
                             return (
                               <tr key={order._id} className="align-top transition duration-150 hover:bg-gray-50/50">
                                 <td className="px-4 py-4 font-mono text-xs font-bold text-brand-primary">
-                                  {order._id}
+                                  {getDisplayOrderNumber(order)}
                                 </td>
                                 <td className="px-4 py-4">
                                   <div className="font-semibold text-brand-dark">

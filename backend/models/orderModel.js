@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { getNextOrderNumber } from '../utils/orderNumberService.js';
 
 const ORDER_STATUS_VALUES = [
   'Processing',
@@ -37,6 +38,13 @@ const orderSchema = mongoose.Schema(
     guestCheckout: {
       type: Boolean,
       default: false,
+    },
+    orderNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      uppercase: true,
     },
     guestCustomer: {
       name: { type: String, default: '', trim: true },
@@ -358,6 +366,18 @@ const orderSchema = mongoose.Schema(
     timestamps: true,
   }
 );
+
+orderSchema.pre('validate', async function assignOrderNumber(next) {
+  try {
+    if (this.isNew && !this.orderNumber) {
+      this.orderNumber = await getNextOrderNumber();
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const Order = mongoose.model('Order', orderSchema);
 

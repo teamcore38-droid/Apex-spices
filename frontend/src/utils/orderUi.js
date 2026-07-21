@@ -12,6 +12,9 @@ export const normalizeShippingAddress = (shippingAddress = {}, fallbackCustomer 
   countryCode: shippingAddress.countryCode || '',
 });
 
+export const getDisplayOrderNumber = (order = {}) =>
+  String(order?.orderNumber || order?._id || order?.orderId || '').trim();
+
 export const getCustomerContactDetails = (order = {}, fallbackCustomer = {}) => {
   const normalizedAddress = normalizeShippingAddress(
     order.shippingAddress,

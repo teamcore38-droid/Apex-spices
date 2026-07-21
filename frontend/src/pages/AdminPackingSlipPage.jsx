@@ -132,7 +132,7 @@ const AdminPackingSlipPage = () => {
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-brand-accent">APEX LINK GROUP</p>
             <h1 className="mt-4 font-serif text-4xl font-bold">Packing Slip</h1>
             <p className="mt-3 text-sm text-white/80">
-              Order {packingSlip.orderId} • {new Date(packingSlip.createdAt).toLocaleDateString('en-US', {
+              Order {packingSlip.orderNumber || packingSlip.orderId} • {new Date(packingSlip.createdAt).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',

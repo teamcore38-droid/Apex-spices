@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Download, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/productUi';
+import { getDisplayOrderNumber } from '../utils/orderUi';
 import {
   getOrderStatusBadgeClass,
   getPaymentBadgeClass,
@@ -87,6 +88,7 @@ const OrderInvoicePage = () => {
         invoice.refund.history?.length)
   );
   const invoiceCurrency = invoice?.currency || invoice?.totals?.currency || 'LKR';
+  const displayOrderNumber = getDisplayOrderNumber(invoice);
 
   if (loading) {
     return (
@@ -224,7 +226,7 @@ const OrderInvoicePage = () => {
             </div>
             <div className="rounded-xl border border-brand-accent/25 bg-white px-4 py-3 text-left sm:min-w-64 sm:text-right">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">Order Number</p>
-              <p className="mt-1 break-all text-sm font-bold text-brand-dark">{invoice.orderId}</p>
+              <p className="mt-1 break-all text-sm font-bold text-brand-dark">{displayOrderNumber}</p>
               <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">Invoice Date</p>
               <p className="mt-1 text-sm font-semibold text-brand-dark">{formatInvoiceDate(invoice.createdAt)}</p>
             </div>

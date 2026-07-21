@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { formatCurrency } from '../utils/productUi';
 import { ACCOUNT_TABS, createInitialAddressForm, formatAddressLines } from '../utils/accountUi';
+import { getDisplayOrderNumber } from '../utils/orderUi';
 import OrderItemReviewForm from '../components/OrderItemReviewForm';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
@@ -948,7 +949,7 @@ const ProfilePage = () => {
                             className="rounded-[24px] border border-gray-100 bg-brand-light p-5"
                           >
                             <div className="flex items-center justify-between gap-3">
-                              <span className="font-mono text-xs font-bold text-brand-primary">{order._id}</span>
+                              <span className="font-mono text-xs font-bold text-brand-primary">{getDisplayOrderNumber(order)}</span>
                               <span className={`rounded-full border px-3 py-1 text-[11px] font-bold ${getOrderStatusBadgeClass(status)}`}>
                                 {status}
                               </span>
@@ -1198,7 +1199,7 @@ const ProfilePage = () => {
                         >
                           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                              <p className="font-mono text-xs font-bold text-brand-primary">{order._id}</p>
+                              <p className="font-mono text-xs font-bold text-brand-primary">{getDisplayOrderNumber(order)}</p>
                               <p className="mt-2 font-serif text-2xl font-bold text-brand-dark">
                                 {formatCurrency(order.totalPrice, order.currency || 'LKR')}
                               </p>

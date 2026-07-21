@@ -122,6 +122,8 @@ const summaryRow = (label, value) => `
 const buildOrderUrl = (orderId) => `${getFrontendUrl()}/orders/${orderId}`;
 const buildInvoiceUrl = (orderId) => `${getFrontendUrl()}/orders/${orderId}/invoice`;
 const buildTrackUrl = () => `${getFrontendUrl()}/track-order`;
+const getPublicOrderNumber = (order) =>
+  String(order?.orderNumber || order?._id?.toString?.() || order?._id || '').trim();
 
 const getSafeOrderRecipient = (order) => order?.shippingAddress?.email || order?.user?.email || '';
 
@@ -129,6 +131,7 @@ const getPaymentLabel = (order) => order?.paymentStatus || (order?.isPaid ? 'Pai
 
 const buildOrderHtml = ({ heading, copy, order, ctaLabel, ctaUrl }) => {
   const orderId = order?._id?.toString?.() || '';
+  const orderNumber = getPublicOrderNumber(order);
   const trackingNumber = order?.trackingNumber || 'Pending assignment';
   const deliveryNote = order?.deliveryNote || 'No delivery note has been added yet.';
 
@@ -149,7 +152,7 @@ const buildOrderHtml = ({ heading, copy, order, ctaLabel, ctaUrl }) => {
     body: `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">${copy}</p>
       <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-        ${summaryRow('Order ID', orderId)}
+        ${summaryRow('Order ID', orderNumber)}
         ${summaryRow('Total', formatMoney(order?.totalPrice || 0, order?.currency || 'LKR'))}
         ${summaryRow('Order Status', order?.orderStatus || 'Processing')}
         ${summaryRow('Payment', getPaymentLabel(order))}
@@ -177,7 +180,7 @@ const sendOrderConfirmationEmail = async (order) =>
   sendMailSafe({
     label: 'order-confirmation',
     to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Order Confirmation - ${order?._id?.toString?.() || ''}`,
+    subject: `Apex Spices Order Confirmation - ${getPublicOrderNumber(order)}`,
     html: buildOrderHtml({
       heading: 'Your order has been received',
       copy:
@@ -197,7 +200,7 @@ const sendOrderStatusUpdateEmail = async (order) =>
   sendMailSafe({
     label: 'order-status-update',
     to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Order Update - ${order?._id?.toString?.() || ''}`,
+    subject: `Apex Spices Order Update - ${getPublicOrderNumber(order)}`,
     html: buildOrderHtml({
       heading: 'Your order has a new update',
       copy:
@@ -349,13 +352,13 @@ const sendInvoiceEmail = async (order) =>
   sendMailSafe({
     label: 'invoice-email',
     to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Invoice - ${order?._id?.toString?.() || ''}`,
+    subject: `Apex Spices Invoice - ${getPublicOrderNumber(order)}`,
     html: wrapTemplate({
       title: 'Your invoice is ready',
       preheader: 'You can review or print your invoice from your order dashboard.',
       body: `
         <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">
-          Your invoice for order <strong>${order?._id?.toString?.() || ''}</strong> is ready.
+          Your invoice for order <strong>${getPublicOrderNumber(order)}</strong> is ready.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">
           ${summaryRow('Total', formatMoney(order?.totalPrice || 0, order?.currency || 'LKR'))}
@@ -375,13 +378,13 @@ const sendRefundConfirmationEmail = async (order, refund = {}) =>
   sendMailSafe({
     label: 'refund-confirmation',
     to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Refund Update - ${order?._id?.toString?.() || ''}`,
+    subject: `Apex Spices Refund Update - ${getPublicOrderNumber(order)}`,
     html: wrapTemplate({
       title: 'Your refund has been processed',
       preheader: 'A refund update is now available for your order.',
       body: `
         <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">
-          We processed a refund update for order <strong>${order?._id?.toString?.() || ''}</strong>.
+          We processed a refund update for order <strong>${getPublicOrderNumber(order)}</strong>.
         </p>
         <table style="width:100%;border-collapse:collapse;margin:24px 0;">
           ${summaryRow('Refund Amount', formatMoney(refund?.amount || 0, order?.currency || 'LKR'))}

@@ -181,6 +181,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
+  const [pendingOrderNumber, setPendingOrderNumber] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [giftCardCode, setGiftCardCode] = useState('');
   const [shippingRateId, setShippingRateId] = useState('');
@@ -276,7 +277,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const isSriLankaDelivery = isSriLankaCountry(form.country, form.countryCode);
   const isInternationalDelivery = Boolean(form.country) && !isSriLankaDelivery;
   const payhereOrderDescription = pendingOrderId
-    ? `${PAYHERE_BRAND_DESCRIPTION} #${pendingOrderId.slice(-8).toUpperCase()}`
+    ? `${PAYHERE_BRAND_DESCRIPTION} #${pendingOrderNumber || pendingOrderId.slice(-8).toUpperCase()}`
     : PAYHERE_BRAND_DESCRIPTION;
   const paymentButtonLabel =
     paymentStage === 'verifying'
@@ -522,6 +523,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
       .catch((recoverError) => console.error(recoverError));
     setSuccess(true);
     setPendingOrderId('');
+    setPendingOrderNumber('');
     clearCart();
 
     setTimeout(() => {
@@ -565,9 +567,11 @@ const CheckoutInner = ({ payhereEnabled }) => {
           },
         });
         order = data;
+        setPendingOrderNumber(order.orderNumber || '');
       } else {
         order = await createOrder(nextShippingAddress);
         setPendingOrderId(order._id);
+        setPendingOrderNumber(order.orderNumber || '');
       }
 
       if (order.isPaid) {
@@ -634,7 +638,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
         cancel_url: `${window.location.origin}/checkout`,
         notify_url: payhereData.notifyUrl,
         order_id: order._id,
-        items: `${PAYHERE_BRAND_DESCRIPTION} #${order._id.slice(-8).toUpperCase()}`,
+        items: `${PAYHERE_BRAND_DESCRIPTION} #${order.orderNumber || order._id.slice(-8).toUpperCase()}`,
         amount: payhereData.amount,
         currency: payhereData.currency,
         first_name: form.fullName.split(' ')[0] || 'Customer',

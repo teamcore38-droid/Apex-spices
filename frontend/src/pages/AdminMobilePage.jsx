@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/productUi';
+import { getDisplayOrderNumber } from '../utils/orderUi';
 
 const countFor = (items = [], key) => items.find((item) => item._id === key)?.count || 0;
 
@@ -136,7 +137,7 @@ const AdminMobilePage = () => {
                 className="block rounded-lg border border-gray-100 p-3 transition-colors hover:bg-brand-light"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-brand-dark">#{order._id.slice(-6).toUpperCase()}</p>
+                  <p className="font-bold text-brand-dark">#{getDisplayOrderNumber(order)}</p>
                   <p className="text-sm font-semibold text-brand-primary">{formatCurrency(order.totalPrice, order.currency)}</p>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">

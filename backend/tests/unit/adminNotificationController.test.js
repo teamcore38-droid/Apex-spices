@@ -36,6 +36,7 @@ test('admin notification order URLs cannot leave the protected order route', () 
 
   assert.equal(buildSecureAdminOrderUrl(orderId), `/admin/orders/${orderId}`);
   assert.throws(() => buildSecureAdminOrderUrl('https://evil.example/order'));
+  assert.equal(buildOrderNumber({ _id: orderId, orderNumber: 'AXS-000100' }), 'AXS-000100');
   assert.equal(buildOrderNumber({ _id: orderId }), orderId.slice(-8).toUpperCase());
 });
 

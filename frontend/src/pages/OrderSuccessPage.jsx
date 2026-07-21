@@ -16,6 +16,7 @@ import { formatCurrency } from '../utils/productUi';
 import OrderItemReviewForm from '../components/OrderItemReviewForm';
 import {
   getCustomerContactDetails,
+  getDisplayOrderNumber,
   getShippingAddressLines,
 } from '../utils/orderUi';
 import {
@@ -119,6 +120,7 @@ const OrderSuccessPage = () => {
     [order, userInfo]
   );
   const orderCurrency = order?.currency || 'LKR';
+  const displayOrderNumber = getDisplayOrderNumber(order);
 
   const markOrderItemReviewed = (orderId, productId, review) => {
     setOrder((currentOrder) => {
@@ -231,7 +233,7 @@ const OrderSuccessPage = () => {
               <section className="rounded-[28px] border border-gray-100 bg-[#fafbfd] p-5">
                 <div className="flex flex-wrap gap-3">
                   <span className="rounded-full border border-gray-200 bg-white px-4 py-2 font-mono text-xs font-bold text-brand-primary">
-                    Order ID: {order._id}
+                    Order ID: {displayOrderNumber}
                   </span>
                   <span className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-brand-dark">
                     {new Date(order.createdAt).toLocaleString('en-US', {

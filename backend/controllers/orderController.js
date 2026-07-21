@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import Order from '../models/orderModel.js';
 import User from '../models/userModel.js';
 import Review from '../models/reviewModel.js';
@@ -68,6 +69,8 @@ const VALID_PAYMENT_STATUSES = [
 const VALID_SORT_OPTIONS = ['newest', 'oldest', 'total-high', 'total-low'];
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const sanitizePhone = (value = '') => value.toString().replace(/\s+/g, '');
+const getPublicOrderNumber = (order = {}) =>
+  String(order?.orderNumber || order?._id || '').trim();
 
 const runCheckoutNotificationsInBackground = (label, tasks = []) => {
   Promise.allSettled(tasks.map((task) => Promise.resolve().then(task))).then((results) => {
@@ -295,6 +298,7 @@ const getBusinessInfoForDocuments = () => ({
 
 const buildInvoicePayload = (order) => ({
   orderId: order._id,
+  orderNumber: getPublicOrderNumber(order),
   createdAt: order.createdAt,
   paidAt: order.paidAt || null,
   currency: order.currency || 'LKR',
@@ -756,6 +760,7 @@ const getOrders = async (req, res) => {
         $or: [
           { 'user.name': searchRegex },
           { 'user.email': searchRegex },
+          { orderNumber: searchRegex },
           {
             $expr: {
               $regexMatch: {
@@ -800,6 +805,7 @@ const getOrders = async (req, res) => {
       {
         $project: {
           _id: 1,
+          orderNumber: 1,
           createdAt: 1,
           updatedAt: 1,
           orderItems: 1,
@@ -1191,14 +1197,21 @@ const trackOrder = async (req, res) => {
       return res.status(400).json({ message: 'Email or phone number is required' });
     }
 
-    const order = await Order.findById(trimmedOrderId).populate('user', 'name email phone');
+    const orderLookupFilter = mongoose.isValidObjectId(trimmedOrderId)
+      ? { _id: trimmedOrderId }
+      : { orderNumber: trimmedOrderId.toUpperCase() };
+    const order = await Order.findOne(orderLookupFilter).populate('user', 'name email phone');
 
     if (!order) {
       return res.status(404).json({ message: 'Tracking details not found' });
     }
 
-    const ownerEmail = order.user?.email?.toLowerCase?.() || '';
-    const ownerPhone = sanitizePhone(order.user?.phone || '');
+    const ownerEmail = String(
+      order.user?.email || order.guestCustomer?.email || order.shippingAddress?.email || ''
+    ).toLowerCase();
+    const ownerPhone = sanitizePhone(
+      order.user?.phone || order.guestCustomer?.phone || order.shippingAddress?.phone || ''
+    );
     const matchesEmail = normalizedEmail && normalizedEmail === ownerEmail;
     const matchesPhone = normalizedPhone && normalizedPhone === ownerPhone;
     const isAuthorizedUser =
@@ -1216,6 +1229,7 @@ const trackOrder = async (req, res) => {
 
     res.json({
       _id: order._id,
+      orderNumber: getPublicOrderNumber(order),
       orderStatus: order.orderStatus || 'Processing',
       paymentStatus: getNormalizedPaymentStatus(order.paymentStatus, order.isPaid),
       paymentMethod: order.paymentMethod || '',
@@ -1318,6 +1332,7 @@ const getOrderPackingSlip = async (req, res) => {
 
     res.json({
       orderId: invoicePayload.orderId,
+      orderNumber: invoicePayload.orderNumber,
       createdAt: invoicePayload.createdAt,
       orderStatus: invoicePayload.orderStatus,
       trackingNumber: invoicePayload.delivery.trackingNumber,

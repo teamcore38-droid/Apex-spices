@@ -105,7 +105,7 @@ const resolveDeepLink = async (req, res) => {
     });
   }
 
-  const order = await Order.findById(id).select('orderStatus user guestCustomer shippingAddress');
+  const order = await Order.findById(id).select('orderNumber orderStatus user guestCustomer shippingAddress');
 
   if (!order) {
     return res.status(404).json({ message: 'Order not found' });
@@ -114,7 +114,7 @@ const resolveDeepLink = async (req, res) => {
   res.json({
     type,
     id,
-    title: `Order ${id.slice(-6).toUpperCase()}`,
+    title: `Order ${order.orderNumber || id.slice(-6).toUpperCase()}`,
     status: order.orderStatus,
     webUrl: `${baseUrl}/orders/${id}`,
     appUrl: `apex://order/${id}`,

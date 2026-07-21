@@ -21,6 +21,7 @@ import { formatCurrency } from '../utils/productUi';
 import {
   buildOrderTimeline,
   getCustomerContactDetails,
+  getDisplayOrderNumber,
   getShippingAddressLines,
 } from '../utils/orderUi';
 import {
@@ -306,7 +307,7 @@ const AdminOrderDetailPage = () => {
     }
 
     const confirmed = window.confirm(
-      `Confirm refund of ${formatCurrency(nextAmount)} for order ${order._id}?`
+      `Confirm refund of ${formatCurrency(nextAmount)} for order ${getDisplayOrderNumber(order)}?`
     );
 
     if (!confirmed) {
@@ -427,7 +428,7 @@ const AdminOrderDetailPage = () => {
                 </div>
                 <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">Order ID</p>
-                  <p className="mt-1 break-all font-mono text-xs font-semibold">{order._id}</p>
+                  <p className="mt-1 break-all font-mono text-xs font-semibold">{getDisplayOrderNumber(order)}</p>
                 </div>
               </div>
             </div>
