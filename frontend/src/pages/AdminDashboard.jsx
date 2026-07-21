@@ -49,6 +49,7 @@ import {
   getPaymentLabel,
 } from '../utils/orderStatus';
 import {
+  createAdminPushError,
   enableAdminPush,
   getAdminPushEnvironment,
   getExistingPushSubscription,
@@ -219,6 +220,43 @@ const AdminDashboard = () => {
       userInfo?.permissions?.includes('orders:read') ||
       userInfo?.permissions?.includes('*')
   );
+  const getPushAvailabilityMessage = (state) => {
+    if (state.loading) {
+      return 'Checking this device...';
+    }
+
+    if (state.enabled) {
+      return 'Enabled for this browser.';
+    }
+
+    if (state.installRequired) {
+      return 'On iPhone and iPad, open the installed Admin App from the Home Screen to enable Web Push.';
+    }
+
+    if (state.permission === 'denied') {
+      return 'Blocked in this browser. Update the site permission to enable alerts.';
+    }
+
+    if (!state.supported) {
+      if (state.reason === 'secure-context-required') {
+        return 'Web Push requires HTTPS or localhost.';
+      }
+
+      if (state.reason === 'notifications-api-unavailable') {
+        return 'This browser does not expose the Notifications API.';
+      }
+
+      if (state.reason === 'service-worker-unavailable') {
+        return 'This browser does not support service workers.';
+      }
+
+      if (state.reason === 'push-api-unavailable') {
+        return 'This browser does not expose the Push API in the current context.';
+      }
+    }
+
+    return 'Enable secure Web Push alerts for this browser.';
+  };
   const [pushState, setPushState] = useState(() => ({
     ...getAdminPushEnvironment(),
     enabled: false,
@@ -654,13 +692,25 @@ const AdminDashboard = () => {
         error: '',
       }));
     } catch (error) {
-      console.error(error);
+      const environment = getAdminPushEnvironment();
+      const resolvedError =
+        error.response?.data?.message
+          ? createAdminPushError('BACKEND_SUBSCRIPTION_REJECTED', error.response.data.message)
+          : error;
+
+      console.error('[admin-push:enable]', {
+        code: resolvedError?.code || 'UNKNOWN',
+        message: resolvedError?.message || 'Unable to enable notifications.',
+        details: resolvedError?.details || null,
+      });
+
       setPushState((current) => ({
         ...current,
-        ...getAdminPushEnvironment(),
+        ...environment,
         action: '',
         message: '',
-        error: error.response?.data?.message || error.message || 'Unable to enable notifications.',
+        error:
+          resolvedError?.message || 'Unable to enable notifications.',
       }));
     }
   };
@@ -784,13 +834,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
-                  {pushState.loading
-                    ? 'Checking this device...'
-                    : pushState.enabled
-                      ? 'Enabled for this browser.'
-                      : pushState.permission === 'denied'
-                        ? 'Blocked in this browser. Update the site permission to enable alerts.'
-                        : 'Enable secure Web Push alerts for this browser.'}
+                  {getPushAvailabilityMessage(pushState)}
                 </p>
               </div>
             </div>
@@ -834,7 +878,9 @@ const AdminDashboard = () => {
           {!pushState.loading && (!pushState.supported || !pushState.publicKeyConfigured) && (
             <p className="mt-3 text-sm font-medium text-amber-700">
               {!pushState.supported
-                ? 'Web Push is unavailable in this browser. On iPhone, install the PWA to the Home Screen first.'
+                ? pushState.installRequired
+                  ? 'Web Push is available after you install the Admin App and open it from the Home Screen.'
+                  : 'Web Push is unavailable in this browser context.'
                 : 'Web Push configuration is incomplete for this deployment.'}
             </p>
           )}
