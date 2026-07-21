@@ -229,7 +229,7 @@ const HomePage = () => {
             Organic · Fresh · Hand-Picked
           </span>
           <h1 className="mb-4 max-w-full whitespace-normal break-words text-balance font-serif text-3xl font-bold leading-tight text-brand-light drop-shadow-lg sm:text-5xl md:mb-6 md:text-7xl">
-            Premium Sri Lankan Spices
+            Premium Ceylon Spices
           </h1>
           <p className="mx-auto mb-7 max-w-2xl text-base font-light leading-8 text-gray-100 drop-shadow-md md:mb-10 md:text-xl">
             Sourced directly from the finest farm estates of the globe, our authentic spices bring rich flavor, natural aroma, and unparalleled quality to every dish.
