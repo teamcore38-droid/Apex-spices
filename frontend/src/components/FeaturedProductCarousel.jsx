@@ -24,7 +24,7 @@ const chunkProducts = (products, size) => {
   return pages;
 };
 
-const FeaturedProductCarousel = ({ products = [] }) => {
+const FeaturedProductCarousel = ({ products = [], revealCards = false }) => {
   const [itemsPerView, setItemsPerView] = useState(() => getItemsPerView(window.innerWidth));
   const [activePage, setActivePage] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -250,8 +250,17 @@ const FeaturedProductCarousel = ({ products = [] }) => {
                       : 'grid-cols-3'
                 }`}
               >
-                {pageProducts.map((product) => (
-                  <div key={product._id} className="h-full">
+                {pageProducts.map((product, productIndex) => (
+                  <div
+                    key={product._id}
+                    className="h-full"
+                    {...(revealCards
+                      ? {
+                          'data-reveal-card': true,
+                          style: { '--reveal-index': pageIndex * itemsPerView + productIndex },
+                        }
+                      : {})}
+                  >
                     <Product product={product} />
                   </div>
                 ))}

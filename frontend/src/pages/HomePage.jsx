@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Product from '../components/Product';
 import FeaturedProductCarousel from '../components/FeaturedProductCarousel';
+import ScrollRevealSection from '../components/ScrollRevealSection';
 import { Link } from 'react-router-dom';
 import { Truck, ShieldCheck, Globe, Award, ChevronRight, ChevronLeft } from 'lucide-react';
 import { getCategoryImageCandidates } from '../utils/categoryUi';
@@ -279,61 +280,67 @@ const HomePage = () => {
         </div>
       </div>
 
-      <div className="bg-[#fcfaf7] py-12 md:py-14">
+      <ScrollRevealSection id="shop-by-category" className="bg-[#fcfaf7] py-12 md:py-14">
         <div className="container mx-auto px-4">
-          <div className="mb-10 text-center md:mb-14">
+          <div className="mb-10 text-center md:mb-14" data-reveal-heading>
             <h2 className="mb-4 font-serif text-3xl font-bold text-brand-dark md:text-5xl">Shop by Category</h2>
             <div className="mx-auto h-1 w-24 bg-brand-accent"></div>
           </div>
 
           <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-6 lg:gap-8">
-            {categories.slice(0, 3).map((category) => (
-              <Link
+            {categories.slice(0, 3).map((category, index) => (
+              <div
                 key={category._id}
-                to={`/category/${category.slug}`}
-                className="group flex w-full max-w-[360px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_44px_rgba(11,31,58,0.08)] transition-transform duration-300 hover:-translate-y-1 sm:w-[calc((100%_-_1.5rem)/2)] lg:w-[calc((100%_-_4rem)/3)]"
+                className="flex w-full max-w-[360px] sm:w-[calc((100%_-_1.5rem)/2)] lg:w-[calc((100%_-_4rem)/3)]"
+                data-reveal-card
+                style={{ '--reveal-index': index }}
               >
-                <div className="relative h-52 overflow-hidden sm:h-60">
-                  {isCategoryImageFailed(category) ? (
-                    <div className="h-full w-full bg-gradient-to-br from-[#23120a] via-[#3d251e] to-[#1f0e07]" />
-                  ) : (
-                    <img
-                      src={getOptimizedImageUrl(getCategoryCardImage(category), 900)}
-                      srcSet={getCloudinarySrcSet(getCategoryCardImage(category), [480, 720, 900, 1200])}
-                      sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 360px"
-                      alt={`${category.name} collection`}
-                      width="1200"
-                      height="800"
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => onCategoryImageError(category)}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/85 via-brand-dark/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-                    <div className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] backdrop-blur-sm">
-                      <Globe size={12} className="mr-2 text-brand-accent" /> Premium Collection
+                <Link
+                  to={`/category/${category.slug}`}
+                  className="group flex h-full w-full flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_44px_rgba(11,31,58,0.08)] transition-transform duration-300 hover:-translate-y-1"
+                >
+                  <div className="relative h-52 overflow-hidden sm:h-60">
+                    {isCategoryImageFailed(category) ? (
+                      <div className="h-full w-full bg-gradient-to-br from-[#23120a] via-[#3d251e] to-[#1f0e07]" />
+                    ) : (
+                      <img
+                        src={getOptimizedImageUrl(getCategoryCardImage(category), 900)}
+                        srcSet={getCloudinarySrcSet(getCategoryCardImage(category), [480, 720, 900, 1200])}
+                        sizes="(max-width: 639px) 90vw, (max-width: 1023px) 45vw, 360px"
+                        alt={`${category.name} collection`}
+                        width="1200"
+                        height="800"
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => onCategoryImageError(category)}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/85 via-brand-dark/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                      <div className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] backdrop-blur-sm">
+                        <Globe size={12} className="mr-2 text-brand-accent" /> Premium Collection
+                      </div>
+                      <h3 className="mt-3 font-serif text-2xl font-bold leading-tight sm:text-3xl">{category.name}</h3>
                     </div>
-                    <h3 className="mt-3 font-serif text-2xl font-bold leading-tight sm:text-3xl">{category.name}</h3>
                   </div>
-                </div>
-                <div className="flex flex-1 flex-col p-5">
-                  <p
-                    className="min-h-[3.5rem] overflow-hidden text-sm leading-7 text-gray-600"
-                    style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                  >
-                    {category.description || 'Explore a carefully curated collection of premium products.'}
-                  </p>
-                  <span className="mt-5 inline-flex items-center text-xs font-bold uppercase tracking-[0.2em] text-brand-primary">
-                    Explore Category <ChevronRight size={16} className="ml-2 transition-transform duration-200 group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </Link>
+                  <div className="flex flex-1 flex-col p-5">
+                    <p
+                      className="min-h-[3.5rem] overflow-hidden text-sm leading-7 text-gray-600"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {category.description || 'Explore a carefully curated collection of premium products.'}
+                    </p>
+                    <span className="mt-5 inline-flex items-center text-xs font-bold uppercase tracking-[0.2em] text-brand-primary">
+                      Explore Category <ChevronRight size={16} className="ml-2 transition-transform duration-200 group-hover:translate-x-1" />
+                    </span>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
           {!loading && categories.length === 0 && (
@@ -347,11 +354,11 @@ const HomePage = () => {
             </Link>
           </div>
         </div>
-      </div>
+      </ScrollRevealSection>
 
-      <div className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] py-10 md:py-12">
+      <ScrollRevealSection id="featured-collection" className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] py-10 md:py-12">
         <div className="container mx-auto px-4">
-          <div className="mb-10 text-center md:mb-12">
+          <div className="mb-10 text-center md:mb-12" data-reveal-heading>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Curated Signature Picks</p>
             <h2 className="mt-3 font-serif text-3xl font-bold text-brand-dark md:text-4xl">Featured Collection</h2>
             <div className="mx-auto mt-5 h-px w-28 bg-gradient-to-r from-transparent via-brand-accent to-transparent"></div>
@@ -388,7 +395,7 @@ const HomePage = () => {
               </Link>
             </div>
           ) : (
-            <FeaturedProductCarousel products={featuredProducts} />
+            <FeaturedProductCarousel products={featuredProducts} revealCards />
           )}
 
           {!loading && !error && featuredProducts.length > 0 && (
@@ -402,12 +409,12 @@ const HomePage = () => {
             </div>
           )}
         </div>
-      </div>
+      </ScrollRevealSection>
 
       {!loading && bestSellers.length > 0 && (
-        <div className="bg-[#edf1f8] py-20">
+        <ScrollRevealSection id="best-sellers" className="bg-[#edf1f8] py-20">
           <div className="container mx-auto px-4">
-            <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
+            <div className="mb-12 flex flex-wrap items-end justify-between gap-4" data-reveal-heading>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Customer Favorites</p>
                 <h2 className="mt-3 font-serif text-3xl font-bold text-brand-dark md:text-4xl">Best Sellers</h2>
@@ -421,12 +428,14 @@ const HomePage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
-              {bestSellers.map((product) => (
-                <Product key={product._id} product={product} />
+              {bestSellers.map((product, index) => (
+                <div key={product._id} className="h-full" data-reveal-card style={{ '--reveal-index': index }}>
+                  <Product product={product} />
+                </div>
               ))}
             </div>
           </div>
-        </div>
+        </ScrollRevealSection>
       )}
 
       <div className="bg-[#fcfaf7] py-24">

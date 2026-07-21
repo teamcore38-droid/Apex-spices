@@ -228,3 +228,36 @@
     @apply mt-5 sm:mt-6 lg:mt-7;
   }
 }
+
+/* Homepage section reveals stay on the compositor and never change layout geometry. */
+.home-scroll-reveal [data-reveal-heading],
+.home-scroll-reveal [data-reveal-card] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+}
+
+.home-scroll-reveal--visible [data-reveal-heading] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 600ms ease-out,
+    transform 600ms ease-out;
+}
+
+.home-scroll-reveal--visible [data-reveal-card] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 600ms ease-out,
+    transform 600ms ease-out;
+  transition-delay: calc(120ms + (var(--reveal-index, 0) * 100ms));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-scroll-reveal [data-reveal-heading],
+  .home-scroll-reveal [data-reveal-card] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
