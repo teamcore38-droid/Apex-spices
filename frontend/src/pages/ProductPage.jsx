@@ -505,8 +505,8 @@ const ProductPage = () => {
                 </div>
               )}
 
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-end lg:gap-4">
-                <div className="order-1 lg:order-none lg:col-start-1 lg:row-start-2">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-start lg:gap-4">
+                <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:self-end">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
                   <div className="mt-3 inline-flex h-14 items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-1">
                     <button
@@ -532,7 +532,7 @@ const ProductPage = () => {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={effectiveStock === 0}
-                  className={`order-2 inline-flex h-14 w-full items-center justify-center rounded-xl px-6 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 lg:order-none lg:col-start-1 lg:row-start-1 ${
+                  className={`order-2 inline-flex h-14 w-full items-center justify-center rounded-xl px-6 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 lg:order-none lg:col-start-1 lg:row-start-1 lg:self-end ${
                     effectiveStock === 0
                       ? 'cursor-not-allowed bg-gray-200 text-gray-500'
                       : 'bg-brand-primary text-white hover:bg-brand-dark'
@@ -541,18 +541,18 @@ const ProductPage = () => {
                   {effectiveStock === 0 ? 'Currently Out of Stock' : 'Add to Cart'}
                 </button>
 
-                <div className="order-3 rounded-2xl border border-[#1fae5b]/20 bg-[#f3fbf6] p-3 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1">
+                <div className="order-3 rounded-2xl border border-[#1fae5b]/20 bg-[#f3fbf6] p-3 lg:contents">
                   <a
                     href={whatsappInquiryUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_product_inquiry', { productId: product._id, name: product.name })}
-                    className="inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
+                    className="inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:col-start-2 lg:row-start-2 lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
                   >
                     <MessageSquareText size={16} className="mr-2" />
                     WhatsApp Inquiry
                   </a>
-                  <p className="mt-3 text-center text-xs font-semibold leading-5 text-[#116b3a]">
+                  <p className="mt-3 text-center text-xs font-semibold leading-5 text-[#116b3a] lg:col-start-1 lg:row-start-2 lg:mt-0 lg:self-center lg:text-left">
                     Need bulk quantities? Inquire using WhatsApp.
                   </p>
                 </div>
