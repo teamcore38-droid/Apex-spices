@@ -1,0 +1,47 @@
+{
+  "name": "Apex Spices Admin",
+  "short_name": "Apex Admin",
+  "description": "Admin dashboard for Apex Spices order and catalog operations.",
+  "start_url": "/admin?source=admin-pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#f7f9fc",
+  "theme_color": "#1f0e07",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "shopping"],
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png?v=20260719",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png?v=20260719",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Admin Dashboard",
+      "short_name": "Dashboard",
+      "url": "/admin",
+      "icons": [{ "src": "/android-chrome-192x192.png?v=20260719", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Admin Notifications",
+      "short_name": "Notifications",
+      "url": "/admin/notifications",
+      "icons": [{ "src": "/android-chrome-192x192.png?v=20260719", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Orders",
+      "short_name": "Orders",
+      "url": "/admin",
+      "icons": [{ "src": "/android-chrome-192x192.png?v=20260719", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

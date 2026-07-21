@@ -6,6 +6,8 @@ import {
   BellOff,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  Download,
   Edit,
   Eye,
   EyeOff,
@@ -17,6 +19,7 @@ import {
   RotateCcw,
   Search,
   Send,
+  Share2,
   ShoppingBag,
   Star,
   Trash2,
@@ -50,6 +53,13 @@ import {
   getAdminPushEnvironment,
   getExistingPushSubscription,
 } from '../utils/adminPush';
+import {
+  ensureAdminManifest,
+  getAdminPwaInstallState,
+  promptAdminPwaInstall,
+  restoreDefaultManifest,
+  subscribeToAdminPwaInstallState,
+} from '../utils/adminPwaInstall';
 
 const INITIAL_PRODUCT_FILTERS = {
   keyword: '',
@@ -220,12 +230,34 @@ const AdminDashboard = () => {
     error: '',
   }));
   const [adminNotificationUnreadCount, setAdminNotificationUnreadCount] = useState(0);
+  const [adminInstallState, setAdminInstallState] = useState(() => getAdminPwaInstallState());
+  const [showIosInstallHelp, setShowIosInstallHelp] = useState(false);
+  const [adminInstallMessage, setAdminInstallMessage] = useState('');
+  const [adminInstallError, setAdminInstallError] = useState('');
 
   useEffect(() => {
     if (!userInfo || !canAccessAdmin) {
       navigate('/login');
     }
   }, [canAccessAdmin, navigate, userInfo]);
+
+  useEffect(() => {
+    ensureAdminManifest();
+    setAdminInstallState(getAdminPwaInstallState());
+
+    const unsubscribe = subscribeToAdminPwaInstallState((nextState) => {
+      setAdminInstallState(nextState);
+      if (nextState.installed) {
+        setShowIosInstallHelp(false);
+        setAdminInstallError('');
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      restoreDefaultManifest();
+    };
+  }, []);
 
   useEffect(() => {
     if (!userInfo?.token || !canReadOrders) {
@@ -687,6 +719,35 @@ const AdminDashboard = () => {
     }
   };
 
+  const installAdminApp = async () => {
+    setAdminInstallMessage('');
+    setAdminInstallError('');
+
+    if (adminInstallState.installed) {
+      return;
+    }
+
+    if (adminInstallState.isIos && !adminInstallState.canPrompt) {
+      setShowIosInstallHelp((currentValue) => !currentValue);
+      return;
+    }
+
+    try {
+      const choice = await promptAdminPwaInstall();
+      setAdminInstallState(getAdminPwaInstallState());
+      setShowIosInstallHelp(false);
+
+      if (choice?.outcome === 'accepted') {
+        setAdminInstallMessage('Admin app installation started.');
+      } else {
+        setAdminInstallMessage('Install prompt dismissed. Reload the dashboard if the browser does not offer it again.');
+      }
+    } catch (error) {
+      console.error(error);
+      setAdminInstallError(error.message || 'Unable to open the install prompt right now.');
+    }
+  };
+
   const productPaginationPages = getPaginationRange(productMeta.currentPage, productMeta.totalPages);
   const orderPaginationPages = getPaginationRange(orderMeta.currentPage, orderMeta.totalPages);
   const showProductSkeleton = productLoading && products.length === 0;
@@ -698,6 +759,7 @@ const AdminDashboard = () => {
       label: category.name,
     })),
   ];
+  const showAdminInstallButton = !adminInstallState.installed && (adminInstallState.canPrompt || adminInstallState.isIos);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -861,6 +923,54 @@ const AdminDashboard = () => {
             >
               <ShieldCheck size={20} className="mr-3" /> Professional Admin
             </button>
+
+            {(adminInstallState.installed || showAdminInstallButton || adminInstallMessage || adminInstallError) && (
+            <div className="mt-2 border-t border-gray-100 pt-3">
+              {adminInstallState.installed ? (
+                <div className="flex items-center rounded border border-green-100 bg-green-50 p-3 text-sm font-semibold text-green-800">
+                  <CheckCircle2 size={18} className="mr-3 shrink-0" />
+                  Admin App Installed
+                </div>
+              ) : showAdminInstallButton ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={installAdminApp}
+                    className="flex w-full items-center rounded bg-brand-primary p-3 text-left font-medium text-white transition-colors hover:bg-brand-dark"
+                  >
+                    {adminInstallState.isIos && !adminInstallState.canPrompt ? (
+                      <Share2 size={20} className="mr-3 shrink-0" />
+                    ) : (
+                      <Download size={20} className="mr-3 shrink-0" />
+                    )}
+                    Install Admin App
+                  </button>
+
+                  {showIosInstallHelp && (
+                    <div className="mt-3 rounded border border-brand-accent/25 bg-brand-light p-3 text-sm text-brand-dark">
+                      <p className="font-serif font-bold">Install on iPhone or iPad</p>
+                      <ol className="mt-2 space-y-1 text-gray-600">
+                        <li>1. Tap the Share icon.</li>
+                        <li>2. Select Add to Home Screen.</li>
+                        <li>3. Open Apex Admin from your Home Screen.</li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {adminInstallMessage && (
+                    <p className="mt-2 text-xs font-medium text-green-700" role="status">
+                      {adminInstallMessage}
+                    </p>
+                  )}
+                  {adminInstallError && (
+                    <p className="mt-2 text-xs font-medium text-red-700" role="alert">
+                      {adminInstallError}
+                    </p>
+                  )}
+                </>
+              ) : null}
+            </div>
+            )}
           </div>
         </div>
 

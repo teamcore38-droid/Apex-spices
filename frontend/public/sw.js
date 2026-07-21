@@ -2,6 +2,7 @@ const CACHE_NAME = 'apex-spices-v9';
 const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
+  '/admin.webmanifest',
   '/logo-96.webp?v=20260719'
 ];
 

@@ -10,6 +10,7 @@ import { installFrontendErrorMonitoring } from './utils/errorMonitoring'
 import { installChunkLoadRecovery } from './utils/chunkLoadRecovery'
 import { installAdTracking } from './utils/analytics'
 import { installRoutePreloadRequestTracking } from './utils/routePreloader'
+import './utils/adminPwaInstall'
 import './index.css'
 
 const apiBaseUrl = (import.meta.env.VITE_API_URL || '').trim()
