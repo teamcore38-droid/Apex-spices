@@ -121,7 +121,6 @@ const summaryRow = (label, value) => `
 
 const buildOrderUrl = (orderId) => `${getFrontendUrl()}/orders/${orderId}`;
 const buildInvoiceUrl = (orderId) => `${getFrontendUrl()}/orders/${orderId}/invoice`;
-const buildTrackUrl = () => `${getFrontendUrl()}/track-order`;
 const getPublicOrderNumber = (order) =>
   String(order?.orderNumber || order?._id?.toString?.() || order?._id || '').trim();
 
@@ -178,9 +177,9 @@ const buildOrderHtml = ({ heading, copy, order, ctaLabel, ctaUrl }) => {
 
 const sendOrderConfirmationEmail = async (order) =>
   sendMailSafe({
-    label: 'order-confirmation',
+    label: 'order-placed',
     to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Order Confirmation - ${getPublicOrderNumber(order)}`,
+    subject: `Apex Spices Order Placed - ${getPublicOrderNumber(order)}`,
     html: buildOrderHtml({
       heading: 'Your order has been received',
       copy:
@@ -196,18 +195,45 @@ const sendOrderConfirmationEmail = async (order) =>
     },
   });
 
-const sendOrderStatusUpdateEmail = async (order) =>
+const sendOrderConfirmedEmail = async (order) =>
   sendMailSafe({
-    label: 'order-status-update',
+    label: 'order-confirmed',
     to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Order Update - ${getPublicOrderNumber(order)}`,
+    subject: `Apex Spices Order Confirmed - ${getPublicOrderNumber(order)}`,
     html: buildOrderHtml({
-      heading: 'Your order has a new update',
+      heading: 'Your order is confirmed',
       copy:
-        'There is a fresh fulfillment update on your order. Review the latest status, tracking, and delivery notes below.',
+        'Your Apex Spices order has been confirmed. We will continue preparing it with care and keep your order record updated.',
       order,
-      ctaLabel: 'Track Order',
-      ctaUrl: buildTrackUrl(),
+      ctaLabel: 'View Order',
+      ctaUrl: buildOrderUrl(order?._id?.toString?.() || ''),
+    }),
+    developmentPayload: {
+      orderId: order?._id?.toString?.() || '',
+      orderStatus: order?.orderStatus || 'Processing',
+      paymentStatus: getPaymentLabel(order),
+      totalPrice: order?.totalPrice || 0,
+    },
+  });
+
+const sendOrderStatusUpdateEmail = async (order) => {
+  const isDelivered = order?.orderStatus === 'Delivered' || order?.isDelivered;
+  const isCancelled = order?.orderStatus === 'Cancelled';
+  const heading = isDelivered ? 'Your order has been delivered' : 'Your order has been cancelled';
+  const copy = isDelivered
+    ? 'Your Apex Spices order has been marked as delivered. Thank you for shopping with us.'
+    : 'Your Apex Spices order has been cancelled. Review your order record for the latest status details.';
+
+  return sendMailSafe({
+    label: isDelivered ? 'order-delivered' : 'order-cancelled',
+    to: getSafeOrderRecipient(order),
+    subject: `Apex Spices ${isDelivered ? 'Order Delivered' : 'Order Cancelled'} - ${getPublicOrderNumber(order)}`,
+    html: buildOrderHtml({
+      heading,
+      copy,
+      order,
+      ctaLabel: 'View Order',
+      ctaUrl: buildOrderUrl(order?._id?.toString?.() || ''),
     }),
     developmentPayload: {
       orderId: order?._id?.toString?.() || '',
@@ -215,6 +241,7 @@ const sendOrderStatusUpdateEmail = async (order) =>
       trackingNumber: order?.trackingNumber || '',
     },
   });
+};
 
 const sendPasswordResetEmail = async (user, resetUrl) => {
   const html = wrapTemplate({
@@ -271,33 +298,6 @@ const sendAdminTwoFactorCodeEmail = async (user, code, expiresInMinutes = 10) =>
     },
   });
 
-const sendSecurityAlertEmail = async (user, { title = 'Security alert', message = '', ipAddress = '' } = {}) =>
-  sendMailSafe({
-    label: 'security-alert',
-    to: user?.email || '',
-    subject: `Apex Spices Security Alert - ${title}`,
-    html: wrapTemplate({
-      title,
-      preheader: 'A security-sensitive event occurred on your Apex Spices account.',
-      body: `
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">${message}</p>
-        <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Account', user?.email || '')}
-          ${summaryRow('IP Address', ipAddress || 'Unknown')}
-          ${summaryRow('Time', new Date().toISOString())}
-        </table>
-        <p style="margin:20px 0 0;font-size:13px;line-height:1.8;color:#6b7a92;">
-          If this was not you, reset your password immediately.
-        </p>
-      `,
-    }),
-    developmentPayload: {
-      userId: user?._id?.toString?.() || '',
-      ipAddress,
-      message,
-    },
-  });
-
 const sendContactMessageNotification = async (message) =>
   sendMailSafe({
     label: 'contact-notification',
@@ -345,61 +345,6 @@ const sendContactAutoReply = async (message) =>
     developmentPayload: {
       email: message?.email || '',
       subject: message?.subject || '',
-    },
-  });
-
-const sendInvoiceEmail = async (order) =>
-  sendMailSafe({
-    label: 'invoice-email',
-    to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Invoice - ${getPublicOrderNumber(order)}`,
-    html: wrapTemplate({
-      title: 'Your invoice is ready',
-      preheader: 'You can review or print your invoice from your order dashboard.',
-      body: `
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">
-          Your invoice for order <strong>${getPublicOrderNumber(order)}</strong> is ready.
-        </p>
-        <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Total', formatMoney(order?.totalPrice || 0, order?.currency || 'LKR'))}
-          ${summaryRow('Payment', getPaymentLabel(order))}
-          ${summaryRow('Order Status', order?.orderStatus || 'Processing')}
-        </table>
-        <a href="${buildInvoiceUrl(order?._id?.toString?.() || '')}" style="display:inline-block;margin-top:10px;padding:14px 22px;border-radius:12px;background:#16365f;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">Open Invoice</a>
-      `,
-    }),
-    developmentPayload: {
-      orderId: order?._id?.toString?.() || '',
-      totalPrice: order?.totalPrice || 0,
-    },
-  });
-
-const sendRefundConfirmationEmail = async (order, refund = {}) =>
-  sendMailSafe({
-    label: 'refund-confirmation',
-    to: getSafeOrderRecipient(order),
-    subject: `Apex Spices Refund Update - ${getPublicOrderNumber(order)}`,
-    html: wrapTemplate({
-      title: 'Your refund has been processed',
-      preheader: 'A refund update is now available for your order.',
-      body: `
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#3a4a63;">
-          We processed a refund update for order <strong>${getPublicOrderNumber(order)}</strong>.
-        </p>
-        <table style="width:100%;border-collapse:collapse;margin:24px 0;">
-          ${summaryRow('Refund Amount', formatMoney(refund?.amount || 0, order?.currency || 'LKR'))}
-          ${summaryRow('Refund Status', refund?.status || order?.refundStatus || 'Updated')}
-          ${summaryRow('Total Refunded', formatMoney(order?.refundedAmount || 0, order?.currency || 'LKR'))}
-          ${summaryRow('Payment Status', getPaymentLabel(order))}
-        </table>
-        <a href="${buildOrderUrl(order?._id?.toString?.() || '')}" style="display:inline-block;margin-top:10px;padding:14px 22px;border-radius:12px;background:#16365f;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">View Order</a>
-      `,
-    }),
-    developmentPayload: {
-      orderId: order?._id?.toString?.() || '',
-      refundId: refund?.refundId || '',
-      amount: refund?.amount || 0,
-      status: refund?.status || '',
     },
   });
 
@@ -464,12 +409,10 @@ const sendAbandonedCartEmail = async (cart) => {
 export {
   isEmailConfigured,
   sendOrderConfirmationEmail,
+  sendOrderConfirmedEmail,
   sendOrderStatusUpdateEmail,
-  sendInvoiceEmail,
-  sendRefundConfirmationEmail,
   sendPasswordResetEmail,
   sendAdminTwoFactorCodeEmail,
-  sendSecurityAlertEmail,
   sendContactMessageNotification,
   sendContactAutoReply,
   sendNewsletterWelcomeEmail,

@@ -1,11 +1,8 @@
 import {
   sendOrderConfirmationEmail,
+  sendOrderConfirmedEmail,
   sendOrderStatusUpdateEmail,
-  sendRefundConfirmationEmail,
-  sendInvoiceEmail,
 } from './emailService.js';
-
-const getPaymentLabel = (order) => order.paymentStatus || (order.isPaid ? 'Paid' : 'Unpaid');
 
 const pushStatusHistoryIfMeaningful = (order, entry) => {
   if (!entry?.note) {
@@ -42,22 +39,8 @@ const markNotificationSent = (order, key, value = new Date()) => {
   order.notifications[key] = value;
 };
 
-const hasRefundNotification = (order, refundId) =>
-  Boolean(order.notifications?.refundEmailEventIds?.includes(refundId));
-
-const addRefundNotification = (order, refundId) => {
-  if (!order.notifications) {
-    order.notifications = {};
-  }
-
-  const existing = Array.isArray(order.notifications.refundEmailEventIds)
-    ? order.notifications.refundEmailEventIds
-    : [];
-
-  if (!existing.includes(refundId)) {
-    order.notifications.refundEmailEventIds = [...existing, refundId];
-  }
-};
+const emailAttemptHandled = (result) =>
+  Boolean(result?.sent || result?.queued || result?.skipped);
 
 const calculateRefundStatus = (order) => {
   const refundedAmount = Number(order.refundedAmount || 0);
@@ -83,34 +66,68 @@ const calculateRefundableAmount = (order) =>
     0
   );
 
-const maybeSendOrderConfirmation = async (order) => {
-  if (order.notifications?.orderConfirmationSentAt) {
+const maybeSendOrderPlacedEmail = async (order) => {
+  if (order.notifications?.orderPlacedEmailSentAt || order.notifications?.orderConfirmationSentAt) {
     return false;
   }
 
-  await sendOrderConfirmationEmail(order);
+  const result = await sendOrderConfirmationEmail(order);
+  if (!emailAttemptHandled(result)) {
+    return false;
+  }
+
+  markNotificationSent(order, 'orderPlacedEmailSentAt');
   markNotificationSent(order, 'orderConfirmationSentAt');
   return true;
 };
 
-const maybeSendInvoiceEmail = async (order) => {
-  if (order.notifications?.invoiceSentAt) {
+const maybeSendOrderConfirmedEmail = async (order) => {
+  if (order.notifications?.orderConfirmedEmailSentAt) {
     return false;
   }
 
-  await sendInvoiceEmail(order);
-  markNotificationSent(order, 'invoiceSentAt');
+  const result = await sendOrderConfirmedEmail(order);
+  if (!emailAttemptHandled(result)) {
+    return false;
+  }
+
+  markNotificationSent(order, 'orderConfirmedEmailSentAt');
   return true;
 };
 
-const maybeSendStatusEmail = async (order, emailKey) => {
-  if (order.notifications?.lastStatusEmailKey === emailKey) {
+const maybeSendFinalStatusEmail = async (order) => {
+  const isCancelled = order.orderStatus === 'Cancelled';
+  const isDelivered = order.orderStatus === 'Delivered' || order.isDelivered;
+  const notificationKey = isCancelled
+    ? 'orderCancelledEmailSentAt'
+    : isDelivered
+      ? 'orderDeliveredEmailSentAt'
+      : '';
+
+  if (!notificationKey || order.notifications?.[notificationKey]) {
     return false;
   }
 
-  await sendOrderStatusUpdateEmail(order);
-  markNotificationSent(order, 'lastStatusEmailKey', emailKey);
+  const result = await sendOrderStatusUpdateEmail(order);
+  if (!emailAttemptHandled(result)) {
+    return false;
+  }
+
+  markNotificationSent(order, notificationKey);
+  markNotificationSent(order, 'lastStatusEmailKey', notificationKey);
   return true;
+};
+
+const maybeSendStatusEmail = async (order) => {
+  const sent = [];
+
+  if (order.isPaid || order.paymentStatus === 'Paid' || order.orderStatus === 'Confirmed') {
+    sent.push(await maybeSendOrderConfirmedEmail(order));
+  }
+
+  sent.push(await maybeSendFinalStatusEmail(order));
+
+  return sent.some(Boolean);
 };
 
 const applySuccessfulPaymentToOrder = async ({
@@ -167,8 +184,7 @@ const applySuccessfulPaymentToOrder = async ({
     updatedByName: actor.name || actor.email || provider,
   });
 
-  await maybeSendOrderConfirmation(order);
-  await maybeSendInvoiceEmail(order);
+  await maybeSendOrderConfirmedEmail(order);
 };
 
 const applyFailedPaymentToOrder = async ({
@@ -302,38 +318,20 @@ const applyRefundToOrder = async ({
       actor.name || actor.email || refundRecord.processedByName || 'Stripe',
   });
 
-  if (
-    refundRecord.status === 'succeeded' &&
-    refundRecord.refundId &&
-    !hasRefundNotification(order, refundRecord.refundId)
-  ) {
-    await sendRefundConfirmationEmail(order, refundRecord);
-    addRefundNotification(order, refundRecord.refundId);
-  }
 };
-
-const createStatusEmailKey = (order) =>
-  [
-    order.orderStatus,
-    getPaymentLabel(order),
-    order.isDelivered ? 'delivered' : 'not-delivered',
-    order.trackingNumber || '',
-    order.deliveryNote || '',
-    Number(order.refundedAmount || 0),
-    order.refundStatus || 'Not Refunded',
-  ].join('|');
 
 export {
   calculateRefundableAmount,
   calculateRefundStatus,
   pushStatusHistoryIfMeaningful,
   markNotificationSent,
-  maybeSendOrderConfirmation,
-  maybeSendInvoiceEmail,
+  emailAttemptHandled,
+  maybeSendOrderPlacedEmail,
+  maybeSendOrderConfirmedEmail,
   maybeSendStatusEmail,
+  maybeSendFinalStatusEmail,
   applySuccessfulPaymentToOrder,
   applyFailedPaymentToOrder,
   applyCancelledPaymentToOrder,
   applyRefundToOrder,
-  createStatusEmailKey,
 };

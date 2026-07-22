@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import RefreshToken from '../models/refreshTokenModel.js';
 import SecurityEvent from '../models/securityEventModel.js';
 import TwoFactorChallenge from '../models/twoFactorChallengeModel.js';
-import { sendAdminTwoFactorCodeEmail, sendSecurityAlertEmail } from './emailService.js';
+import { sendAdminTwoFactorCodeEmail } from './emailService.js';
 
 const ACCESS_TOKEN_SECONDS = Number(process.env.ACCESS_TOKEN_SECONDS || 15 * 60);
 const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || `${ACCESS_TOKEN_SECONDS}s`;
@@ -141,11 +141,6 @@ const registerFailedLogin = async (req, user, email = '') => {
 
   if (attempts >= LOCKOUT_THRESHOLD) {
     user.security.accountLockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000);
-    await sendSecurityAlertEmail(user, {
-      title: 'Account temporarily locked',
-      message: `Your account was locked for ${LOCKOUT_MINUTES} minutes after repeated failed login attempts.`,
-      ipAddress: getRequestIp(req),
-    });
   }
 
   await user.save({ validateBeforeSave: false });
@@ -168,13 +163,6 @@ const registerSuccessfulLogin = async (req, user) => {
   await user.save({ validateBeforeSave: false });
   await recordSecurityEvent(req, suspicious ? 'login.suspicious' : 'login.success', user, { previousIp, nextIp }, suspicious ? 'warning' : 'info');
 
-  if (suspicious) {
-    await sendSecurityAlertEmail(user, {
-      title: 'New login location detected',
-      message: 'We noticed a login from a different network than your last sign-in.',
-      ipAddress: nextIp,
-    });
-  }
 };
 
 const adminRequiresTwoFactor = (user) =>

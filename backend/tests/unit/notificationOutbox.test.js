@@ -242,7 +242,46 @@ test('Phase 3 worker is signed, retry-safe, and deactivates expired devices', as
   assert.doesNotMatch(notificationRoutes, /\/test/);
   assert.match(orderSource, /createOrderOutboxEvent\(createdOrder, 'order\.created'/);
   assert.match(orderSource, /runCheckoutNotificationsInBackground\('order-created'/);
+  assert.equal((orderSource.match(/maybeSendOrderPlacedEmail\(createdOrder\)/g) || []).length, 2);
   assert.doesNotMatch(orderSource, /await sendOrderConfirmationEmail\(populatedOrder\)/);
   assert.match(paymentSource, /createOrderOutboxEvent\(updatedOrder, 'order\.paid'/);
   assert.match(paymentSource, /if \(order\.isPaid\)[\s\S]*createOrderOutboxEvent\(order, 'order\.paid'/);
+});
+
+test('order and login email triggers stay limited to approved events', async () => {
+  const [emailSource, lifecycleSource, orderSource, orderModelSource, securitySource] =
+    await Promise.all([
+      readFile(new URL('../../utils/emailService.js', import.meta.url), 'utf8'),
+      readFile(new URL('../../utils/orderPaymentLifecycle.js', import.meta.url), 'utf8'),
+      readFile(new URL('../../controllers/orderController.js', import.meta.url), 'utf8'),
+      readFile(new URL('../../models/orderModel.js', import.meta.url), 'utf8'),
+      readFile(new URL('../../utils/securityService.js', import.meta.url), 'utf8'),
+    ]);
+
+  assert.match(emailSource, /label: 'order-placed'/);
+  assert.match(emailSource, /label: 'order-confirmed'/);
+  assert.match(emailSource, /label: isDelivered \? 'order-delivered' : 'order-cancelled'/);
+  assert.doesNotMatch(emailSource, /order-status-update/);
+  assert.doesNotMatch(emailSource, /invoice-email/);
+  assert.doesNotMatch(emailSource, /refund-confirmation/);
+  assert.doesNotMatch(emailSource, /security-alert/);
+
+  assert.match(lifecycleSource, /maybeSendOrderPlacedEmail/);
+  assert.match(lifecycleSource, /maybeSendOrderConfirmedEmail/);
+  assert.match(lifecycleSource, /maybeSendFinalStatusEmail/);
+  assert.match(lifecycleSource, /orderPlacedEmailSentAt/);
+  assert.match(lifecycleSource, /orderConfirmedEmailSentAt/);
+  assert.match(lifecycleSource, /orderCancelledEmailSentAt/);
+  assert.match(lifecycleSource, /orderDeliveredEmailSentAt/);
+  assert.doesNotMatch(lifecycleSource, /sendInvoiceEmail/);
+  assert.doesNotMatch(lifecycleSource, /sendRefundConfirmationEmail/);
+
+  assert.equal((orderSource.match(/maybeSendOrderPlacedEmail\(createdOrder\)/g) || []).length, 2);
+  assert.doesNotMatch(orderSource, /sendOrderConfirmationEmail\(populatedOrder\)/);
+  assert.match(orderModelSource, /orderPlacedEmailSentAt/);
+  assert.match(orderModelSource, /orderConfirmedEmailSentAt/);
+  assert.match(orderModelSource, /orderCancelledEmailSentAt/);
+  assert.match(orderModelSource, /orderDeliveredEmailSentAt/);
+
+  assert.doesNotMatch(securitySource, /sendSecurityAlertEmail/);
 });

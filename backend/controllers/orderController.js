@@ -5,9 +5,6 @@ import User from '../models/userModel.js';
 import Review from '../models/reviewModel.js';
 import { normalizeAddressPayload, saveAddressToUser } from '../utils/addressBook.js';
 import {
-  sendOrderConfirmationEmail,
-} from '../utils/emailService.js';
-import {
   buildSafePaymentResult,
   getStripeClient,
   isStripeConfigured,
@@ -15,7 +12,7 @@ import {
 } from '../utils/paymentService.js';
 import {
   applySuccessfulPaymentToOrder,
-  createStatusEmailKey,
+  maybeSendOrderPlacedEmail,
   maybeSendStatusEmail,
 } from '../utils/orderPaymentLifecycle.js';
 import {
@@ -518,6 +515,8 @@ const addOrderItems = async (req, res) => {
 
     await applyReservation({ order, actor: req.user });
     const createdOrder = await order.save();
+    await maybeSendOrderPlacedEmail(createdOrder);
+    await createdOrder.save({ validateBeforeSave: false });
     const createdOutbox = await createOrderOutboxEvent(createdOrder, 'order.created', {
       request: req,
     });
@@ -555,9 +554,6 @@ const addOrderItems = async (req, res) => {
         resourceId: populatedOrder._id.toString(),
       }),
     ];
-    if (normalizedPaymentProvider !== 'Stripe' && normalizedPaymentProvider !== 'PayHere') {
-      notificationTasks.push(() => sendOrderConfirmationEmail(populatedOrder));
-    }
     runCheckoutNotificationsInBackground('order-created', notificationTasks);
 
     res.status(201).json(populatedOrder);
@@ -655,6 +651,8 @@ const addGuestOrderItems = async (req, res) => {
       actor: { name: guestCustomer.name, email: guestCustomer.email },
     });
     const createdOrder = await order.save();
+    await maybeSendOrderPlacedEmail(createdOrder);
+    await createdOrder.save({ validateBeforeSave: false });
     const createdOutbox = await createOrderOutboxEvent(createdOrder, 'order.created', {
       request: req,
     });
@@ -670,9 +668,6 @@ const addGuestOrderItems = async (req, res) => {
         resourceId: createdOrder._id.toString(),
       }),
     ];
-    if (createdOrder.paymentProvider !== 'Stripe' && createdOrder.paymentProvider !== 'PayHere') {
-      notificationTasks.push(() => sendOrderConfirmationEmail(createdOrder));
-    }
     runCheckoutNotificationsInBackground('guest-order-created', notificationTasks);
 
     res.status(201).json({
@@ -1153,7 +1148,11 @@ const updateOrderStatus = async (req, res) => {
       previousState.trackingNumber !== (updatedOrder.trackingNumber || '') ||
       previousState.isPaid !== updatedOrder.isPaid
     ) {
-      await maybeSendStatusEmail(populatedOrder, createStatusEmailKey(populatedOrder));
+      const statusEmailSent = await maybeSendStatusEmail(populatedOrder);
+
+      if (statusEmailSent) {
+        await populatedOrder.save({ validateBeforeSave: false });
+      }
     }
     await notifyOrderEvent(populatedOrder, 'order.status.updated');
     await emitWebhookEvent('order.status.updated', populatedOrder.toObject(), {
