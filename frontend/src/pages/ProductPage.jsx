@@ -16,6 +16,7 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useSettings } from '../context/SettingsContext';
 import Product from '../components/Product';
 import { slugifyCategoryName } from '../utils/categoryUi';
 import { trackEvent } from '../utils/analytics';
@@ -50,6 +51,7 @@ const ProductPage = () => {
   const { addToCart } = useCart();
   const { userInfo } = useAuth();
   const { formatPrice } = useCurrency();
+  const { checkoutMode, whatsappNumber } = useSettings();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -62,6 +64,7 @@ const ProductPage = () => {
   const [selectedImage, setSelectedImage] = useState('');
   const [imageReady, setImageReady] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState('');
+  const [validationError, setValidationError] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -260,6 +263,69 @@ const ProductPage = () => {
       qty
     );
     navigate('/cart');
+  };
+
+  const handleBuyNow = () => {
+    setValidationError('');
+
+    const activeVariants = product.variants?.filter((v) => v.isActive !== false) || [];
+    const hasSizes = activeVariants.some((v) => Boolean(v.size));
+    const hasColors = activeVariants.some((v) => Boolean(v.color));
+
+    if (activeVariants.length > 0) {
+      if (!selectedVariant) {
+        setValidationError('Please select an option before proceeding.');
+        return;
+      }
+      if (hasSizes && !selectedVariant.size) {
+        setValidationError('Please select a size option.');
+        return;
+      }
+      if (hasColors && !selectedVariant.color) {
+        setValidationError('Please select a color option.');
+        return;
+      }
+    }
+
+    if (checkoutMode === 'whatsapp') {
+      const sizeVal = selectedVariant?.size || 'N/A';
+      const colorVal = selectedVariant?.color || 'N/A';
+      const unitPriceStr = formatPrice(effectivePrice);
+      const totalPriceStr = formatPrice(effectivePrice * qty);
+      const prodUrl = window.location.href;
+
+      const message = [
+        `🛒 *New Order Request via WhatsApp*`,
+        ``,
+        `📦 *Product:* ${product.name}`,
+        `• *Size:* ${sizeVal}`,
+        `• *Color:* ${colorVal}`,
+        `• *Quantity:* ${qty}`,
+        `• *Unit Price:* ${unitPriceStr}`,
+        `• *Total:* ${totalPriceStr}`,
+        ``,
+        `🔗 *Product Link:* ${prodUrl}`,
+        ``,
+        `Please let me know how to proceed with payment and delivery.`,
+      ].join('\n');
+
+      const cleanNum = String(whatsappNumber || '94765669961').replace(/\D/g, '');
+      const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      addToCart(
+        {
+          ...product,
+          price: effectivePrice,
+          countInStock: effectiveStock,
+          variantId: selectedVariant?._id || '',
+          variantLabel: selectedVariant?.label || '',
+          sku: selectedVariant?.sku || product.sku || '',
+        },
+        qty
+      );
+      navigate('/login?redirect=/checkout');
+    }
   };
 
   const shareProduct = async () => {
@@ -505,6 +571,12 @@ const ProductPage = () => {
                 </div>
               )}
 
+              {validationError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+                  {validationError}
+                </div>
+              )}
+
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-start lg:gap-4">
                 <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:self-end">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
@@ -561,9 +633,23 @@ const ProductPage = () => {
                   </p>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={effectiveStock === 0}
+                  className={`order-4 inline-flex h-14 w-full items-center justify-center rounded-xl px-6 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 lg:order-none lg:col-span-2 lg:row-start-3 ${
+                    effectiveStock === 0
+                      ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                      : 'bg-[#1fae5b] text-white hover:bg-[#116b3a]'
+                  }`}
+                >
+                  <MessageSquareText size={18} className="mr-2" />
+                  Buy Now
+                </button>
+
                 <Link
                   to="/products"
-                  className="order-4 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-span-2 lg:row-start-3 lg:px-4"
+                  className="order-5 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-span-2 lg:row-start-4 lg:px-4"
                 >
                   Continue Shopping
                 </Link>

@@ -1,16 +1,46 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { Trash2, ArrowLeft, Minus, Plus } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+import { Trash2, ArrowLeft, Minus, Plus, MessageSquareText } from 'lucide-react';
 
 const CartPage = () => {
   const { cartItems, addToCart, removeFromCart } = useCart();
   const { formatPrice } = useCurrency();
+  const { checkoutMode, whatsappNumber } = useSettings();
   const navigate = useNavigate();
   const subtotal = cartItems.reduce((acc, item) => acc + item.qty * item.price, 0);
 
   const checkoutHandler = () => {
-    navigate('/login?redirect=/checkout');
+    if (checkoutMode === 'whatsapp') {
+      const itemsList = cartItems
+        .map((item, index) => {
+          const itemLabel = item.variantLabel ? ` (${item.variantLabel})` : '';
+          const lineTotal = formatPrice(item.price * item.qty);
+          const unitPrice = formatPrice(item.price);
+          return `${index + 1}. *${item.name}*${itemLabel}\n   Qty: ${item.qty} x ${unitPrice} = ${lineTotal}`;
+        })
+        .join('\n');
+
+      const formattedSubtotal = formatPrice(subtotal);
+
+      const message = [
+        `🛒 *New Order Request via WhatsApp*`,
+        ``,
+        `📦 *Cart Items (${cartItems.reduce((acc, item) => acc + item.qty, 0)}):*`,
+        itemsList,
+        ``,
+        `💰 *Cart Subtotal:* ${formattedSubtotal}`,
+        ``,
+        `Please let me know how to proceed with payment and delivery.`,
+      ].join('\n');
+
+      const cleanNum = String(whatsappNumber || '94765669961').replace(/\D/g, '');
+      const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate('/login?redirect=/checkout');
+    }
   };
 
   return (
@@ -121,8 +151,13 @@ const CartPage = () => {
               
               <button 
                 onClick={checkoutHandler}
-                className="w-full btn-primary py-3 text-lg font-bold uppercase tracking-wider"
+                className={`w-full py-3.5 text-base font-bold uppercase tracking-wider rounded-xl transition duration-200 flex items-center justify-center ${
+                  checkoutMode === 'whatsapp'
+                    ? 'bg-[#1fae5b] text-white hover:bg-[#116b3a]'
+                    : 'btn-primary'
+                }`}
               >
+                {checkoutMode === 'whatsapp' && <MessageSquareText size={20} className="mr-2" />}
                 Proceed to Checkout
               </button>
             </div>

@@ -5,6 +5,7 @@ import axios from 'axios'
 import { CartProvider } from './context/CartContext'
 import { AuthProvider } from './context/AuthContext'
 import { CurrencyProvider } from './context/CurrencyContext'
+import { SettingsProvider } from './context/SettingsContext'
 import App from './App.jsx'
 import { installFrontendErrorMonitoring } from './utils/errorMonitoring'
 import { installChunkLoadRecovery } from './utils/chunkLoadRecovery'
@@ -27,11 +28,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <CurrencyProvider>
-        <CartProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </CartProvider>
+        <SettingsProvider>
+          <CartProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </CartProvider>
+        </SettingsProvider>
       </CurrencyProvider>
     </AuthProvider>
   </React.StrictMode>,

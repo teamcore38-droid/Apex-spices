@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 
 const Field = ({ label, value, onChange, type = 'text' }) => (
   <label className="block">
@@ -18,6 +19,7 @@ const Field = ({ label, value, onChange, type = 'text' }) => (
 
 const AdminCommercePage = () => {
   const { userInfo } = useAuth();
+  const { checkoutMode, whatsappNumber, updateSettings } = useSettings();
   const navigate = useNavigate();
   const canManageCommerce = Boolean(
     userInfo?.isAdmin ||
@@ -38,6 +40,40 @@ const AdminCommercePage = () => {
   const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percent', discountValue: 10, minSubtotal: 0, isActive: true });
   const [giftCardForm, setGiftCardForm] = useState({ code: '', balance: 100, currency: 'LKR', isActive: true });
   const [taxForm, setTaxForm] = useState({ country: 'LK', state: '', label: 'Sales Tax', rate: 0.15, isActive: true });
+
+  const [settingsForm, setSettingsForm] = useState({
+    checkoutMode: 'whatsapp',
+    whatsappNumber: '94765669961',
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsSuccess, setSettingsSuccess] = useState('');
+  const [settingsError, setSettingsError] = useState('');
+
+  useEffect(() => {
+    if (checkoutMode || whatsappNumber) {
+      setSettingsForm({
+        checkoutMode: checkoutMode || 'whatsapp',
+        whatsappNumber: whatsappNumber || '94765669961',
+      });
+    }
+  }, [checkoutMode, whatsappNumber]);
+
+  const saveSettingsHandler = async (e) => {
+    e?.preventDefault();
+    setSavingSettings(true);
+    setSettingsSuccess('');
+    setSettingsError('');
+
+    try {
+      await updateSettings(settingsForm, userInfo.token);
+      setSettingsSuccess('Store checkout settings updated successfully.');
+    } catch (err) {
+      console.error(err);
+      setSettingsError(err.response?.data?.message || 'Failed to update store checkout settings.');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const config = userInfo?.token
     ? {
@@ -173,6 +209,107 @@ const AdminCommercePage = () => {
 
         {error && <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {success && <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>}
+
+        <div className="mt-8 rounded-[28px] bg-white p-6 shadow-sm">
+          <div className="border-b border-gray-100 pb-4">
+            <h2 className="font-serif text-2xl font-bold text-brand-dark">Checkout Mode & Store Settings</h2>
+            <p className="mt-1 text-sm text-gray-500">Configure how customer orders are placed (WhatsApp vs Online Checkout) and update store WhatsApp number.</p>
+          </div>
+
+          {settingsSuccess && (
+            <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700">
+              {settingsSuccess}
+            </div>
+          )}
+
+          {settingsError && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              {settingsError}
+            </div>
+          )}
+
+          <form onSubmit={saveSettingsHandler} className="mt-6 space-y-6">
+            <div>
+              <span className="block text-xs font-bold uppercase tracking-[0.18em] text-gray-500 mb-3">
+                Checkout Mode Selection
+              </span>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label
+                  className={`flex cursor-pointer items-start rounded-2xl border p-4 transition ${
+                    settingsForm.checkoutMode === 'whatsapp'
+                      ? 'border-brand-primary bg-brand-light text-brand-dark ring-2 ring-brand-primary/20'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="checkoutMode"
+                    value="whatsapp"
+                    checked={settingsForm.checkoutMode === 'whatsapp'}
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, checkoutMode: e.target.value }))}
+                    className="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                  />
+                  <div className="ml-3">
+                    <span className="block font-bold text-base text-brand-dark">WhatsApp Order (Default)</span>
+                    <span className="mt-1 block text-xs text-gray-500 leading-relaxed">
+                      All "Buy Now" and cart checkout actions automatically open WhatsApp with a pre-filled itemized order summary.
+                    </span>
+                  </div>
+                </label>
+
+                <label
+                  className={`flex cursor-pointer items-start rounded-2xl border p-4 transition ${
+                    settingsForm.checkoutMode === 'online'
+                      ? 'border-brand-primary bg-brand-light text-brand-dark ring-2 ring-brand-primary/20'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="checkoutMode"
+                    value="online"
+                    checked={settingsForm.checkoutMode === 'online'}
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, checkoutMode: e.target.value }))}
+                    className="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                  />
+                  <div className="ml-3">
+                    <span className="block font-bold text-base text-brand-dark">Online Checkout</span>
+                    <span className="mt-1 block text-xs text-gray-500 leading-relaxed">
+                      Restores standard e-commerce web checkout page flow (`/checkout`) with online payment choices.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <Field
+                label="WhatsApp Business Phone Number"
+                value={settingsForm.whatsappNumber}
+                onChange={(val) => setSettingsForm((prev) => ({ ...prev, whatsappNumber: val }))}
+              />
+              <p className="mt-1.5 text-xs text-gray-500">
+                Country code + phone number without spaces or dashes (e.g. 94765669961).
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingSettings}
+              className="inline-flex items-center justify-center rounded-xl bg-brand-primary px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition duration-200 hover:bg-brand-dark disabled:opacity-50"
+            >
+              {savingSettings ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" /> Saving Settings...
+                </>
+              ) : (
+                <>
+                  <Save size={16} className="mr-2" /> Save Checkout Settings
+                </>
+              )}
+            </button>
+          </form>
+        </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <section className="rounded-[28px] bg-white p-6 shadow-sm">
