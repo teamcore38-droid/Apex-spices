@@ -51,28 +51,46 @@ export const CartProvider = ({ children }) => {
   }, [shippingAddress]);
 
   const addToCart = (product, qty) => {
+    const productId = product._id || product.product;
+    const isCustom = Boolean(product.isCustomQuantity);
+    const variantId = isCustom
+      ? `custom-${product.customQuantity}${product.customUnit}`
+      : (product.variantId || '');
+
     trackEvent('add_to_cart', {
-      productId: product._id || product.product,
+      productId,
       name: product.name,
       price: product.price,
       quantity: qty,
-      variantId: product.variantId || '',
+      variantId,
       value: Number(product.price || 0) * Number(qty || 0),
       currency: 'LKR',
     });
 
-    setCartItems(prev => {
-      const productId = product._id || product.product;
-      const variantId = product.variantId || '';
-      const existItem = prev.find(x => x.product === productId && (x.variantId || '') === variantId);
+    setCartItems((prev) => {
+      const existItem = prev.find(
+        (x) => x.product === productId && (x.variantId || '') === variantId
+      );
       if (existItem) {
-        return prev.map(x => 
-          x.product === existItem.product && (x.variantId || '') === variantId
-            ? { ...x, qty } // Replace old qty with new qty
+        return prev.map((x) =>
+          x.product === productId && (x.variantId || '') === variantId
+            ? {
+                ...x,
+                price: product.price,
+                qty,
+                isCustomQuantity: isCustom,
+                customQuantity: product.customQuantity,
+                customUnit: product.customUnit,
+                customQuantityFormatted: product.customQuantityFormatted,
+                unitPrice: product.unitPrice,
+                variantLabel: product.variantLabel || x.variantLabel,
+              }
             : x
         );
-      } else {
-        return [...prev, {
+      }
+      return [
+        ...prev,
+        {
           product: productId,
           name: product.name,
           image: product.image,
@@ -81,14 +99,21 @@ export const CartProvider = ({ children }) => {
           variantLabel: product.variantLabel || '',
           sku: product.sku || '',
           countInStock: product.countInStock,
-          qty
-        }];
-      }
+          isCustomQuantity: isCustom,
+          customQuantity: product.customQuantity,
+          customUnit: product.customUnit,
+          customQuantityFormatted: product.customQuantityFormatted,
+          unitPrice: product.unitPrice,
+          qty,
+        },
+      ];
     });
   };
 
-  const removeFromCart = (id) => {
-    const item = cartItems.find((cartItem) => cartItem.product === id);
+  const removeFromCart = (id, variantId = '') => {
+    const item = cartItems.find(
+      (cartItem) => cartItem.product === id && (!variantId || cartItem.variantId === variantId)
+    );
     if (item) {
       trackEvent('remove_from_cart', {
         productId: item.product,
@@ -98,7 +123,11 @@ export const CartProvider = ({ children }) => {
       });
     }
 
-    setCartItems(prev => prev.filter(x => x.product !== id));
+    setCartItems((prev) =>
+      prev.filter(
+        (x) => !(x.product === id && (!variantId || (x.variantId || '') === (variantId || '')))
+      )
+    );
   };
 
   const clearCart = () => {

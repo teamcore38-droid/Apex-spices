@@ -565,6 +565,13 @@ const AdminOrderDetailPage = () => {
                         />
                         <div>
                           <p className="font-serif text-lg font-bold text-brand-dark">{item.name}</p>
+                          {item.isCustomQuantity ? (
+                            <p className="mt-1 text-sm font-semibold text-brand-accent">
+                              Custom Quantity: {item.customQuantityFormatted || `${item.customQuantity}${item.customUnit}`}
+                            </p>
+                          ) : item.variantLabel ? (
+                            <p className="mt-1 text-xs text-gray-500">Option: {item.variantLabel}</p>
+                          ) : null}
                           <p className="mt-1 text-sm text-gray-500">Quantity: {item.qty}</p>
                           <p className="text-sm text-gray-500">Unit Price: {formatCurrency(item.price)}</p>
                         </div>

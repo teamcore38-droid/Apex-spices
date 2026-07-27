@@ -190,6 +190,33 @@ const productSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    allowCustomQuantity: {
+      type: Boolean,
+      default: false,
+    },
+    customQuantitySettings: {
+      unit: {
+        type: String,
+        enum: ['g', 'kg'],
+        default: 'g',
+        trim: true,
+      },
+      unitPrice: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      minQuantity: {
+        type: Number,
+        default: 50,
+        min: 1,
+      },
+      maxQuantity: {
+        type: Number,
+        default: 10000,
+        min: 1,
+      },
+    },
     seo: {
       title: { type: String, default: '', trim: true },
       description: { type: String, default: '', trim: true },

@@ -362,6 +362,15 @@ const validateProductPayload = async (payload, { productId = null } = {}) => {
       isFeatured: parseBooleanValue(payload.isFeatured) ?? false,
       isActive: parseBooleanValue(payload.isActive) ?? true,
       isBestSeller: parseBooleanValue(payload.isBestSeller) ?? false,
+      allowCustomQuantity: parseBooleanValue(payload.allowCustomQuantity) ?? false,
+      customQuantitySettings: {
+        unit: ['g', 'kg'].includes(payload.customQuantitySettings?.unit)
+          ? payload.customQuantitySettings.unit
+          : 'g',
+        unitPrice: Math.max(0, Number(payload.customQuantitySettings?.unitPrice || 0)),
+        minQuantity: Math.max(1, Number(payload.customQuantitySettings?.minQuantity || 50)),
+        maxQuantity: Math.max(1, Number(payload.customQuantitySettings?.maxQuantity || 10000)),
+      },
       approvalStatus: ['Approved', 'Pending', 'Rejected'].includes(payload.approvalStatus)
         ? payload.approvalStatus
         : 'Approved',

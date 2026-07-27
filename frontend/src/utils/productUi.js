@@ -57,6 +57,11 @@ export const createInitialProductForm = () => ({
   isFeatured: false,
   isActive: true,
   isBestSeller: false,
+  allowCustomQuantity: false,
+  customUnit: 'g',
+  customUnitPrice: '',
+  customMinQuantity: '50',
+  customMaxQuantity: '10000',
 });
 
 export const normalizeProductPayload = (data) => {
@@ -177,6 +182,11 @@ export const buildProductFormFromProduct = (product = {}) => ({
   isFeatured: Boolean(product.isFeatured),
   isActive: product.isActive ?? true,
   isBestSeller: Boolean(product.isBestSeller),
+  allowCustomQuantity: Boolean(product.allowCustomQuantity),
+  customUnit: product.customQuantitySettings?.unit || 'g',
+  customUnitPrice: product.customQuantitySettings?.unitPrice ?? '',
+  customMinQuantity: product.customQuantitySettings?.minQuantity ?? 50,
+  customMaxQuantity: product.customQuantitySettings?.maxQuantity ?? 10000,
 });
 
 export const buildProductPayloadFromForm = (form) => ({
@@ -203,4 +213,11 @@ export const buildProductPayloadFromForm = (form) => ({
   isFeatured: Boolean(form.isFeatured),
   isActive: Boolean(form.isActive),
   isBestSeller: Boolean(form.isBestSeller),
+  allowCustomQuantity: Boolean(form.allowCustomQuantity),
+  customQuantitySettings: {
+    unit: form.customUnit || 'g',
+    unitPrice: Number(form.customUnitPrice || 0),
+    minQuantity: Number(form.customMinQuantity || 50),
+    maxQuantity: Number(form.customMaxQuantity || 10000),
+  },
 });

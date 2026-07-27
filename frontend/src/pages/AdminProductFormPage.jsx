@@ -525,6 +525,99 @@ const AdminProductFormPage = ({ mode = 'create' }) => {
 
             <section className="space-y-5">
               <div>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Flexible Quantity</p>
+                <h2 className="mt-2 font-serif text-2xl font-bold text-brand-dark">Custom Quantity Purchasing</h2>
+                <p className="mt-1 text-xs leading-5 text-gray-500">
+                  Allow customers to enter their required quantity (such as 100g, 550g, 900g, 1kg) with unit pricing and limits.
+                </p>
+              </div>
+
+              <div className="space-y-4 rounded-[24px] border border-gray-100 bg-[#fbfcfe] p-5">
+                <label className="flex items-center gap-3 text-sm font-bold text-brand-dark cursor-pointer">
+                  <input
+                    name="allowCustomQuantity"
+                    type="checkbox"
+                    checked={Boolean(form.allowCustomQuantity)}
+                    onChange={handleChange}
+                    className="h-5 w-5 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
+                  />
+                  Enable Custom Quantity Purchasing for this product
+                </label>
+
+                {form.allowCustomQuantity && (
+                  <div className="pt-4 border-t border-gray-200/60 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <label htmlFor="customUnit" className="mb-2 block text-sm font-semibold text-brand-dark">
+                        Unit of Measure
+                      </label>
+                      <select
+                        id="customUnit"
+                        name="customUnit"
+                        value={form.customUnit || 'g'}
+                        onChange={handleChange}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-brand-dark outline-none focus:border-brand-accent"
+                      >
+                        <option value="g">Grams (g)</option>
+                        <option value="kg">Kilograms (kg)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="customUnitPrice" className="mb-2 block text-sm font-semibold text-brand-dark">
+                        Price per {form.customUnit === 'kg' ? 'Kilogram (kg)' : 'Gram (g)'}
+                      </label>
+                      <input
+                        id="customUnitPrice"
+                        name="customUnitPrice"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.customUnitPrice}
+                        onChange={handleChange}
+                        placeholder={form.customUnit === 'kg' ? 'e.g. 2500' : 'e.g. 2.50'}
+                        required={Boolean(form.allowCustomQuantity)}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-brand-dark outline-none focus:border-brand-accent"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="customMinQuantity" className="mb-2 block text-sm font-semibold text-brand-dark">
+                        Min Quantity ({form.customUnit || 'g'})
+                      </label>
+                      <input
+                        id="customMinQuantity"
+                        name="customMinQuantity"
+                        type="number"
+                        min="1"
+                        value={form.customMinQuantity}
+                        onChange={handleChange}
+                        placeholder="e.g. 50"
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-brand-dark outline-none focus:border-brand-accent"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="customMaxQuantity" className="mb-2 block text-sm font-semibold text-brand-dark">
+                        Max Quantity ({form.customUnit || 'g'})
+                      </label>
+                      <input
+                        id="customMaxQuantity"
+                        name="customMaxQuantity"
+                        type="number"
+                        min="1"
+                        value={form.customMaxQuantity}
+                        onChange={handleChange}
+                        placeholder="e.g. 10000"
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-brand-dark outline-none focus:border-brand-accent"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-5">
+              <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Media & Story</p>
                 <h2 className="mt-2 font-serif text-2xl font-bold text-brand-dark">Visuals and selling copy</h2>
               </div>

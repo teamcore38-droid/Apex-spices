@@ -15,7 +15,11 @@ const CartPage = () => {
     if (checkoutMode === 'whatsapp') {
       const itemsList = cartItems
         .map((item, index) => {
-          const itemLabel = item.variantLabel ? ` (${item.variantLabel})` : '';
+          const itemLabel = item.isCustomQuantity
+            ? ` (Custom Qty: ${item.customQuantityFormatted})`
+            : item.variantLabel
+              ? ` (${item.variantLabel})`
+              : '';
           const lineTotal = formatPrice(item.price * item.qty);
           const unitPrice = formatPrice(item.price);
           return `${index + 1}. *${item.name}*${itemLabel}\n   Qty: ${item.qty} x ${unitPrice} = ${lineTotal}`;
@@ -111,7 +115,7 @@ const CartPage = () => {
                       <span className="md:hidden">Total: </span>
                       {formatPrice(item.price * item.qty)}
                       <button 
-                        onClick={() => removeFromCart(item.product)}
+                        onClick={() => removeFromCart(item.product, item.variantId)}
                         className="ml-4 text-red-500 hover:text-red-700 transition-colors"
                         title="Remove from Cart"
                       >

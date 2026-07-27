@@ -287,7 +287,14 @@ const OrderInvoicePage = () => {
                 <tbody className="divide-y divide-gray-100 text-sm text-brand-dark">
                   {(invoice.items || []).map((item) => (
                     <tr key={`${item.name}-${item.product}`}>
-                      <td className="px-3 py-2.5 font-semibold">{item.name}</td>
+                      <td className="px-3 py-2.5 font-semibold">
+                        {item.name}
+                        {(item.variantLabel || item.customQuantityFormatted) && (
+                          <span className="block text-xs font-normal text-gray-500">
+                            {item.variantLabel || `Custom Qty: ${item.customQuantityFormatted}`}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2.5 text-center">{item.qty}</td>
                       <td className="px-3 py-2.5 text-right">{formatCurrency(item.price, invoiceCurrency)}</td>
                       <td className="px-3 py-2.5 text-right font-bold">{formatCurrency(item.lineTotal, invoiceCurrency)}</td>

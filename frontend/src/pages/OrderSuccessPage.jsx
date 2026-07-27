@@ -279,7 +279,12 @@ const OrderSuccessPage = () => {
                           <div>
                             <h3 className="font-serif text-xl font-bold text-brand-dark">{item.name}</h3>
                             <p className="text-sm text-gray-500">
-                              Qty: {item.qty} | {formatCurrency(item.price, orderCurrency)} each
+                              {item.isCustomQuantity
+                                ? `Custom Qty: ${item.customQuantityFormatted || `${item.customQuantity}${item.customUnit}`}`
+                                : item.variantLabel
+                                  ? `Option: ${item.variantLabel} | Qty: ${item.qty}`
+                                  : `Qty: ${item.qty}`}
+                              {' '}| {formatCurrency(item.price, orderCurrency)}
                             </p>
                           </div>
                         </div>

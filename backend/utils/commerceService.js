@@ -91,7 +91,14 @@ const normalizeCartItems = async (cartItems = []) => {
       throw new Error(`${product.name} has only ${availableStock} available`);
     }
 
-    const price = roundMoney(Number(product.price || 0) + Number(variant?.priceAdjustment || 0));
+    const isCustom = Boolean(product.allowCustomQuantity || item.isCustomQuantity);
+    const customUnit = item.customUnit || product.customQuantitySettings?.unit || 'g';
+    const customUnitPrice = Number(item.unitPrice ?? product.customQuantitySettings?.unitPrice ?? 0);
+    const customQty = Number(item.customQuantity || 0);
+    const price = isCustom && customQty > 0
+      ? roundMoney(customQty * customUnitPrice)
+      : roundMoney(Number(product.price || 0) + Number(variant?.priceAdjustment || 0));
+
     const vendor = product.vendor ? await Vendor.findById(product.vendor).lean() : null;
     const commissionRate = vendor ? Number(vendor.commissionRate || 0) : 0;
     const commissionAmount = roundMoney(price * qty * (commissionRate / 100));
@@ -105,8 +112,13 @@ const normalizeCartItems = async (cartItems = []) => {
       vendor: vendor?._id || null,
       vendorName: vendor?.businessName || '',
       variantId: variant?._id || null,
-      variantLabel: variant?.label || '',
+      variantLabel: item.variantLabel || variant?.label || '',
       sku: variant?.sku || product.sku || '',
+      isCustomQuantity: isCustom,
+      customQuantity: customQty,
+      customUnit,
+      customQuantityFormatted: item.customQuantityFormatted || (isCustom ? `${customQty}${customUnit}` : ''),
+      unitPrice: customUnitPrice,
       commissionRate,
       commissionAmount,
       vendorNetAmount: roundMoney(price * qty - commissionAmount),

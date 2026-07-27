@@ -216,12 +216,68 @@ const ProductPage = () => {
     };
   }, [id, userInfo?.token]);
 
+  const [customQtyInput, setCustomQtyInput] = useState('');
+
+  useEffect(() => {
+    if (product?.allowCustomQuantity) {
+      const defaultQty = product.customQuantitySettings?.minQuantity || (product.customQuantitySettings?.unit === 'kg' ? 1 : 250);
+      setCustomQtyInput(String(defaultQty));
+    }
+  }, [product]);
+
+  const isCustomQtyProduct = Boolean(product?.allowCustomQuantity);
+  const customUnit = product?.customQuantitySettings?.unit || 'g';
+  const customUnitPrice = Number(product?.customQuantitySettings?.unitPrice || 0);
+  const customMinQty = Number(product?.customQuantitySettings?.minQuantity || (customUnit === 'kg' ? 0.1 : 50));
+  const customMaxQty = Number(product?.customQuantitySettings?.maxQuantity || (customUnit === 'kg' ? 50 : 10000));
+
+  const parsedCustomQty = Number(customQtyInput);
+
+  const customQtyFormatted = useMemo(() => {
+    if (!isCustomQtyProduct || Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
+      return '';
+    }
+    if (customUnit === 'g' && parsedCustomQty >= 1000) {
+      const inKg = parsedCustomQty / 1000;
+      const formattedKg = Number.isInteger(inKg) ? inKg.toString() : inKg.toFixed(2);
+      return `${formattedKg}kg (${parsedCustomQty}g)`;
+    }
+    return `${parsedCustomQty}${customUnit}`;
+  }, [isCustomQtyProduct, customUnit, parsedCustomQty]);
+
+  const computedCustomTotalPrice = useMemo(() => {
+    if (!isCustomQtyProduct || Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
+      return 0;
+    }
+    return parsedCustomQty * customUnitPrice;
+  }, [isCustomQtyProduct, parsedCustomQty, customUnitPrice]);
+
+  const customQtyPresets = useMemo(() => {
+    if (customUnit === 'kg') {
+      return [
+        { value: 0.25, label: '250g' },
+        { value: 0.5, label: '500g' },
+        { value: 1, label: '1kg' },
+        { value: 2, label: '2kg' },
+        { value: 5, label: '5kg' },
+      ];
+    }
+    return [
+      { value: 100, label: '100g' },
+      { value: 250, label: '250g' },
+      { value: 500, label: '500g' },
+      { value: 1000, label: '1kg' },
+    ];
+  }, [customUnit]);
+
   const productImages = useMemo(() => getProductImages(product || {}), [product]);
   const selectedVariant = useMemo(
     () => product?.variants?.find((variant) => variant._id === selectedVariantId) || null,
     [product, selectedVariantId]
   );
-  const effectivePrice = Number(product?.price || 0) + Number(selectedVariant?.priceAdjustment || 0);
+  const effectivePrice = isCustomQtyProduct
+    ? computedCustomTotalPrice
+    : Number(product?.price || 0) + Number(selectedVariant?.priceAdjustment || 0);
   const effectiveStock = selectedVariant ? selectedVariant.countInStock : product?.countInStock || 0;
   const stockPresentation = getStockPresentation(effectiveStock || 0);
 
@@ -250,7 +306,49 @@ const ProductPage = () => {
     );
   }
 
+  const validateCustomQty = () => {
+    if (!isCustomQtyProduct) return true;
+    if (customQtyInput === '' || Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
+      setValidationError('Please enter a valid quantity.');
+      return false;
+    }
+    if (parsedCustomQty < customMinQty) {
+      setValidationError(`Minimum allowed quantity is ${customMinQty}${customUnit}.`);
+      return false;
+    }
+    if (parsedCustomQty > customMaxQty) {
+      setValidationError(`Maximum allowed quantity is ${customMaxQty}${customUnit}.`);
+      return false;
+    }
+    return true;
+  };
+
   const handleAddToCart = () => {
+    setValidationError('');
+
+    if (isCustomQtyProduct) {
+      if (!validateCustomQty()) return;
+
+      addToCart(
+        {
+          ...product,
+          price: computedCustomTotalPrice,
+          countInStock: effectiveStock || 999,
+          isCustomQuantity: true,
+          customQuantity: parsedCustomQty,
+          customUnit,
+          customQuantityFormatted,
+          unitPrice: customUnitPrice,
+          variantId: '',
+          variantLabel: `Custom Qty: ${customQuantityFormatted}`,
+          sku: product.sku || '',
+        },
+        1
+      );
+      navigate('/cart');
+      return;
+    }
+
     addToCart(
       {
         ...product,
@@ -267,6 +365,52 @@ const ProductPage = () => {
 
   const handleBuyNow = () => {
     setValidationError('');
+
+    if (isCustomQtyProduct) {
+      if (!validateCustomQty()) return;
+
+      if (checkoutMode === 'whatsapp') {
+        const unitPriceLabel = `${formatPrice(customUnitPrice)} / ${customUnit}`;
+        const totalPriceStr = formatPrice(computedCustomTotalPrice);
+        const prodUrl = window.location.href;
+
+        const message = [
+          `🛒 *New Order Request via WhatsApp*`,
+          ``,
+          `📦 *Product:* ${product.name}`,
+          `• *Custom Quantity:* ${customQuantityFormatted}`,
+          `• *Unit Price:* ${unitPriceLabel}`,
+          `• *Total:* ${totalPriceStr}`,
+          ``,
+          `🔗 *Product Link:* ${prodUrl}`,
+          ``,
+          `Please let me know how to proceed with payment and delivery.`,
+        ].join('\n');
+
+        const cleanNum = String(whatsappNumber || '94765669961').replace(/\D/g, '');
+        const waUrl = `https://wa.me/${cleanNum}?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        addToCart(
+          {
+            ...product,
+            price: computedCustomTotalPrice,
+            countInStock: effectiveStock || 999,
+            isCustomQuantity: true,
+            customQuantity: parsedCustomQty,
+            customUnit,
+            customQuantityFormatted,
+            unitPrice: customUnitPrice,
+            variantId: '',
+            variantLabel: `Custom Qty: ${customQuantityFormatted}`,
+            sku: product.sku || '',
+          },
+          1
+        );
+        navigate('/login?redirect=/checkout');
+      }
+      return;
+    }
 
     const activeVariants = product.variants?.filter((v) => v.isActive !== false) || [];
     const hasSizes = activeVariants.some((v) => Boolean(v.size));
@@ -538,37 +682,102 @@ const ProductPage = () => {
             </div>
 
             <div className="mt-6 rounded-[28px] border border-[#e1e8f2] p-5">
-              {product.variants?.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Variant</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {product.variants.filter((variant) => variant.isActive !== false).map((variant) => (
-                      <button
-                        key={variant._id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedVariantId(variant._id);
-                          setQty(1);
-                        }}
-                        className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                          selectedVariantId === variant._id
-                            ? 'border-brand-primary bg-brand-light text-brand-dark'
-                            : 'border-gray-200 bg-white text-gray-600 hover:border-brand-primary/40'
-                        }`}
-                      >
-                        <span className="block font-semibold">{variant.label}</span>
-                        <span className="mt-1 block text-xs">
-                          {[variant.size, variant.color, variant.weight, variant.packaging].filter(Boolean).join(' | ') || 'Standard option'}
+              {isCustomQtyProduct ? (
+                <div className="mb-6 rounded-2xl bg-[#f7f9fc] p-4 border border-gray-200/80">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-dark">Select Required Quantity</p>
+                    <p className="text-xs font-semibold text-gray-500">
+                      Rate: <span className="font-bold text-brand-primary">{formatPrice(customUnitPrice)}</span> / {customUnit}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {customQtyPresets.map((preset) => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => {
+                            setCustomQtyInput(String(preset.value));
+                            setValidationError('');
+                          }}
+                          className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
+                            Number(customQtyInput) === preset.value
+                              ? 'border-brand-primary bg-brand-primary text-white shadow-sm'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-brand-primary/40'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          step="any"
+                          min={customMinQty}
+                          max={customMaxQty}
+                          value={customQtyInput}
+                          onChange={(e) => {
+                            setCustomQtyInput(e.target.value);
+                            setValidationError('');
+                          }}
+                          placeholder={`Enter quantity in ${customUnit}`}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-brand-dark outline-none focus:border-brand-primary"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-gray-400">
+                          {customUnit}
                         </span>
-                        {variant.priceAdjustment !== 0 && (
-                          <span className="mt-1 block text-xs font-semibold text-brand-primary">
-                            {variant.priceAdjustment > 0 ? '+' : ''}{formatPrice(variant.priceAdjustment)}
-                          </span>
-                        )}
-                      </button>
-                    ))}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-500">
+                      Allowed range: <span className="font-semibold text-brand-dark">{customMinQty}{customUnit}</span> to <span className="font-semibold text-brand-dark">{customMaxQty.toLocaleString()}{customUnit}</span>
+                    </p>
+
+                    {parsedCustomQty > 0 && !Number.isNaN(parsedCustomQty) && (
+                      <div className="mt-2 rounded-xl bg-white p-3 border border-brand-primary/20 flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Calculated Total Price:</span>
+                        <span className="font-bold text-brand-dark text-base">{formatPrice(computedCustomTotalPrice)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
+              ) : (
+                product.variants?.length > 0 && (
+                  <div className="mb-6">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Variant</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {product.variants.filter((variant) => variant.isActive !== false).map((variant) => (
+                        <button
+                          key={variant._id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVariantId(variant._id);
+                            setQty(1);
+                          }}
+                          className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                            selectedVariantId === variant._id
+                              ? 'border-brand-primary bg-brand-light text-brand-dark'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-brand-primary/40'
+                          }`}
+                        >
+                          <span className="block font-semibold">{variant.label}</span>
+                          <span className="mt-1 block text-xs">
+                            {[variant.size, variant.color, variant.weight, variant.packaging].filter(Boolean).join(' | ') || 'Standard option'}
+                          </span>
+                          {variant.priceAdjustment !== 0 && (
+                            <span className="mt-1 block text-xs font-semibold text-brand-primary">
+                              {variant.priceAdjustment > 0 ? '+' : ''}{formatPrice(variant.priceAdjustment)}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
               )}
 
               {validationError && (
@@ -578,27 +787,29 @@ const ProductPage = () => {
               )}
 
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-start lg:gap-4">
-                <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:self-end">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
-                  <div className="mt-3 inline-flex h-14 items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setQty((currentQty) => Math.max(1, currentQty - 1))}
-                      className="rounded-full p-3 text-brand-dark transition-colors duration-200 hover:bg-brand-light"
-                    >
-                      <Minus size={16} />
-                    </button>
-                    <span className="min-w-[54px] text-center text-lg font-semibold text-brand-dark">{qty}</span>
-                    <button
-                      type="button"
-                      disabled={qty >= effectiveStock}
-                      onClick={() => setQty((currentQty) => Math.min(effectiveStock, currentQty + 1))}
-                      className="rounded-full p-3 text-brand-dark transition-colors duration-200 hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Plus size={16} />
-                    </button>
+                {!isCustomQtyProduct && (
+                  <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:self-end">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
+                    <div className="mt-3 inline-flex h-14 items-center rounded-full border border-gray-200 bg-[#f7f9fc] p-1">
+                      <button
+                        type="button"
+                        onClick={() => setQty((currentQty) => Math.max(1, currentQty - 1))}
+                        className="rounded-full p-3 text-brand-dark transition-colors duration-200 hover:bg-brand-light"
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="min-w-[54px] text-center text-lg font-semibold text-brand-dark">{qty}</span>
+                      <button
+                        type="button"
+                        disabled={qty >= effectiveStock}
+                        onClick={() => setQty((currentQty) => Math.min(effectiveStock, currentQty + 1))}
+                        className="rounded-full p-3 text-brand-dark transition-colors duration-200 hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <button
                   type="button"

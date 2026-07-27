@@ -1303,7 +1303,13 @@ const CheckoutInner = ({ payhereEnabled }) => {
                       <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-14 w-14 rounded-2xl object-cover" />
                       <div>
                         <h4 className="text-sm font-bold text-brand-dark">{item.name}</h4>
-                        <p className="text-xs text-gray-500">Qty: {item.qty}</p>
+                        <p className="text-xs text-gray-500">
+                          {item.isCustomQuantity
+                            ? `Custom Qty: ${item.customQuantityFormatted || `${item.customQuantity}${item.customUnit}`}`
+                            : item.variantLabel
+                              ? `${item.variantLabel} | Qty: ${item.qty}`
+                              : `Qty: ${item.qty}`}
+                        </p>
                       </div>
                     </div>
                     <span className="text-sm font-semibold text-brand-dark">
