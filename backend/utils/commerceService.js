@@ -106,7 +106,7 @@ const normalizeCartItems = async (cartItems = []) => {
       throw new Error(`${product.name} has only ${availableStock} available`);
     }
 
-    const isCustom = Boolean(product.allowCustomQuantity);
+    const isCustom = Boolean(product.allowCustomQuantity && item.isCustomQuantity);
     const customSettings = product.customQuantitySettings || {};
     const customUnit = customSettings.unit || 'g';
     const customUnitPrice = Number(customSettings.unitPrice || 0);
@@ -150,7 +150,9 @@ const normalizeCartItems = async (cartItems = []) => {
       vendor: vendor?._id || null,
       vendorName: vendor?.businessName || '',
       variantId: variant?._id || null,
-      variantLabel: isCustom ? `Custom Qty: ${customQuantityFormatted}` : variant?.label || '',
+      variantLabel: isCustom
+        ? `Custom Qty: ${customQuantityFormatted}`
+        : variant?.label || (product.allowCustomQuantity && product.weight ? `Default Weight: ${product.weight}` : ''),
       sku: variant?.sku || product.sku || '',
       isCustomQuantity: isCustom,
       customQuantity: isCustom ? customQty : 0,

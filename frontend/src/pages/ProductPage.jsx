@@ -104,11 +104,7 @@ const ProductPage = () => {
         setSelectedImage(getProductImages(data)[0] || data.image);
         setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
         setQty(1);
-        setCustomQtyInput(
-          data.allowCustomQuantity
-            ? String(data.customQuantitySettings?.minQuantity || (data.customQuantitySettings?.unit === 'kg' ? 1 : 250))
-            : ''
-        );
+        setCustomQtyInput('');
         setDetailsOpen(false);
         setLoading(false);
 
@@ -229,6 +225,7 @@ const ProductPage = () => {
   const customMaxQty = Number(product?.customQuantitySettings?.maxQuantity || (customUnit === 'kg' ? 50 : 10000));
 
   const parsedCustomQty = Number(customQtyInput);
+  const hasCustomQuantitySelection = Boolean(isCustomQtyProduct && String(customQtyInput).trim() !== '');
 
   const customQuantityFormatted = useMemo(() => {
     if (!isCustomQtyProduct || Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
@@ -272,10 +269,10 @@ const ProductPage = () => {
     () => product?.variants?.find((variant) => variant._id === selectedVariantId) || null,
     [product, selectedVariantId]
   );
-  const effectivePrice = isCustomQtyProduct
-    ? computedCustomTotalPrice
-    : Number(product?.price || 0) + Number(selectedVariant?.priceAdjustment || 0);
+  const effectivePrice = Number(product?.price || 0) + Number(selectedVariant?.priceAdjustment || 0);
   const effectiveStock = selectedVariant ? selectedVariant.countInStock : product?.countInStock || 0;
+  const defaultWeightLabel = isCustomQtyProduct && product?.weight ? `Default Weight: ${product.weight}` : '';
+  const fixedVariantLabel = selectedVariant?.label || defaultWeightLabel;
   const stockPresentation = getStockPresentation(effectiveStock || 0);
 
   if (loading) {
@@ -304,8 +301,8 @@ const ProductPage = () => {
   }
 
   const validateCustomQty = () => {
-    if (!isCustomQtyProduct) return true;
-    if (customQtyInput === '' || Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
+    if (!hasCustomQuantitySelection) return true;
+    if (Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
       setValidationError('Please enter a valid quantity.');
       return false;
     }
@@ -323,7 +320,7 @@ const ProductPage = () => {
   const handleAddToCart = () => {
     setValidationError('');
 
-    if (isCustomQtyProduct) {
+    if (hasCustomQuantitySelection) {
       if (!validateCustomQty()) return;
 
       addToCart(
@@ -352,7 +349,7 @@ const ProductPage = () => {
         price: effectivePrice,
         countInStock: effectiveStock,
         variantId: selectedVariant?._id || '',
-        variantLabel: selectedVariant?.label || '',
+        variantLabel: fixedVariantLabel,
         sku: selectedVariant?.sku || product.sku || '',
       },
       qty
@@ -363,7 +360,7 @@ const ProductPage = () => {
   const handleBuyNow = () => {
     setValidationError('');
 
-    if (isCustomQtyProduct) {
+    if (hasCustomQuantitySelection) {
       if (!validateCustomQty()) return;
 
       if (checkoutMode === 'whatsapp') {
@@ -460,7 +457,7 @@ const ProductPage = () => {
           price: effectivePrice,
           countInStock: effectiveStock,
           variantId: selectedVariant?._id || '',
-          variantLabel: selectedVariant?.label || '',
+          variantLabel: fixedVariantLabel,
           sku: selectedVariant?.sku || product.sku || '',
         },
         qty

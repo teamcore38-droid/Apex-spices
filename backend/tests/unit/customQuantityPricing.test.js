@@ -52,6 +52,7 @@ test('custom quantity pricing uses the product unit price instead of the cart pa
       {
         product: productId,
         qty: 1,
+        isCustomQuantity: true,
         customQuantity: 100,
         customUnit: 'kg',
         customQuantityFormatted: 'tampered',
@@ -80,9 +81,35 @@ test('custom quantity checkout rejects quantities below the product minimum', as
 
   await withProductLookup(product, async () => {
     await assert.rejects(
-      () => normalizeCartItems([{ product: productId, qty: 1, customQuantity: 25 }]),
+      () => normalizeCartItems([{ product: productId, qty: 1, isCustomQuantity: true, customQuantity: 25 }]),
       /at least 50g/
     );
+  });
+});
+
+test('custom-enabled products use the default product price and weight when no custom quantity is selected', async () => {
+  const product = buildProduct({
+    allowCustomQuantity: true,
+    price: 2500,
+    weight: '250g',
+    customQuantitySettings: {
+      unit: 'g',
+      unitPrice: 10,
+      minQuantity: 50,
+      maxQuantity: 10000,
+    },
+  });
+
+  await withProductLookup(product, async () => {
+    const [item] = await normalizeCartItems([{ product: productId, qty: 1 }]);
+
+    assert.equal(item.isCustomQuantity, false);
+    assert.equal(item.customQuantity, 0);
+    assert.equal(item.customUnit, '');
+    assert.equal(item.customQuantityFormatted, '');
+    assert.equal(item.unitPrice, 0);
+    assert.equal(item.variantLabel, 'Default Weight: 250g');
+    assert.equal(item.price, 2500);
   });
 });
 
