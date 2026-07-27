@@ -35,6 +35,28 @@ const validateForm = (form) => {
     return 'Low-stock threshold cannot be negative.';
   }
 
+  if (form.allowCustomQuantity) {
+    const unitPrice = Number(form.customUnitPrice);
+    const minQuantity = Number(form.customMinQuantity);
+    const maxQuantity = Number(form.customMaxQuantity);
+
+    if (Number.isNaN(unitPrice) || unitPrice <= 0) {
+      return 'Custom quantity unit price must be greater than zero.';
+    }
+
+    if (Number.isNaN(minQuantity) || minQuantity <= 0) {
+      return 'Custom quantity minimum must be greater than zero.';
+    }
+
+    if (Number.isNaN(maxQuantity) || maxQuantity <= 0) {
+      return 'Custom quantity maximum must be greater than zero.';
+    }
+
+    if (maxQuantity < minQuantity) {
+      return 'Custom quantity maximum must be greater than or equal to the minimum.';
+    }
+  }
+
   try {
     JSON.parse(form.variantsJson || '[]');
   } catch {

@@ -20,6 +20,11 @@ const Product = ({ product, compactOnMobile = false }) => {
   const handleAddToCart = (event) => {
     event.preventDefault();
 
+    if (product.allowCustomQuantity) {
+      navigate(`/product/${product._id}`);
+      return;
+    }
+
     if (product.countInStock > 0) {
       addToCart(product, 1);
       navigate('/cart');
@@ -142,7 +147,7 @@ const Product = ({ product, compactOnMobile = false }) => {
                 onClick={handleAddToCart}
                 className={`inline-flex flex-1 items-center justify-center rounded-full bg-[#22406b] font-bold uppercase text-white transition-colors duration-200 hover:bg-[#081729] ${compactOnMobile ? 'px-2 py-2 text-[10px] tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.16em]' : 'px-4 py-2 text-xs tracking-[0.16em]'}`}
               >
-                <ShoppingCart size={13} className="mr-1.5 sm:mr-2" /> Add
+                <ShoppingCart size={13} className="mr-1.5 sm:mr-2" /> {product.allowCustomQuantity ? 'Select' : 'Add'}
               </button>
             )}
           </div>

@@ -49,6 +49,21 @@ const getAvailableStock = (product, variant = null) => {
   return Math.max(Number(stockHolder.countInStock || 0) - Number(stockHolder.reservedStock || 0), 0);
 };
 
+const formatCustomQuantity = (quantity, unit = 'g') => {
+  const normalizedQuantity = Number(quantity || 0);
+
+  if (unit === 'g' && normalizedQuantity >= 1000) {
+    const kgQuantity = normalizedQuantity / 1000;
+    const formattedKg = Number.isInteger(kgQuantity)
+      ? String(kgQuantity)
+      : Number(kgQuantity.toFixed(2)).toString();
+
+    return `${formattedKg}kg (${normalizedQuantity}g)`;
+  }
+
+  return `${normalizedQuantity}${unit}`;
+};
+
 const normalizeCartItems = async (cartItems = []) => {
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     throw new Error('No order items');
@@ -91,11 +106,34 @@ const normalizeCartItems = async (cartItems = []) => {
       throw new Error(`${product.name} has only ${availableStock} available`);
     }
 
-    const isCustom = Boolean(product.allowCustomQuantity || item.isCustomQuantity);
-    const customUnit = item.customUnit || product.customQuantitySettings?.unit || 'g';
-    const customUnitPrice = Number(item.unitPrice ?? product.customQuantitySettings?.unitPrice ?? 0);
+    const isCustom = Boolean(product.allowCustomQuantity);
+    const customSettings = product.customQuantitySettings || {};
+    const customUnit = customSettings.unit || 'g';
+    const customUnitPrice = Number(customSettings.unitPrice || 0);
+    const customMinQty = Number(customSettings.minQuantity || 1);
+    const customMaxQty = Number(customSettings.maxQuantity || customMinQty);
     const customQty = Number(item.customQuantity || 0);
-    const price = isCustom && customQty > 0
+
+    if (isCustom) {
+      if (!Number.isFinite(customUnitPrice) || customUnitPrice <= 0) {
+        throw new Error(`${product.name} custom quantity unit price is not configured`);
+      }
+
+      if (!Number.isFinite(customQty) || customQty <= 0) {
+        throw new Error(`${product.name} custom quantity must be greater than zero`);
+      }
+
+      if (customQty < customMinQty) {
+        throw new Error(`${product.name} custom quantity must be at least ${customMinQty}${customUnit}`);
+      }
+
+      if (customQty > customMaxQty) {
+        throw new Error(`${product.name} custom quantity cannot exceed ${customMaxQty}${customUnit}`);
+      }
+    }
+
+    const customQuantityFormatted = isCustom ? formatCustomQuantity(customQty, customUnit) : '';
+    const price = isCustom
       ? roundMoney(customQty * customUnitPrice)
       : roundMoney(Number(product.price || 0) + Number(variant?.priceAdjustment || 0));
 
@@ -112,13 +150,13 @@ const normalizeCartItems = async (cartItems = []) => {
       vendor: vendor?._id || null,
       vendorName: vendor?.businessName || '',
       variantId: variant?._id || null,
-      variantLabel: item.variantLabel || variant?.label || '',
+      variantLabel: isCustom ? `Custom Qty: ${customQuantityFormatted}` : variant?.label || '',
       sku: variant?.sku || product.sku || '',
       isCustomQuantity: isCustom,
-      customQuantity: customQty,
-      customUnit,
-      customQuantityFormatted: item.customQuantityFormatted || (isCustom ? `${customQty}${customUnit}` : ''),
-      unitPrice: customUnitPrice,
+      customQuantity: isCustom ? customQty : 0,
+      customUnit: isCustom ? customUnit : '',
+      customQuantityFormatted,
+      unitPrice: isCustom ? customUnitPrice : 0,
       commissionRate,
       commissionAmount,
       vendorNetAmount: roundMoney(price * qty - commissionAmount),
@@ -340,6 +378,7 @@ const calculateOrderPricing = async ({
     orderItems: normalizedItems.map(({ availableStock, ...item }) => ({
       ...item,
       price: toDisplayMoney(item.price, exchangeRate),
+      unitPrice: item.isCustomQuantity ? toDisplayMoney(item.unitPrice, exchangeRate) : 0,
       commissionAmount: toDisplayMoney(item.commissionAmount, exchangeRate),
       vendorNetAmount: toDisplayMoney(item.vendorNetAmount, exchangeRate),
     })),
@@ -413,6 +452,7 @@ export {
   commitPromotionsForOrder,
   getShippingOptions,
   getCurrencyRate,
+  normalizeCartItems,
   normalizeCode,
   roundMoney,
 };

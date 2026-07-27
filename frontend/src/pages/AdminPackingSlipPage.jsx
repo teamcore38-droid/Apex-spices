@@ -183,7 +183,17 @@ const AdminPackingSlipPage = () => {
                 <tbody className="divide-y divide-gray-100 text-sm text-brand-dark">
                   {(packingSlip.items || []).map((item) => (
                     <tr key={`${item.product}-${item.name}`}>
-                      <td className="px-4 py-3">{item.name}</td>
+                      <td className="px-4 py-3">
+                        {item.name}
+                        {item.isCustomQuantity && (
+                          <span className="mt-1 block text-xs font-semibold text-brand-accent">
+                            Custom Quantity: {item.customQuantityFormatted || `${item.customQuantity}${item.customUnit}`}
+                          </span>
+                        )}
+                        {!item.isCustomQuantity && item.variantLabel && (
+                          <span className="mt-1 block text-xs text-gray-500">Option: {item.variantLabel}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-semibold">{item.qty}</td>
                     </tr>
                   ))}

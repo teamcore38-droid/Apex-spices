@@ -288,6 +288,10 @@ const validateProductPayload = async (payload, { productId = null } = {}) => {
   const compareAtPrice = Number(payload.compareAtPrice ?? 0);
   const lowStockThreshold = Number(payload.lowStockThreshold ?? 10);
   const variants = normalizeVariants(payload.variants);
+  const allowCustomQuantity = parseBooleanValue(payload.allowCustomQuantity) ?? false;
+  const customUnitPrice = Number(payload.customQuantitySettings?.unitPrice ?? 0);
+  const customMinQuantity = Number(payload.customQuantitySettings?.minQuantity ?? 50);
+  const customMaxQuantity = Number(payload.customQuantitySettings?.maxQuantity ?? 10000);
 
   if (!name) {
     errors.push('Product name is required');
@@ -311,6 +315,28 @@ const validateProductPayload = async (payload, { productId = null } = {}) => {
 
   if (Number.isNaN(lowStockThreshold) || lowStockThreshold < 0) {
     errors.push('Low-stock threshold must be a valid non-negative number');
+  }
+
+  if (allowCustomQuantity) {
+    if (!['g', 'kg'].includes(payload.customQuantitySettings?.unit || 'g')) {
+      errors.push('Custom quantity unit must be grams or kilograms');
+    }
+
+    if (Number.isNaN(customUnitPrice) || customUnitPrice <= 0) {
+      errors.push('Custom quantity unit price must be greater than zero');
+    }
+
+    if (Number.isNaN(customMinQuantity) || customMinQuantity <= 0) {
+      errors.push('Custom quantity minimum must be greater than zero');
+    }
+
+    if (Number.isNaN(customMaxQuantity) || customMaxQuantity <= 0) {
+      errors.push('Custom quantity maximum must be greater than zero');
+    }
+
+    if (!Number.isNaN(customMinQuantity) && !Number.isNaN(customMaxQuantity) && customMaxQuantity < customMinQuantity) {
+      errors.push('Custom quantity maximum must be greater than or equal to the minimum');
+    }
   }
 
   variants.forEach((variant) => {
@@ -362,14 +388,14 @@ const validateProductPayload = async (payload, { productId = null } = {}) => {
       isFeatured: parseBooleanValue(payload.isFeatured) ?? false,
       isActive: parseBooleanValue(payload.isActive) ?? true,
       isBestSeller: parseBooleanValue(payload.isBestSeller) ?? false,
-      allowCustomQuantity: parseBooleanValue(payload.allowCustomQuantity) ?? false,
+      allowCustomQuantity,
       customQuantitySettings: {
         unit: ['g', 'kg'].includes(payload.customQuantitySettings?.unit)
           ? payload.customQuantitySettings.unit
           : 'g',
-        unitPrice: Math.max(0, Number(payload.customQuantitySettings?.unitPrice || 0)),
-        minQuantity: Math.max(1, Number(payload.customQuantitySettings?.minQuantity || 50)),
-        maxQuantity: Math.max(1, Number(payload.customQuantitySettings?.maxQuantity || 10000)),
+        unitPrice: Math.max(0, Number.isNaN(customUnitPrice) ? 0 : customUnitPrice),
+        minQuantity: Math.max(1, Number.isNaN(customMinQuantity) ? 50 : customMinQuantity),
+        maxQuantity: Math.max(1, Number.isNaN(customMaxQuantity) ? 10000 : customMaxQuantity),
       },
       approvalStatus: ['Approved', 'Pending', 'Rejected'].includes(payload.approvalStatus)
         ? payload.approvalStatus

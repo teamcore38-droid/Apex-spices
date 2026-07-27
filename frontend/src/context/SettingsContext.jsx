@@ -30,7 +30,17 @@ export const SettingsProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    fetchSettings();
+    let cancelled = false;
+
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        fetchSettings();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [fetchSettings]);
 
   const updateSettings = useCallback(async (newSettings, token) => {

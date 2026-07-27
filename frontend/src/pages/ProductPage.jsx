@@ -67,6 +67,7 @@ const ProductPage = () => {
   const [validationError, setValidationError] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [customQtyInput, setCustomQtyInput] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -103,6 +104,11 @@ const ProductPage = () => {
         setSelectedImage(getProductImages(data)[0] || data.image);
         setSelectedVariantId(data.variants?.find((variant) => variant.isActive !== false)?._id || '');
         setQty(1);
+        setCustomQtyInput(
+          data.allowCustomQuantity
+            ? String(data.customQuantitySettings?.minQuantity || (data.customQuantitySettings?.unit === 'kg' ? 1 : 250))
+            : ''
+        );
         setDetailsOpen(false);
         setLoading(false);
 
@@ -216,15 +222,6 @@ const ProductPage = () => {
     };
   }, [id, userInfo?.token]);
 
-  const [customQtyInput, setCustomQtyInput] = useState('');
-
-  useEffect(() => {
-    if (product?.allowCustomQuantity) {
-      const defaultQty = product.customQuantitySettings?.minQuantity || (product.customQuantitySettings?.unit === 'kg' ? 1 : 250);
-      setCustomQtyInput(String(defaultQty));
-    }
-  }, [product]);
-
   const isCustomQtyProduct = Boolean(product?.allowCustomQuantity);
   const customUnit = product?.customQuantitySettings?.unit || 'g';
   const customUnitPrice = Number(product?.customQuantitySettings?.unitPrice || 0);
@@ -233,7 +230,7 @@ const ProductPage = () => {
 
   const parsedCustomQty = Number(customQtyInput);
 
-  const customQtyFormatted = useMemo(() => {
+  const customQuantityFormatted = useMemo(() => {
     if (!isCustomQtyProduct || Number.isNaN(parsedCustomQty) || parsedCustomQty <= 0) {
       return '';
     }

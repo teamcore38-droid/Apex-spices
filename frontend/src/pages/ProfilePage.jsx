@@ -1266,7 +1266,12 @@ const ProfilePage = () => {
                                     <div className="min-w-0">
                                       <p className="font-serif text-lg font-bold text-brand-dark">{item.name}</p>
                                       <p className="mt-1 text-sm text-gray-500">
-                                        Qty {item.qty} | {formatCurrency(item.price, order.currency || 'LKR')} each
+                                        {item.isCustomQuantity
+                                          ? `Custom Qty: ${item.customQuantityFormatted || `${item.customQuantity}${item.customUnit}`}`
+                                          : item.variantLabel
+                                            ? `Option: ${item.variantLabel} | Qty ${item.qty}`
+                                            : `Qty ${item.qty}`}
+                                        {' '}| {formatCurrency(item.price, order.currency || 'LKR')}
                                       </p>
                                     </div>
                                   </div>

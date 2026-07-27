@@ -50,12 +50,20 @@ const AdminCommercePage = () => {
   const [settingsError, setSettingsError] = useState('');
 
   useEffect(() => {
-    if (checkoutMode || whatsappNumber) {
-      setSettingsForm({
-        checkoutMode: checkoutMode || 'whatsapp',
-        whatsappNumber: whatsappNumber || '94765669961',
-      });
-    }
+    let cancelled = false;
+
+    Promise.resolve().then(() => {
+      if (!cancelled && (checkoutMode || whatsappNumber)) {
+        setSettingsForm({
+          checkoutMode: checkoutMode || 'whatsapp',
+          whatsappNumber: whatsappNumber || '94765669961',
+        });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [checkoutMode, whatsappNumber]);
 
   const saveSettingsHandler = async (e) => {

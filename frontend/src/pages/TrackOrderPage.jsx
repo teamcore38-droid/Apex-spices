@@ -484,10 +484,18 @@ const TrackOrderPage = () => {
                           <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-16 w-16 shrink-0 rounded-2xl object-cover" />
                           <div className="min-w-0">
                             <p className="break-words font-serif text-lg font-bold text-brand-dark sm:text-xl">{item.name}</p>
-                            <p className="text-sm text-gray-500">Qty: {item.qty}</p>
+                            <p className="text-sm text-gray-500">
+                              {item.isCustomQuantity
+                                ? `Custom Qty: ${item.customQuantityFormatted || `${item.customQuantity}${item.customUnit}`}`
+                                : item.variantLabel
+                                  ? `Option: ${item.variantLabel} | Qty: ${item.qty}`
+                                  : `Qty: ${item.qty}`}
+                            </p>
                           </div>
                         </div>
-                        <p className="shrink-0 text-sm font-semibold text-brand-dark">{formatCurrency(item.price, resultCurrency)}</p>
+                        <p className="shrink-0 text-sm font-semibold text-brand-dark">
+                          {formatCurrency(Number(item.price || 0) * Number(item.qty || 0), resultCurrency)}
+                        </p>
                       </article>
                     ))}
                   </div>
