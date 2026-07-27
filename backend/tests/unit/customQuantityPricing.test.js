@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import mongoose from 'mongoose';
 import Product from '../../models/productModel.js';
 import { normalizeCartItems } from '../../utils/commerceService.js';
@@ -108,4 +109,13 @@ test('fixed quantity products ignore fake custom quantity payload fields', async
     assert.equal(item.unitPrice, 0);
     assert.equal(item.price, 1200);
   });
+});
+
+test('product create and update persist custom quantity settings', async () => {
+  const source = await readFile(new URL('../../controllers/productController.js', import.meta.url), 'utf8');
+
+  assert.match(source, /allowCustomQuantity:\s*normalized\.allowCustomQuantity/);
+  assert.match(source, /customQuantitySettings:\s*normalized\.customQuantitySettings/);
+  assert.match(source, /product\.allowCustomQuantity\s*=\s*normalized\.allowCustomQuantity/);
+  assert.match(source, /product\.customQuantitySettings\s*=\s*normalized\.customQuantitySettings/);
 });

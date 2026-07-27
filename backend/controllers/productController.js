@@ -670,6 +670,8 @@ const createProduct = async (req, res) => {
       isFeatured: normalized.isFeatured,
       isActive: normalized.isActive,
       isBestSeller: normalized.isBestSeller,
+      allowCustomQuantity: normalized.allowCustomQuantity,
+      customQuantitySettings: normalized.customQuantitySettings,
       approvalStatus: normalized.approvalStatus,
       seo: normalized.seo,
     });
@@ -728,6 +730,8 @@ const updateProduct = async (req, res) => {
     product.isFeatured = normalized.isFeatured;
     product.isActive = normalized.isActive;
     product.isBestSeller = normalized.isBestSeller;
+    product.allowCustomQuantity = normalized.allowCustomQuantity;
+    product.customQuantitySettings = normalized.customQuantitySettings;
     product.approvalStatus = normalized.approvalStatus;
     product.seo = normalized.seo;
 
