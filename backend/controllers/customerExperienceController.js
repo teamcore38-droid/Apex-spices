@@ -6,7 +6,7 @@ import RecentlyViewed from '../models/recentlyViewedModel.js';
 import SupportTicket from '../models/supportTicketModel.js';
 import User from '../models/userModel.js';
 import { LoyaltyAccount, LoyaltyTransaction } from '../models/loyaltyModel.js';
-import fallbackProducts from '../data/products.js';
+import { getMongoConnectionState, isMongoReady } from '../config/db.js';
 import logger from '../utils/logger.js';
 import { activeProductFilter, getPersonalizedRecommendations } from '../utils/recommendationService.js';
 import { getOrCreateLoyaltyAccount } from '../utils/loyaltyService.js';
@@ -16,11 +16,6 @@ const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const getSessionId = (req) =>
   String(req.body?.sessionId || req.query?.sessionId || req.headers['x-session-id'] || '').trim();
-
-const normalizeFallbackProduct = (product) => ({
-  ...product,
-  _id: product._id || product.slug,
-});
 
 const hydrateProductReviewStats = async (products = []) => {
   const productList = Array.isArray(products) ? products : [products];
@@ -106,114 +101,69 @@ const buildProductReviewStatsStages = (minRating = 0) => [
   ...(minRating > 0 ? [{ $match: { rating: { $gte: minRating } } }] : []),
 ];
 
-const getFallbackFeaturedProducts = () =>
-  fallbackProducts
-    .filter((product) => product.isFeatured && product.isActive !== false)
-    .slice(0, 8)
-    .map(normalizeFallbackProduct);
-
-const getFallbackBestSellers = () =>
-  fallbackProducts
-    .filter((product) => product.isBestSeller && product.isActive !== false)
-    .slice(0, 4)
-    .map(normalizeFallbackProduct);
-
-const getEmptyCategories = () => [];
-
-const resolveHomeSection = async (req, section, queryFn, fallbackFn) => {
-  if (mongoose.connection.readyState !== 1) {
-    const databaseState = mongoose.connection.readyState;
-    logger.warn('Home data section using fallback because database is not connected', {
+const getHomePageData = async (req, res) => {
+  if (!isMongoReady()) {
+    logger.warn('Home data unavailable because database is not connected', {
       requestId: req.requestId,
-      section,
-      databaseState,
+      databaseState: getMongoConnectionState(),
     });
-
-    return {
-      data: fallbackFn(),
-      warning: {
-        section,
-        message: 'Database is not connected',
-      },
-    };
+    res.set('Cache-Control', 'no-store');
+    return res.status(503).json({
+      status: 'unavailable',
+      message: 'Home data is temporarily unavailable.',
+      database: { state: getMongoConnectionState() },
+    });
   }
 
   try {
-    return {
-      data: await queryFn(),
-      warning: null,
-    };
-  } catch (error) {
-    logger.error('Home data section failed', {
-      requestId: req.requestId,
-      section,
-      error: error.message,
-      databaseState: mongoose.connection.readyState,
+    const [featuredProducts, bestSellers, categories] = await Promise.all([
+      Product.find({
+        ...activeProductFilter,
+        isFeatured: true,
+      })
+        .sort({ isBestSeller: -1, rating: -1, createdAt: -1 })
+        .limit(8)
+        .lean(),
+      Product.find({
+        ...activeProductFilter,
+        isBestSeller: true,
+      })
+        .sort({ rating: -1, createdAt: -1 })
+        .limit(4)
+        .lean(),
+      Category.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).limit(3).lean(),
+    ]);
+
+    const featuredCount = featuredProducts.length;
+    const hydratedProducts = await hydrateProductReviewStats([
+      ...featuredProducts,
+      ...bestSellers,
+    ]);
+
+    if (!isMongoReady()) {
+      throw new Error('MongoDB connection was lost while loading home data.');
+    }
+
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    return res.json({
+      featuredProducts: hydratedProducts.slice(0, featuredCount),
+      bestSellers: hydratedProducts.slice(featuredCount),
+      categories,
+      generatedAt: new Date().toISOString(),
     });
-
-    return {
-      data: fallbackFn(),
-      warning: {
-        section,
-        message: error.message,
-      },
-    };
+  } catch (error) {
+    logger.error('Home data request failed', {
+      requestId: req.requestId,
+      error: error.message,
+      databaseState: getMongoConnectionState(),
+    });
+    res.set('Cache-Control', 'no-store');
+    return res.status(503).json({
+      status: 'unavailable',
+      message: 'Home data is temporarily unavailable.',
+      database: { state: getMongoConnectionState() },
+    });
   }
-};
-
-const getHomePageData = async (req, res) => {
-  const [featuredResult, bestSellerResult, categoriesResult] = await Promise.all([
-    resolveHomeSection(
-      req,
-      'featuredProducts',
-      () =>
-        Product.find({
-          ...activeProductFilter,
-          isFeatured: true,
-        })
-          .sort({ isBestSeller: -1, rating: -1, createdAt: -1 })
-          .limit(8)
-          .lean(),
-      getFallbackFeaturedProducts
-    ),
-    resolveHomeSection(
-      req,
-      'bestSellers',
-      () =>
-        Product.find({
-          ...activeProductFilter,
-          isBestSeller: true,
-        })
-          .sort({ rating: -1, createdAt: -1 })
-          .limit(4)
-          .lean(),
-      getFallbackBestSellers
-    ),
-    resolveHomeSection(
-      req,
-      'categories',
-      () => Category.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).limit(3).lean(),
-      getEmptyCategories
-    ),
-  ]);
-
-  const featuredCount = featuredResult.data.length;
-  const hydratedProducts = await hydrateProductReviewStats([
-    ...featuredResult.data,
-    ...bestSellerResult.data,
-  ]);
-  featuredResult.data = hydratedProducts.slice(0, featuredCount);
-  bestSellerResult.data = hydratedProducts.slice(featuredCount);
-
-  const warnings = [featuredResult.warning, bestSellerResult.warning, categoriesResult.warning].filter(Boolean);
-  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-  res.json({
-    featuredProducts: featuredResult.data,
-    bestSellers: bestSellerResult.data,
-    categories: categoriesResult.data,
-    generatedAt: new Date().toISOString(),
-    ...(process.env.NODE_ENV === 'production' || warnings.length === 0 ? {} : { warnings }),
-  });
 };
 
 const buildSearchFilter = (query = {}) => {

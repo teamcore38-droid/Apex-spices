@@ -8,11 +8,29 @@ const stateMap = {
   3: 'disconnecting',
 };
 
-const connectDB = async (options = {}) => {
-  if (mongoose.connection.readyState === 1) {
-    return true;
-  }
+const DEFAULT_RETRY_DELAY_MS = 5000;
+let connectionPromise = null;
+let lastConnectionError = null;
+let retryAfter = 0;
 
+const getRetryDelayMs = () => {
+  const configuredDelay = Number.parseInt(process.env.MONGO_RETRY_DELAY_MS, 10);
+  return Number.isFinite(configuredDelay) && configuredDelay >= 0
+    ? configuredDelay
+    : DEFAULT_RETRY_DELAY_MS;
+};
+
+const rememberConnectionFailure = (error) => {
+  lastConnectionError = error;
+  retryAfter = Date.now() + getRetryDelayMs();
+};
+
+const clearConnectionFailure = () => {
+  lastConnectionError = null;
+  retryAfter = 0;
+};
+
+const performConnection = async (options = {}) => {
   const primaryUri = process.env.MONGO_URI || process.env.MONGODB_URI;
   const localUri = process.env.LOCAL_MONGO_URI || DEFAULT_LOCAL_URI;
 
@@ -65,6 +83,57 @@ const connectDB = async (options = {}) => {
   }
 };
 
+const connectDB = async (options = {}) => {
+  if (mongoose.connection.readyState === 1) {
+    return true;
+  }
+
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
+  if (mongoose.connection.readyState === 2) {
+    const error = new Error('MongoDB connection is still being established.');
+    if (options.strict || process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+    return false;
+  }
+
+  if (!options.force && lastConnectionError && Date.now() < retryAfter) {
+    if (options.strict || process.env.NODE_ENV === 'production') {
+      throw lastConnectionError;
+    }
+    return false;
+  }
+
+  connectionPromise = (async () => {
+    try {
+      const connected = await performConnection(options);
+
+      if (!connected || mongoose.connection.readyState !== 1) {
+        const error = new Error('MongoDB connection did not become ready.');
+        rememberConnectionFailure(error);
+        if (options.strict || process.env.NODE_ENV === 'production') {
+          throw error;
+        }
+        return false;
+      }
+
+      clearConnectionFailure();
+      return true;
+    } catch (error) {
+      rememberConnectionFailure(error);
+      throw error;
+    } finally {
+      connectionPromise = null;
+    }
+  })();
+
+  return connectionPromise;
+};
+
 export const getMongoConnectionState = () => stateMap[mongoose.connection.readyState] || 'unknown';
+export const isMongoReady = () => mongoose.connection.readyState === 1;
 
 export default connectDB;

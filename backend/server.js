@@ -31,16 +31,25 @@ import adminPushRoutes from './routes/adminPushRoutes.js';
 import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
 import notificationWorkerRoutes from './routes/notificationWorkerRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import { getOpsHealth } from './controllers/opsController.js';
+import { requireDatabaseConnection } from './middleware/databaseReadinessMiddleware.js';
 import { sanitizeRequest } from './middleware/sanitizeMiddleware.js';
 import { requestContext } from './middleware/requestContextMiddleware.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 
 dotenv.config();
 
-connectDB();
+const isProduction = process.env.NODE_ENV === 'production';
+try {
+  const connected = await connectDB({ strict: isProduction });
+  if (!connected) {
+    console.error('MongoDB was not ready during application startup.');
+  }
+} catch (error) {
+  console.error(`MongoDB startup connection failed: ${error.message}`);
+}
 
 const app = express();
-const isProduction = process.env.NODE_ENV === 'production';
 
 if (isProduction) {
   app.set('trust proxy', 1);
@@ -110,45 +119,40 @@ app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'ApexLink Backend'
-  });
-});
+app.get('/api/health', getOpsHealth);
 
-app.get('/sitemap.xml', (req, res, next) => seoRoutes(req, res, next));
 app.get('/robots.txt', (req, res, next) => seoRoutes(req, res, next));
-
-app.use('/api/categories', categoryRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/contact', contactRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/returns', returnRoutes);
-app.use('/api/admin/commerce', commerceAdminRoutes);
-app.use('/api/vendors', vendorRoutes);
-app.use('/api/rfqs', rfqRoutes);
-app.use('/api/admin/pro', proAdminRoutes);
-app.use('/api/admin/webhooks', webhookRoutes);
-app.use('/api/admin/push', adminPushRoutes);
-app.use('/api/admin/notifications', adminNotificationRoutes);
-app.use('/api/workers/admin-notifications', notificationWorkerRoutes);
-app.use('/api/cms', cmsRoutes);
-app.use('/api/customer', customerExperienceRoutes);
-app.use('/api/privacy', privacyRoutes);
-app.use('/api/marketing', marketingRoutes);
-app.use('/api/analytics', marketingRoutes);
-app.use('/api/seo', seoRoutes);
-app.use('/api/currency', currencyRoutes);
-app.use('/api/settings', settingsRoutes);
 app.use('/api/ops', opsRoutes);
 app.use('/api/docs', opsRoutes);
-app.use('/api/v1', v1Routes);
+
+app.get('/sitemap.xml', requireDatabaseConnection, (req, res, next) => seoRoutes(req, res, next));
+
+app.use('/api/categories', requireDatabaseConnection, categoryRoutes);
+app.use('/api/products', requireDatabaseConnection, productRoutes);
+app.use('/api/users', requireDatabaseConnection, userRoutes);
+app.use('/api/orders', requireDatabaseConnection, orderRoutes);
+app.use('/api/contact', requireDatabaseConnection, contactRoutes);
+app.use('/api/payments', requireDatabaseConnection, paymentRoutes);
+app.use('/api/wishlist', requireDatabaseConnection, wishlistRoutes);
+app.use('/api/reviews', requireDatabaseConnection, reviewRoutes);
+app.use('/api/returns', requireDatabaseConnection, returnRoutes);
+app.use('/api/admin/commerce', requireDatabaseConnection, commerceAdminRoutes);
+app.use('/api/vendors', requireDatabaseConnection, vendorRoutes);
+app.use('/api/rfqs', requireDatabaseConnection, rfqRoutes);
+app.use('/api/admin/pro', requireDatabaseConnection, proAdminRoutes);
+app.use('/api/admin/webhooks', requireDatabaseConnection, webhookRoutes);
+app.use('/api/admin/push', requireDatabaseConnection, adminPushRoutes);
+app.use('/api/admin/notifications', requireDatabaseConnection, adminNotificationRoutes);
+app.use('/api/workers/admin-notifications', requireDatabaseConnection, notificationWorkerRoutes);
+app.use('/api/cms', requireDatabaseConnection, cmsRoutes);
+app.use('/api/customer', requireDatabaseConnection, customerExperienceRoutes);
+app.use('/api/privacy', requireDatabaseConnection, privacyRoutes);
+app.use('/api/marketing', requireDatabaseConnection, marketingRoutes);
+app.use('/api/analytics', requireDatabaseConnection, marketingRoutes);
+app.use('/api/seo', requireDatabaseConnection, seoRoutes);
+app.use('/api/currency', currencyRoutes);
+app.use('/api/settings', requireDatabaseConnection, settingsRoutes);
+app.use('/api/v1', requireDatabaseConnection, v1Routes);
 app.use(notFound);
 app.use(errorHandler);
 

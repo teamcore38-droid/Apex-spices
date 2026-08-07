@@ -8,6 +8,7 @@ import {
   uptimeCheck,
   seedDatabase,
 } from '../controllers/opsController.js';
+import { requireDatabaseConnection } from '../middleware/databaseReadinessMiddleware.js';
 
 const router = express.Router();
 
@@ -17,6 +18,6 @@ router.get('/metrics', getMetrics);
 router.get('/uptime', uptimeCheck);
 router.post('/client-errors', recordClientError);
 router.get('/openapi.json', getOpenApi);
-router.get('/seed', seedDatabase);
+router.get('/seed', requireDatabaseConnection, seedDatabase);
 
 export default router;

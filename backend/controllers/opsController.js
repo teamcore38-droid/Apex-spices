@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { getMongoConnectionState, isMongoReady } from '../config/db.js';
 import { captureException } from '../utils/errorMonitoring.js';
 import { sendAlert } from '../utils/alertService.js';
 import Product from '../models/productModel.js';
@@ -17,37 +17,30 @@ const counters = {
   uptimeChecks: 0,
 };
 
-const getDbState = () => {
-  const stateMap = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting',
-  };
-
-  return stateMap[mongoose.connection.readyState] || 'unknown';
-};
-
 const getOpsHealth = (_req, res) => {
-  res.json({
-    status: 'ok',
+  const dbReady = isMongoReady();
+
+  res.set('Cache-Control', 'no-store');
+  res.status(dbReady ? 200 : 503).json({
+    status: dbReady ? 'ok' : 'not_ready',
     service: process.env.SERVICE_NAME || 'apex-backend',
     environment: process.env.NODE_ENV || 'development',
     startedAt,
     uptimeSeconds: process.uptime(),
     database: {
-      state: getDbState(),
+      state: getMongoConnectionState(),
     },
   });
 };
 
 const getReadiness = (_req, res) => {
-  const dbReady = mongoose.connection.readyState === 1;
+  const dbReady = isMongoReady();
 
+  res.set('Cache-Control', 'no-store');
   res.status(dbReady ? 200 : 503).json({
     status: dbReady ? 'ready' : 'not_ready',
     database: {
-      state: getDbState(),
+      state: getMongoConnectionState(),
     },
   });
 };
@@ -88,20 +81,21 @@ const recordClientError = async (req, res) => {
 
 const uptimeCheck = async (_req, res) => {
   counters.uptimeChecks += 1;
-  const dbReady = mongoose.connection.readyState === 1;
+  const dbReady = isMongoReady();
 
   if (!dbReady) {
     await sendAlert({
       title: 'Apex uptime check failed',
-      message: `Database state is ${getDbState()}`,
+      message: `Database state is ${getMongoConnectionState()}`,
       severity: 'critical',
     });
   }
 
+  res.set('Cache-Control', 'no-store');
   res.status(dbReady ? 200 : 503).json({
     ok: dbReady,
     checkedAt: new Date().toISOString(),
-    database: getDbState(),
+    database: getMongoConnectionState(),
   });
 };
 
