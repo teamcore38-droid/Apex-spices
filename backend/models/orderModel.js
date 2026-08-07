@@ -376,15 +376,9 @@ const orderSchema = mongoose.Schema(
   }
 );
 
-orderSchema.pre('validate', async function assignOrderNumber(next) {
-  try {
-    if (this.isNew && !this.orderNumber) {
-      this.orderNumber = await getNextOrderNumber();
-    }
-
-    next();
-  } catch (error) {
-    next(error);
+orderSchema.pre('validate', async function assignOrderNumber() {
+  if (this.isNew && !this.orderNumber) {
+    this.orderNumber = await getNextOrderNumber();
   }
 });
 
