@@ -20,7 +20,7 @@ import {
 const DEFAULT_CURRENCY = (process.env.DEFAULT_CURRENCY || BASE_CURRENCY).toUpperCase();
 const FALLBACK_SHIPPING_THRESHOLD = Number(process.env.FREE_SHIPPING_THRESHOLD || 50);
 const FALLBACK_SHIPPING_PRICE = Number(process.env.DEFAULT_SHIPPING_PRICE || 10);
-const FALLBACK_TAX_RATE = Number(process.env.DEFAULT_TAX_RATE || 0.15);
+const FALLBACK_TAX_RATE = Number(process.env.DEFAULT_TAX_RATE || 0);
 
 const normalizeCode = (value = '') => String(value || '').trim().toUpperCase();
 

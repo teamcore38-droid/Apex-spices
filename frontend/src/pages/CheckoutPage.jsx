@@ -260,7 +260,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
     [cartItems]
   );
   const shippingPrice = itemsPrice > 50 ? 0 : 10;
-  const taxPrice = Number((itemsPrice * 0.15).toFixed(2));
+  const taxPrice = 0;
   const totalPrice = itemsPrice + shippingPrice + taxPrice;
   const checkoutCurrency =
     payhereEnabled && !PAYHERE_SUPPORTED_CURRENCIES.includes(currency) ? 'USD' : currency;
