@@ -290,7 +290,7 @@ const mapStatusHistory = (statusHistory = []) =>
   }));
 
 const OFFICIAL_BUSINESS_INFO = {
-  name: 'APEX LINK GROUP',
+  name: 'APEX SPICES',
   email: 'apexlinkimportandexport@gmail.com',
   phone: '+94 76 566 9961',
   address: '580/12, Moque Lane, Nawala, Rajagiriya, Sri Lanka',
@@ -312,8 +312,14 @@ const resolveBusinessValue = (value, fallback) => {
   return normalizedValue;
 };
 
+const normalizeDocumentBusinessName = (value) => {
+  const resolvedName = resolveBusinessValue(value, OFFICIAL_BUSINESS_INFO.name);
+
+  return /^apex\s+link\s+group$/i.test(resolvedName) ? OFFICIAL_BUSINESS_INFO.name : resolvedName;
+};
+
 const getBusinessInfoForDocuments = () => ({
-  name: resolveBusinessValue(process.env.BUSINESS_NAME, OFFICIAL_BUSINESS_INFO.name),
+  name: normalizeDocumentBusinessName(process.env.BUSINESS_NAME),
   email: resolveBusinessValue(process.env.BUSINESS_EMAIL, OFFICIAL_BUSINESS_INFO.email),
   phone: resolveBusinessValue(process.env.BUSINESS_PHONE, OFFICIAL_BUSINESS_INFO.phone),
   address: resolveBusinessValue(process.env.BUSINESS_ADDRESS, OFFICIAL_BUSINESS_INFO.address),
@@ -1754,6 +1760,7 @@ export {
   trackOrder,
   getOrderInvoice,
   getOrderPackingSlip,
+  getBusinessInfoForDocuments,
   quoteOrder,
   reviewCancellationRequest,
   getOrderShippingRates,

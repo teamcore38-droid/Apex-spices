@@ -168,8 +168,7 @@ const OrderInvoicePage = () => {
           }
 
           .invoice-section,
-          .invoice-summary-box,
-          .invoice-business-box {
+          .invoice-summary-box {
             break-inside: avoid;
             page-break-inside: avoid;
           }
@@ -216,7 +215,7 @@ const OrderInvoicePage = () => {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-accent">Invoice / Receipt</p>
               <h1 className="mt-2 font-serif text-2xl font-bold text-brand-dark sm:text-3xl">
-                {invoice.business?.name || 'APEX LINK GROUP'}
+                {invoice.business?.name || 'APEX SPICES'}
               </h1>
               <div className="mt-2 space-y-0.5 text-xs leading-5 text-gray-600">
                 <p>{invoice.business?.address}</p>
@@ -304,29 +303,8 @@ const OrderInvoicePage = () => {
               </table>
             </section>
 
-            <div className="grid gap-4 md:grid-cols-[1fr_320px]">
-              <section className="invoice-business-box rounded-xl bg-[#fffaf2] p-4 text-sm leading-6 text-gray-600">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">Business Information</p>
-                <p className="mt-2 font-bold text-brand-dark">{invoice.business?.name || 'APEX LINK GROUP'}</p>
-                <p>{invoice.business?.address}</p>
-                <p>{invoice.business?.email}</p>
-                <p>{invoice.business?.phone}</p>
-                {hasRefundInfo && (
-                  <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-500">Refund Information</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${getRefundBadgeClass(invoice.refund?.status)}`}>
-                        {invoice.refund?.status || 'Not Refunded'}
-                      </span>
-                      <span className="font-semibold text-brand-dark">
-                        {formatCurrency(invoice.refund?.refundedAmount || 0, invoiceCurrency)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              <section className="invoice-summary-box rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex justify-end">
+              <section className="invoice-summary-box w-full rounded-xl border border-gray-200 bg-white p-4 md:max-w-[320px]">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">Totals</p>
                 <div className="mt-3 space-y-2 text-sm text-gray-600">
                   <div className="flex justify-between gap-4">
@@ -357,6 +335,19 @@ const OrderInvoicePage = () => {
                     <span>Total</span>
                     <span>{formatCurrency(invoice.totals?.total || 0, invoiceCurrency)}</span>
                   </div>
+                  {hasRefundInfo && (
+                    <div className="mt-3 rounded-lg border border-gray-200 bg-[#fffaf2] p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-500">Refund Information</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${getRefundBadgeClass(invoice.refund?.status)}`}>
+                          {invoice.refund?.status || 'Not Refunded'}
+                        </span>
+                        <span className="font-semibold text-brand-dark">
+                          {formatCurrency(invoice.refund?.refundedAmount || 0, invoiceCurrency)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
             </div>
