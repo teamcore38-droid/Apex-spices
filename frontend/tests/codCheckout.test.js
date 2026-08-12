@@ -7,6 +7,10 @@ test('checkout exposes COD alongside PayHere and sends the canonical COD contrac
 
   assert.match(source, /const COD_PAYMENT_PROVIDER = 'COD'/);
   assert.match(source, /const COD_PAYMENT_METHOD = 'Cash on Delivery'/);
+  assert.match(source, /data-testid="checkout-payment-methods"/);
+  assert.match(source, /useState\(true\)/);
+  assert.match(source, /className="order-1 overflow-hidden[^"]*lg:row-start-1/);
+  assert.match(source, /className="order-2 space-y-6 lg:col-start-1 lg:row-start-2"/);
   assert.match(source, /name="checkout-payment-method"/);
   assert.match(source, /value="COD"/);
   assert.match(source, /Cash on Delivery/);

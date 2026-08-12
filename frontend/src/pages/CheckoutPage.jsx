@@ -191,7 +191,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [shippingRateId, setShippingRateId] = useState('');
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [isPaymentInfoExpanded, setIsPaymentInfoExpanded] = useState(false);
+  const [isPaymentInfoExpanded, setIsPaymentInfoExpanded] = useState(true);
   const guestCheckoutEnabled = true;
 
   useEffect(() => {
@@ -878,7 +878,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
         <div className="apex-section-gap grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
           <form
             onSubmit={placeOrderHandler}
-            className="order-1 space-y-6 lg:col-start-1 lg:row-start-1"
+            className="order-2 space-y-6 lg:col-start-1 lg:row-start-2"
           >
             <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
               <div className="flex items-center gap-3">
@@ -1212,7 +1212,10 @@ const CheckoutInner = ({ payhereEnabled }) => {
 
           </form>
 
-          <section className="order-3 overflow-hidden rounded-[28px] border border-brand-accent/20 bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)] md:order-2 lg:col-start-1 lg:row-start-2">
+          <section
+            data-testid="checkout-payment-methods"
+            className="order-1 overflow-hidden rounded-[28px] border border-brand-accent/20 bg-white shadow-[0_18px_40px_rgba(11,31,58,0.08)] md:order-1 lg:col-start-1 lg:row-start-1"
+          >
               <button
                 type="button"
                 aria-expanded={isPaymentInfoExpanded}
@@ -1337,7 +1340,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
               </div>
           </section>
 
-          <aside className="order-2 space-y-6 md:order-4 lg:order-2 lg:col-start-2 lg:row-span-3 lg:row-start-1">
+          <aside className="order-4 space-y-6 md:order-4 lg:order-2 lg:col-start-2 lg:row-span-3 lg:row-start-1">
             <div className="sticky top-24 rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)]">
               <h2 className="border-b border-gray-100 pb-4 font-serif text-2xl font-bold text-brand-dark">
                 Order Summary
