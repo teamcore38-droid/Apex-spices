@@ -145,6 +145,105 @@ const escapeCsv = (value = '') => {
   return normalized;
 };
 
+const CATALOG_EXPORT_HEADERS = [
+  'id',
+  'title',
+  'description',
+  'availability',
+  'condition',
+  'price',
+  'link',
+  'image_link',
+  'brand',
+  'google_product_category',
+  'fb_product_category',
+  'quantity_to_sell_on_facebook',
+  'sale_price',
+  'sale_price_effective_date',
+  'item_group_id',
+  'gender',
+  'color',
+  'size',
+  'age_group',
+  'material',
+  'pattern',
+  'shipping',
+  'shipping_weight',
+  'offer_disclaimer',
+  'offer_disclaimer_url',
+  'video[0].url',
+  'video[0].tag[0]',
+  'gtin',
+  'product_tags[0]',
+  'product_tags[1]',
+  'style[0]',
+];
+
+const CATALOG_EXPORT_SITE_URL = 'https://www.apexspices.lk';
+
+const formatCatalogPrice = (value) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? `${amount.toFixed(2)} LKR` : '';
+};
+
+const getCatalogSiteUrl = () =>
+  String(process.env.FRONTEND_URL || process.env.CLIENT_URL || CATALOG_EXPORT_SITE_URL)
+    .trim()
+    .replace(/\/+$/, '');
+
+const mapProductToCatalog = (product = {}) => {
+  const currentPrice = Number(product.price || 0);
+  const compareAtPrice = Number(product.compareAtPrice || 0);
+  const hasSalePrice = compareAtPrice > currentPrice;
+  const stockQuantity = Math.max(0, Number(product.countInStock || 0));
+  const isCatalogVisible = product.isActive !== false && (!product.approvalStatus || product.approvalStatus === 'Approved');
+  const productId = String(product._id || product.sku || '').trim();
+  const image = String(product.image || product.images?.[0] || '').trim();
+
+  return {
+    id: String(product.sku || productId).trim(),
+    title: product.name || '',
+    description: product.description || product.shortDescription || '',
+    availability: isCatalogVisible && stockQuantity > 0 ? 'in stock' : 'out of stock',
+    condition: 'new',
+    price: formatCatalogPrice(hasSalePrice ? compareAtPrice : currentPrice),
+    link: productId ? `${getCatalogSiteUrl()}/product/${encodeURIComponent(productId)}` : '',
+    image_link: image,
+    brand: product.brand || 'Apex Spices',
+    google_product_category: product.category || '',
+    fb_product_category: product.category || '',
+    quantity_to_sell_on_facebook: String(stockQuantity),
+    sale_price: hasSalePrice ? formatCatalogPrice(currentPrice) : '',
+    sale_price_effective_date: '',
+    item_group_id: '',
+    gender: '',
+    color: '',
+    size: '',
+    age_group: '',
+    material: '',
+    pattern: '',
+    shipping: '',
+    shipping_weight: product.weight || '',
+    offer_disclaimer: '',
+    offer_disclaimer_url: '',
+    'video[0].url': '',
+    'video[0].tag[0]': '',
+    gtin: '',
+    'product_tags[0]': '',
+    'product_tags[1]': '',
+    'style[0]': '',
+  };
+};
+
+const productsToCatalogCsv = (products = []) => {
+  const rows = products.map((product) => {
+    const catalogProduct = mapProductToCatalog(product);
+    return CATALOG_EXPORT_HEADERS.map((header) => escapeCsv(catalogProduct[header])).join(',');
+  });
+
+  return `\ufeff${[CATALOG_EXPORT_HEADERS.join(','), ...rows].join('\r\n')}\r\n`;
+};
+
 const productsToCsv = (products = []) => {
   const headers = [
     '_id',
@@ -398,6 +497,12 @@ const exportProducts = async (req, res) => {
   const products = await Product.find({}).sort({ createdAt: -1 }).lean();
 
   await recordAuditLog(req, 'bulk.products.export', 'Product', '', { format, total: products.length });
+
+  if (format === 'catalog') {
+    res.type('text/csv');
+    res.set('Content-Disposition', 'attachment; filename="apex-spices-product-catalog.csv"');
+    return res.send(productsToCatalogCsv(products));
+  }
 
   if (format === 'csv') {
     res.type('text/csv');
@@ -820,6 +925,7 @@ const uploadImage = async (req, res) => {
 export {
   archiveMedia,
   bulkOrderActions,
+  CATALOG_EXPORT_HEADERS,
   exportProducts,
   getAuditLogs,
   getPublicCms,
@@ -827,6 +933,8 @@ export {
   getReports,
   getStaffUsers,
   importProducts,
+  mapProductToCatalog,
+  productsToCatalogCsv,
   listCms,
   listMedia,
   updateStaffStatus,

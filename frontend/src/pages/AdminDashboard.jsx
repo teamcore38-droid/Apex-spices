@@ -199,6 +199,7 @@ const AdminDashboard = () => {
   });
   const [productRefreshToken, setProductRefreshToken] = useState(0);
   const [productActionKey, setProductActionKey] = useState('');
+  const [productExportLoading, setProductExportLoading] = useState(false);
 
   const [orders, setOrders] = useState([]);
   const [orderLoading, setOrderLoading] = useState(false);
@@ -526,6 +527,39 @@ const AdminDashboard = () => {
 
   const navigateToAddProduct = () => {
     navigate('/admin/products/new');
+  };
+
+  const exportProductCatalog = async () => {
+    setProductExportLoading(true);
+    setProductError('');
+    setProductSuccess('');
+
+    try {
+      const response = await axios.get('/api/admin/pro/bulk/products/export?format=catalog', {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        responseType: 'blob',
+      });
+      const blob = response.data instanceof Blob
+        ? response.data
+        : new Blob([response.data], { type: 'text/csv;charset=utf-8' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+
+      downloadLink.href = downloadUrl;
+      downloadLink.download = 'apex-spices-product-catalog.csv';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      setProductSuccess('Product catalog exported successfully.');
+    } catch (error) {
+      console.error(error);
+      setProductError(error.response?.data?.message || 'Unable to export products right now.');
+    } finally {
+      setProductExportLoading(false);
+    }
   };
 
   const toggleProductActiveHandler = async (product) => {
@@ -1060,6 +1094,15 @@ const AdminDashboard = () => {
                       className="inline-flex items-center rounded-md bg-brand-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-white transition-colors duration-200 hover:bg-brand-dark"
                     >
                       Add Product
+                    </button>
+                    <button
+                      type="button"
+                      onClick={exportProductCatalog}
+                      disabled={productExportLoading}
+                      className="inline-flex items-center rounded-md border border-brand-primary/20 px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {productExportLoading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Download size={16} className="mr-2" />}
+                      Export Products
                     </button>
                   </div>
                 </div>
