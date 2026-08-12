@@ -3,7 +3,10 @@ import axios from 'axios';
 const SESSION_KEY = 'apexMarketingSessionId';
 const CONSENT_KEY = 'apexCookieConsent';
 const CONSENT_EVENT = 'apex:consent-updated';
+const DEFAULT_META_PIXEL_ID = '969724942822685';
 let consentListenerInstalled = false;
+let metaPixelInitializedId = '';
+let lastMetaPixelPagePath = '';
 
 const getStoredConsent = () => {
   try {
@@ -38,6 +41,38 @@ const loadScript = (id, src, body) => {
   document.head.appendChild(script);
 };
 
+const getCurrentPagePath = () => `${window.location.pathname}${window.location.search}`;
+
+const installMetaPixel = (pixelId) => {
+  if (!pixelId || metaPixelInitializedId === pixelId) {
+    return;
+  }
+
+  if (!window.fbq) {
+    ((f, b, e, v, n, t, s) => {
+      if (f.fbq) return;
+      n = f.fbq = function fbq() {
+        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+      };
+      if (!f._fbq) f._fbq = n;
+      n.push = n;
+      n.loaded = true;
+      n.version = '2.0';
+      n.queue = [];
+      t = b.createElement(e);
+      t.async = true;
+      t.src = v;
+      s = b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t, s);
+    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+  }
+
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+  metaPixelInitializedId = pixelId;
+  lastMetaPixelPagePath = getCurrentPagePath();
+};
+
 const installAdTracking = () => {
   if (!consentListenerInstalled) {
     window.addEventListener(CONSENT_EVENT, installAdTracking);
@@ -46,7 +81,7 @@ const installAdTracking = () => {
 
   const consent = getStoredConsent();
   const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-  const metaPixelId = import.meta.env.VITE_META_PIXEL_ID;
+  const metaPixelId = String(import.meta.env.VITE_META_PIXEL_ID || '').trim() || DEFAULT_META_PIXEL_ID;
   const tiktokPixelId = import.meta.env.VITE_TIKTOK_PIXEL_ID;
   const linkedinPartnerId = import.meta.env.VITE_LINKEDIN_PARTNER_ID;
 
@@ -59,10 +94,7 @@ const installAdTracking = () => {
   }
 
   if (metaPixelId && consent.marketing) {
-    window.fbq = window.fbq || function fbq() { (window.fbq.queue = window.fbq.queue || []).push(arguments); };
-    loadScript('meta-pixel-loader', 'https://connect.facebook.net/en_US/fbevents.js');
-    window.fbq('init', metaPixelId);
-    window.fbq('track', 'PageView');
+    installMetaPixel(metaPixelId);
   }
 
   if (tiktokPixelId && consent.marketing) {
@@ -81,15 +113,20 @@ const installAdTracking = () => {
 };
 
 const trackPageView = (pathname) => {
-  if (!window.gtag || !getStoredConsent().analytics) {
-    return;
+  const consent = getStoredConsent();
+
+  if (window.gtag && consent.analytics) {
+    window.gtag('event', 'page_view', {
+      page_path: pathname,
+      page_location: window.location.href,
+      page_title: document.title,
+    });
   }
 
-  window.gtag('event', 'page_view', {
-    page_path: pathname,
-    page_location: window.location.href,
-    page_title: document.title,
-  });
+  if (window.fbq && consent.marketing && metaPixelInitializedId && pathname !== lastMetaPixelPagePath) {
+    window.fbq('track', 'PageView');
+    lastMetaPixelPagePath = pathname;
+  }
 };
 
 const trackAdPlatforms = (eventName, properties = {}) => {
