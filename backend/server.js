@@ -31,6 +31,7 @@ import adminPushRoutes from './routes/adminPushRoutes.js';
 import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
 import notificationWorkerRoutes from './routes/notificationWorkerRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import userManagementRoutes from './routes/userManagementRoutes.js';
 import { getOpsHealth } from './controllers/opsController.js';
 import { requireDatabaseConnection } from './middleware/databaseReadinessMiddleware.js';
 import { sanitizeRequest } from './middleware/sanitizeMiddleware.js';
@@ -130,6 +131,7 @@ app.get('/sitemap.xml', requireDatabaseConnection, (req, res, next) => seoRoutes
 app.use('/api/categories', requireDatabaseConnection, categoryRoutes);
 app.use('/api/products', requireDatabaseConnection, productRoutes);
 app.use('/api/users', requireDatabaseConnection, userRoutes);
+app.use('/api/admin/users', requireDatabaseConnection, userManagementRoutes);
 app.use('/api/orders', requireDatabaseConnection, orderRoutes);
 app.use('/api/contact', requireDatabaseConnection, contactRoutes);
 app.use('/api/payments', requireDatabaseConnection, paymentRoutes);

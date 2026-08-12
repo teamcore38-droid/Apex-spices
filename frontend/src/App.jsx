@@ -52,6 +52,9 @@ const OrderSuccessPage = lazyWithChunkRecovery(() => import('./pages/OrderSucces
 const OrderInvoicePage = lazyWithChunkRecovery(() => import('./pages/OrderInvoicePage'))
 const AdminOrderDetailPage = lazyWithChunkRecovery(() => import('./pages/AdminOrderDetailPage'))
 const AdminPackingSlipPage = lazyWithChunkRecovery(() => import('./pages/AdminPackingSlipPage'))
+const AdminCustomerUsersPage = lazyWithChunkRecovery(() => import('./pages/AdminCustomerUsersPage'))
+const AdminStaffUsersPage = lazyWithChunkRecovery(() => import('./pages/AdminStaffUsersPage'))
+const AdminUsersPage = lazyWithChunkRecovery(() => import('./pages/AdminUsersPage'))
 
 const ShopRedirect = () => {
   const { search } = useLocation()
@@ -126,6 +129,10 @@ function App() {
               <Route path="/admin/shipping" element={<AdminShippingPage />} />
               <Route path="/admin/vendors" element={<AdminVendorsPage />} />
               <Route path="/admin/professional" element={<AdminProfessionalPage />} />
+              <Route path="/admin/users" element={<Navigate to="/admin/users/customers" replace />} />
+              <Route path="/admin/users/customers" element={<AdminCustomerUsersPage />} />
+              <Route path="/admin/users/staff" element={<AdminStaffUsersPage />} />
+              <Route path="/admin/users/admins" element={<AdminUsersPage />} />
               <Route path="/admin/mobile" element={<AdminMobilePage />} />
               <Route path="/admin/products/new" element={<AddProductPage />} />
               <Route path="/admin/product/:id/edit" element={<EditProductPage />} />

@@ -127,6 +127,11 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    accountStatus: {
+      type: String,
+      enum: ['Active', 'Suspended'],
+      default: 'Active',
+    },
     isStaff: {
       type: Boolean,
       default: false,
@@ -143,6 +148,7 @@ const userSchema = mongoose.Schema(
         'content_manager',
         'analyst',
         'vendor_manager',
+        'user_manager',
         'custom',
       ],
       default: 'customer',
@@ -246,6 +252,8 @@ userSchema.index(
     partialFilterExpression: { googleSubject: { $type: 'string' } },
   }
 );
+
+userSchema.index({ isAdmin: 1, isStaff: 1, accountStatus: 1, createdAt: -1 });
 
 const User = mongoose.model('User', userSchema);
 

@@ -23,6 +23,7 @@ import {
   ShoppingBag,
   Star,
   Trash2,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -970,6 +971,14 @@ const AdminDashboard = () => {
             >
               <ShieldCheck size={20} className="mr-3" /> Professional Admin
             </button>
+            {(userInfo?.isAdmin || userInfo?.permissions?.includes('users:read') || userInfo?.permissions?.includes('users:manage') || userInfo?.permissions?.includes('staff:manage')) && (
+              <button
+                onClick={() => navigate('/admin/users/customers')}
+                className="flex items-center rounded p-3 text-left font-medium transition-colors hover:bg-gray-100"
+              >
+                <Users size={20} className="mr-3" /> User Management
+              </button>
+            )}
 
             {(adminInstallState.installed || showAdminInstallButton || adminInstallMessage || adminInstallError) && (
             <div className="mt-2 border-t border-gray-100 pt-3">

@@ -126,6 +126,12 @@ const recordSecurityEvent = async (req, eventType, user = null, metadata = {}, s
 const isAccountLocked = (user) =>
   Boolean(user?.security?.accountLockedUntil && new Date(user.security.accountLockedUntil).getTime() > Date.now());
 
+const isAccountSuspended = (user) =>
+  Boolean(
+    user?.accountStatus === 'Suspended' ||
+      ((user?.isStaff || user?.isAdmin) && user?.staffStatus === 'Suspended')
+  );
+
 const registerFailedLogin = async (req, user, email = '') => {
   if (!user) {
     await recordSecurityEvent(req, 'login.failed.unknown-account', null, { email }, 'warning');
@@ -232,6 +238,7 @@ export {
   getRequestIp,
   getUserAgent,
   hashValue,
+  isAccountSuspended,
   isAccountLocked,
   issueAccessToken,
   issueRefreshToken,

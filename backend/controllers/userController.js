@@ -23,6 +23,7 @@ import {
   getRefreshTokenDays,
   getRefreshTokenFromRequest,
   hashValue,
+  isAccountSuspended,
   isAccountLocked,
   issueAccessToken,
   issueRefreshToken,
@@ -70,6 +71,7 @@ const serializeUser = (user) => {
     isAdmin: user.isAdmin,
     isStaff: Boolean(user.isStaff),
     role: user.role || (user.isAdmin ? 'admin' : 'customer'),
+    accountStatus: user.accountStatus || 'Active',
     staffStatus: user.staffStatus || 'Active',
     permissions: getPermissionsForUser(user),
     isVendor: Boolean(user.isVendor),
@@ -106,6 +108,13 @@ const sendLockedAccountResponse = async (req, res, user) => {
   return res.status(423).json({
     message: 'Account is temporarily locked after repeated failed login attempts.',
     accountLockedUntil: user.security.accountLockedUntil,
+  });
+};
+
+const sendSuspendedAccountResponse = async (req, res, user) => {
+  await recordSecurityEvent(req, 'login.blocked.suspended', user, {}, 'warning');
+  return res.status(403).json({
+    message: 'This account has been suspended. Please contact support.',
   });
 };
 
@@ -240,6 +249,10 @@ const authUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    if (isAccountSuspended(user)) {
+      return sendSuspendedAccountResponse(req, res, user);
+    }
+
     if (adminRequiresTwoFactor(user) && user.security?.adminTwoFactorEnabled !== false) {
       return createAdminLoginChallengeResponse(req, res, user);
     }
@@ -309,6 +322,10 @@ const authGoogleUser = async (req, res) => {
 
     if (isAccountLocked(user)) {
       return sendLockedAccountResponse(req, res, user);
+    }
+
+    if (isAccountSuspended(user)) {
+      return sendSuspendedAccountResponse(req, res, user);
     }
 
     if (adminRequiresTwoFactor(user) && user.security?.adminTwoFactorEnabled !== false) {
@@ -401,6 +418,10 @@ const verifyGoogleLinkTwoFactor = async (req, res) => {
       return res.status(400).json({ message: result.message });
     }
 
+    if (isAccountSuspended(result.user)) {
+      return sendSuspendedAccountResponse(req, res, result.user);
+    }
+
     if (result.user?._id?.toString() !== req.user._id.toString()) {
       await recordSecurityEvent(req, 'account.google.link.failed', req.user, { reason: 'challenge-user-mismatch' }, 'critical');
       return res.status(403).json({ message: 'This verification challenge does not belong to your account.' });
@@ -448,6 +469,10 @@ const verifyAdminTwoFactorLogin = async (req, res) => {
       return res.status(400).json({ message: result.message });
     }
 
+    if (isAccountSuspended(result.user)) {
+      return sendSuspendedAccountResponse(req, res, result.user);
+    }
+
     return issueLoginResponse(req, res, result.user, 200, { rememberMe });
   } catch (error) {
     console.error(error);
@@ -475,6 +500,14 @@ const refreshAccessToken = async (req, res) => {
       clearRefreshCookie(res);
       await recordSecurityEvent(req, 'session.refresh.invalid', null, {}, 'warning');
       return res.status(401).json({ message: 'Session expired. Please sign in again.' });
+    }
+
+    if (isAccountSuspended(tokenRecord.user)) {
+      tokenRecord.revokedAt = new Date();
+      await tokenRecord.save();
+      clearRefreshCookie(res);
+      await recordSecurityEvent(req, 'session.refresh.blocked.suspended', tokenRecord.user, {}, 'warning');
+      return res.status(403).json({ message: 'This account has been suspended. Please contact support.' });
     }
 
     const refreshTokenDays = getRefreshTokenDays(tokenRecord.rememberMe);

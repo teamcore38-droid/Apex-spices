@@ -35,6 +35,8 @@ const PERMISSIONS = [
   'audit:read',
   'bulk:manage',
   'webhooks:manage',
+  'users:read',
+  'users:manage',
 ];
 
 const ROLE_OPTIONS = [
@@ -45,6 +47,7 @@ const ROLE_OPTIONS = [
   'content_manager',
   'analyst',
   'vendor_manager',
+  'user_manager',
 ];
 
 const INITIAL_STAFF_FORM = {

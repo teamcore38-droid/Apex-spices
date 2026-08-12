@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 import { hasPermission } from '../utils/permissions.js';
+import { isAccountSuspended } from '../utils/securityService.js';
 
 const getTokenFromRequest = (req) => {
   if (
@@ -26,6 +27,12 @@ const protect = async (req, res, next) => {
   if (token) {
     try {
       req.user = await attachUserFromToken(token);
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user no longer exists' });
+      }
+      if (isAccountSuspended(req.user)) {
+        return res.status(403).json({ message: 'This account has been suspended. Please contact support.' });
+      }
       next();
     } catch (error) {
       console.error(error);
@@ -47,6 +54,12 @@ const protectOptional = async (req, res, next) => {
 
   try {
     req.user = await attachUserFromToken(token);
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized, user no longer exists' });
+    }
+    if (isAccountSuspended(req.user)) {
+      return res.status(403).json({ message: 'This account has been suspended. Please contact support.' });
+    }
     next();
   } catch (error) {
     console.error(error);
@@ -55,7 +68,7 @@ const protectOptional = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
+  if (req.user && req.user.isAdmin && !isAccountSuspended(req.user)) {
     next();
   } else {
     res.status(401).json({ message: 'Not authorized as an admin' });

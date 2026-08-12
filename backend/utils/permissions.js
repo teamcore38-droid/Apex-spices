@@ -13,6 +13,8 @@ const PERMISSIONS = {
   AUDIT_READ: 'audit:read',
   BULK_MANAGE: 'bulk:manage',
   WEBHOOKS_MANAGE: 'webhooks:manage',
+  USERS_READ: 'users:read',
+  USERS_MANAGE: 'users:manage',
 };
 
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);
@@ -51,6 +53,10 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.VENDORS_MANAGE,
     PERMISSIONS.REPORTS_READ,
   ],
+  user_manager: [
+    PERMISSIONS.USERS_READ,
+    PERMISSIONS.USERS_MANAGE,
+  ],
 };
 
 const normalizePermissionList = (permissions = []) =>
@@ -70,6 +76,13 @@ const getPermissionsForUser = (user = {}) => {
 };
 
 const hasPermission = (user = {}, requiredPermission = '') => {
+  if (
+    user?.accountStatus === 'Suspended' ||
+    ((user?.isAdmin || user?.isStaff) && user?.staffStatus === 'Suspended')
+  ) {
+    return false;
+  }
+
   if (user?.isAdmin) {
     return true;
   }

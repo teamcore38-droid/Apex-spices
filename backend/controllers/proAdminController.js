@@ -167,9 +167,12 @@ const productsToCsv = (products = []) => {
   return [headers.join(','), ...rows].join('\n');
 };
 
-const getStaffUsers = async (_req, res) => {
+const getStaffUsers = async (req, res) => {
+  const staffFilter = req.user?.isAdmin
+    ? { $or: [{ isAdmin: true }, { isStaff: true }] }
+    : { isStaff: true, isAdmin: { $ne: true } };
   const staff = await User.find({
-    $or: [{ isAdmin: true }, { isStaff: true }],
+    ...staffFilter,
   })
     .select(STAFF_SELECT)
     .sort({ isAdmin: -1, createdAt: -1 });
@@ -205,6 +208,18 @@ const upsertStaffUser = async (req, res) => {
   }
 
   let user = id && mongoose.Types.ObjectId.isValid(id) ? await User.findById(id) : null;
+
+  if (!req.user?.isAdmin && (Boolean(isAdmin) || user?.isAdmin)) {
+    return res.status(403).json({ message: 'Only administrators can manage administrator accounts' });
+  }
+
+  if (
+    user &&
+    String(user._id) === String(req.user?._id) &&
+    String(staffStatus) === 'Suspended'
+  ) {
+    return res.status(400).json({ message: 'You cannot suspend your own staff account' });
+  }
 
   if (!user) {
     if (!password || password.length < 6) {
@@ -264,6 +279,14 @@ const updateStaffStatus = async (req, res) => {
 
   if (!user || (!user.isStaff && !user.isAdmin)) {
     return res.status(404).json({ message: 'Staff account not found' });
+  }
+
+  if (user.isAdmin && !req.user?.isAdmin) {
+    return res.status(403).json({ message: 'Only administrators can manage administrator accounts' });
+  }
+
+  if (String(user._id) === String(req.user?._id) && staffStatus === 'Suspended') {
+    return res.status(400).json({ message: 'You cannot suspend your own staff account' });
   }
 
   user.staffStatus = staffStatus === 'Suspended' ? 'Suspended' : 'Active';
