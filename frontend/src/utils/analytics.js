@@ -3,7 +3,7 @@ import axios from 'axios';
 const SESSION_KEY = 'apexMarketingSessionId';
 const CONSENT_KEY = 'apexCookieConsent';
 const CONSENT_EVENT = 'apex:consent-updated';
-const DEFAULT_META_PIXEL_ID = '969724942822685';
+const DEFAULT_META_PIXEL_ID = '2231399167654612';
 let consentListenerInstalled = false;
 let metaPixelInitializedId = '';
 let lastMetaPixelPagePath = '';
