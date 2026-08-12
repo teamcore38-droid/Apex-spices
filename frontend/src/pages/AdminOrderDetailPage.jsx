@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowLeft,
+  Banknote,
   Calendar,
   CreditCard,
   Download,
@@ -155,7 +156,9 @@ const AdminOrderDetailPage = () => {
     fetchPaymentEvents();
   }, [order?._id, paymentEventsRefreshToken, userInfo]);
 
-  const amountPaid = Number(order?.paymentResult?.amountReceived || order?.totalPrice || 0);
+  const amountPaid = order?.isPaid
+    ? Number(order?.paymentResult?.amountReceived || order?.totalPrice || 0)
+    : 0;
   const refundedAmount = Number(order?.refundedAmount || 0);
   const refundableAmount = Math.max(amountPaid - refundedAmount, 0);
   const stripeRefundAvailable = Boolean(order?.paymentProvider === 'Stripe' && (order?.paymentIntentId || order?.paymentResult?.chargeId));
@@ -208,12 +211,12 @@ const AdminOrderDetailPage = () => {
 
       const payload = {
         orderStatus: formData.orderStatus,
-        isPaid: formData.isPaid,
         isDelivered: formData.isDelivered,
         trackingNumber: formData.trackingNumber,
         courierName: formData.courierName,
         trackingUrl: formData.trackingUrl,
         deliveryNote: formData.deliveryNote,
+        ...(order.paymentProvider === 'COD' ? {} : { isPaid: formData.isPaid }),
       };
 
       const { data } = await axios.put(`/api/orders/${id}/status`, payload, config);
@@ -224,6 +227,37 @@ const AdminOrderDetailPage = () => {
       setPaymentEventsRefreshToken((currentToken) => currentToken + 1);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to update this order.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const collectCodPayment = async () => {
+    if (!userInfo?.token || !order?._id || order.paymentProvider !== 'COD') {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const { data } = await axios.put(
+        `/api/orders/${order._id}/cod/collect`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      setOrder(data);
+      setFormData(buildFormState(data));
+      setSuccessMessage('Cash on delivery payment recorded successfully.');
+      setPaymentEventsRefreshToken((currentToken) => currentToken + 1);
+    } catch (collectError) {
+      setError(collectError.response?.data?.message || 'Unable to record cash on delivery payment.');
     } finally {
       setSaving(false);
     }
@@ -622,12 +656,41 @@ const AdminOrderDetailPage = () => {
                         id="paymentStatus"
                         value={String(formData.isPaid)}
                         onChange={(nextValue) => handleBooleanChange('isPaid', nextValue)}
+                        disabled={order.paymentProvider === 'COD'}
                         options={[
                           { value: 'false', label: 'Unpaid' },
                           { value: 'true', label: 'Paid' },
                         ]}
                       />
                     </div>
+
+                    {order.paymentProvider === 'COD' && (
+                      <div className="rounded-2xl border border-brand-accent/20 bg-brand-light p-4 sm:col-span-2">
+                        <div className="flex items-start gap-3">
+                          <Banknote size={19} className="mt-0.5 text-brand-primary" />
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-accent">Cash on Delivery</p>
+                            <p className="mt-1 text-sm text-gray-600">
+                              Collection status: <span className="font-semibold text-brand-dark">{order.codStatus || 'Pending'}</span>
+                            </p>
+                            {order.codStatus !== 'Collected' && (
+                              <button
+                                type="button"
+                                onClick={collectCodPayment}
+                                disabled={saving || (!order.isDelivered && order.orderStatus !== 'Delivered')}
+                                className="mt-3 inline-flex items-center rounded-xl bg-brand-primary px-4 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                <Banknote size={15} className="mr-2" />
+                                {saving ? 'Recording...' : 'Record COD Collection'}
+                              </button>
+                            )}
+                            {!order.isDelivered && order.orderStatus !== 'Delivered' && (
+                              <p className="mt-2 text-xs font-semibold text-amber-700">Mark the order delivered before recording collection.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label htmlFor="deliveryStatus" className="mb-2 block text-sm font-semibold text-brand-dark">
@@ -827,6 +890,13 @@ const AdminOrderDetailPage = () => {
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Payment Status</p>
                   <p className="mt-2 text-sm font-semibold text-brand-dark">{getPaymentLabel(order)}</p>
                 </div>
+                {order.paymentProvider === 'COD' && (
+                  <div className="mt-4 rounded-2xl bg-brand-light p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">COD Collection</p>
+                    <p className="mt-2 text-sm font-semibold text-brand-dark">{order.codStatus || 'Pending'}</p>
+                    {order.codCollectedAt && <p className="mt-1 text-xs text-gray-500">Collected {formatDateTime(order.codCollectedAt)}</p>}
+                  </div>
+                )}
                 <div className="mt-4 rounded-2xl bg-brand-light p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Payment Intent ID</p>
                   <p className="mt-2 break-all text-sm font-semibold text-brand-dark">

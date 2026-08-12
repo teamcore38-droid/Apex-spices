@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
+  Banknote,
   CheckCircle2,
   ChevronDown,
   CreditCard,
@@ -94,6 +95,8 @@ const wait = (milliseconds) =>
 
 const PAYHERE_SUPPORTED_CURRENCIES = ['LKR', 'USD', 'EUR', 'GBP', 'AUD'];
 const PAYHERE_BRAND_DESCRIPTION = 'Apex Spices Premium Order';
+const COD_PAYMENT_PROVIDER = 'COD';
+const COD_PAYMENT_METHOD = 'Cash on Delivery';
 const PAYHERE_SCRIPT_ID = 'payhere-checkout-sdk';
 const PAYHERE_SCRIPT_URL = 'https://www.payhere.lk/lib/payhere.js';
 let payhereScriptRequest = null;
@@ -184,6 +187,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [pendingOrderNumber, setPendingOrderNumber] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [giftCardCode, setGiftCardCode] = useState('');
+  const [paymentSelection, setPaymentSelection] = useState('PayHere');
   const [shippingRateId, setShippingRateId] = useState('');
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -276,6 +280,16 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const displayCurrency = activeQuote?.currency || checkoutCurrency;
   const isSriLankaDelivery = isSriLankaCountry(form.country, form.countryCode);
   const isInternationalDelivery = Boolean(form.country) && !isSriLankaDelivery;
+  const canUsePayHere = Boolean(payhereEnabled && userInfo?.token);
+  const canUseCod = isSriLankaDelivery;
+  const activePaymentSelection =
+    paymentSelection === 'COD' && canUseCod
+      ? 'COD'
+      : canUsePayHere
+      ? 'PayHere'
+      : canUseCod
+      ? 'COD'
+      : 'PayHere';
   const payhereOrderDescription = pendingOrderId
     ? `${PAYHERE_BRAND_DESCRIPTION} #${pendingOrderNumber || pendingOrderId.slice(-8).toUpperCase()}`
     : PAYHERE_BRAND_DESCRIPTION;
@@ -283,14 +297,14 @@ const CheckoutInner = ({ payhereEnabled }) => {
     paymentStage === 'verifying'
       ? 'Verifying Payment...'
       : loading
-      ? payhereEnabled
+      ? activePaymentSelection === 'PayHere'
         ? paymentStage === 'opening'
           ? 'Opening PayHere...'
           : 'Preparing Payment...'
-        : 'Placing Order...'
-      : payhereEnabled
+        : 'Placing COD Order...'
+      : activePaymentSelection === 'PayHere'
       ? 'Pay Securely with PayHere'
-      : 'Place Order';
+      : 'Place COD Order';
   const formatCheckoutBasePrice = (baseValue) =>
     activeQuote?.exchangeRate
       ? formatCurrency(Number(baseValue || 0) * Number(activeQuote.exchangeRate || 1), displayCurrency)
@@ -443,8 +457,8 @@ const CheckoutInner = ({ payhereEnabled }) => {
       {
         orderItems: cartItems,
         shippingAddress: nextShippingAddress,
-        paymentMethod: userInfo?.token && payhereEnabled ? 'Card' : 'Development Placeholder',
-        paymentProvider: userInfo?.token && payhereEnabled ? 'PayHere' : 'Manual',
+        paymentMethod: activePaymentSelection === 'COD' ? COD_PAYMENT_METHOD : 'Card',
+        paymentProvider: activePaymentSelection === 'COD' ? COD_PAYMENT_PROVIDER : 'PayHere',
         couponCode,
         giftCardCode,
         shippingRateId,
@@ -542,7 +556,17 @@ const CheckoutInner = ({ payhereEnabled }) => {
       return;
     }
 
-    if (payhereEnabled && !window.payhere) {
+    if (activePaymentSelection === 'COD' && !canUseCod) {
+      setError('Cash on delivery is currently available only for Sri Lanka deliveries.');
+      return;
+    }
+
+    if (activePaymentSelection === 'PayHere' && !userInfo?.token) {
+      setError('Sign in to use secure online payment, or choose Cash on Delivery for a Sri Lanka delivery.');
+      return;
+    }
+
+    if (activePaymentSelection === 'PayHere' && (!payhereEnabled || !window.payhere)) {
       setError('Secure payment gateway is still loading. Please wait a moment and try again.');
       return;
     }
@@ -579,9 +603,13 @@ const CheckoutInner = ({ payhereEnabled }) => {
         return;
       }
 
-      if (!payhereEnabled || !userInfo?.token) {
+      if (order.paymentProvider === COD_PAYMENT_PROVIDER) {
         finalizeSuccess(order);
         return;
+      }
+
+      if (order.paymentProvider !== 'PayHere' || !userInfo?.token || !payhereEnabled) {
+        throw new Error('Secure online payment is unavailable. Select Cash on Delivery for a Sri Lanka delivery or sign in.');
       }
 
       setPaymentStage('opening');
@@ -1198,7 +1226,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-accent sm:text-xs">Payment Method</p>
                     <h2 className="font-serif text-lg font-bold leading-tight sm:text-xl">
-                      {payhereEnabled ? 'Secure PayHere Checkout' : 'Development payment mode'}
+                      {activePaymentSelection === 'COD' ? 'Cash on Delivery' : 'Secure PayHere Checkout'}
                     </h2>
                   </div>
                   <ChevronDown
@@ -1220,54 +1248,76 @@ const CheckoutInner = ({ payhereEnabled }) => {
               >
                 <div className="min-h-0 overflow-hidden">
                   <div className="p-6 sm:p-8">
-                {payhereEnabled ? (
-                  <div className="rounded-[24px] border border-brand-accent/20 bg-[#fffaf2] p-5 shadow-sm">
-                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="mb-3 flex items-center gap-2 text-brand-dark">
-                          <LockKeyhole size={16} className="text-brand-primary" />
-                          <p className="text-sm font-bold uppercase tracking-[0.16em]">Protected PayHere window</p>
-                        </div>
-                        <p className="text-sm leading-7 text-gray-700">
-                          The payment form opens in PayHere&apos;s secure hosted interface. Apex Spices controls this surrounding checkout experience, while card entry, bank selection, and wallet authentication remain inside PayHere&apos;s protected payment UI.
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-brand-accent/20 bg-white px-4 py-3 text-sm shadow-sm sm:min-w-44">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">Description</p>
-                        <p className="mt-1 font-serif text-lg font-bold text-brand-dark">{payhereOrderDescription}</p>
-                      </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${activePaymentSelection === 'PayHere' ? 'border-brand-primary bg-brand-light' : 'border-gray-200 bg-white'} ${!canUsePayHere ? 'cursor-not-allowed opacity-50' : ''}`}>
+                        <input
+                          type="radio"
+                          name="checkout-payment-method"
+                          value="PayHere"
+                          checked={activePaymentSelection === 'PayHere'}
+                          onChange={() => setPaymentSelection('PayHere')}
+                          disabled={!canUsePayHere}
+                          className="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-accent"
+                        />
+                        <span>
+                          <span className="flex items-center gap-2 font-bold text-brand-dark"><LockKeyhole size={16} className="text-brand-primary" />Pay securely with PayHere</span>
+                          <span className="mt-1 block text-xs leading-5 text-gray-600">Card, bank, and wallet payments are completed in PayHere&apos;s protected window.</span>
+                          {!userInfo?.token && <span className="mt-1 block text-xs font-semibold text-amber-700">Sign in is required for online payment.</span>}
+                        </span>
+                      </label>
+                      <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${activePaymentSelection === 'COD' ? 'border-brand-primary bg-brand-light' : 'border-gray-200 bg-white'} ${!canUseCod ? 'cursor-not-allowed opacity-50' : ''}`}>
+                        <input
+                          type="radio"
+                          name="checkout-payment-method"
+                          value="COD"
+                          checked={activePaymentSelection === 'COD'}
+                          onChange={() => setPaymentSelection('COD')}
+                          disabled={!canUseCod}
+                          className="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-accent"
+                        />
+                        <span>
+                          <span className="flex items-center gap-2 font-bold text-brand-dark"><Banknote size={17} className="text-brand-primary" />Cash on Delivery</span>
+                          <span className="mt-1 block text-xs leading-5 text-gray-600">Pay the courier in cash when your Sri Lanka order is delivered.</span>
+                          {!canUseCod && <span className="mt-1 block text-xs font-semibold text-amber-700">Available for Sri Lanka deliveries only.</span>}
+                        </span>
+                      </label>
                     </div>
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                      {[
-                        ['Verified by Backend', 'Payment is marked paid only after PayHere notification validation.'],
-                        ['Secure Card Entry', 'Sensitive payment fields are handled by PayHere, not Apex Spices.'],
-                        ['Apex Branded Flow', 'Order copy, buttons, and status messages match the store theme.'],
-                      ].map(([title, body]) => (
-                        <div key={title} className="rounded-2xl border border-brand-accent/15 bg-white p-4">
-                          <div className="mb-2 flex items-center gap-2 text-brand-primary">
-                            <Sparkles size={14} />
-                            <p className="text-xs font-bold uppercase tracking-[0.14em]">{title}</p>
+                    {activePaymentSelection === 'PayHere' ? (
+                      <div className="mt-5 rounded-[24px] border border-brand-accent/20 bg-[#fffaf2] p-5 shadow-sm">
+                        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="mb-3 flex items-center gap-2 text-brand-dark">
+                              <LockKeyhole size={16} className="text-brand-primary" />
+                              <p className="text-sm font-bold uppercase tracking-[0.16em]">Protected PayHere window</p>
+                            </div>
+                            <p className="text-sm leading-7 text-gray-700">The payment form opens in PayHere&apos;s secure hosted interface. Sensitive payment fields remain inside PayHere and are never stored by Apex Spices.</p>
                           </div>
-                          <p className="text-xs leading-5 text-gray-600">{body}</p>
+                          <div className="rounded-2xl border border-brand-accent/20 bg-white px-4 py-3 text-sm shadow-sm sm:min-w-44">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-accent">Description</p>
+                            <p className="mt-1 font-serif text-lg font-bold text-brand-dark">{payhereOrderDescription}</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-[24px] border border-brand-accent/15 bg-[#fffaf2] p-5">
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-accent">
-                      Development mode
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-gray-600">
-                      PayHere script is not loaded, so checkout will place the order in safe manual-payment mode. This keeps development moving without blocking checkout.
-                    </p>
-                    <label className="mt-4 inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-dark shadow-sm">
-                      <input type="radio" checked readOnly className="mr-2" />
-                      Manual / Development Placeholder
-                    </label>
-                  </div>
-                )}
+                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                          {[
+                            ['Verified by Backend', 'Payment is marked paid only after PayHere notification validation.'],
+                            ['Secure Card Entry', 'Sensitive payment fields are handled by PayHere, not Apex Spices.'],
+                            ['Apex Branded Flow', 'Order copy, buttons, and status messages match the store theme.'],
+                          ].map(([title, body]) => (
+                            <div key={title} className="rounded-2xl border border-brand-accent/15 bg-white p-4">
+                              <div className="mb-2 flex items-center gap-2 text-brand-primary"><Sparkles size={14} /><p className="text-xs font-bold uppercase tracking-[0.14em]">{title}</p></div>
+                              <p className="text-xs leading-5 text-gray-600">{body}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-[24px] border border-brand-accent/20 bg-[#fffaf2] p-5">
+                        <div className="flex items-center gap-2 text-brand-dark"><Banknote size={18} className="text-brand-primary" /><p className="text-sm font-bold uppercase tracking-[0.16em]">Cash on Delivery</p></div>
+                        <p className="mt-3 text-sm leading-7 text-gray-700">Your order will be confirmed now and payment will remain unpaid until the courier collects the exact order total at delivery.</p>
+                        <p className="mt-3 text-xs font-semibold text-gray-600">COD is currently available for Sri Lanka delivery addresses only.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1281,7 +1331,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                 <div>
                   <h2 className="font-serif text-2xl font-bold text-brand-dark">Trust & Security</h2>
                   <p className="mt-3 text-sm leading-7 text-gray-600">
-                    We use your checkout details to fulfill your order, support delivery, and connect updates to your account history. If PayHere is enabled, payment is confirmed before we clear your cart.
+                    We use your checkout details to fulfill your order, support delivery, and connect updates to your account history. PayHere orders are confirmed after secure gateway verification; COD orders are confirmed when the courier records collection.
                   </p>
                 </div>
               </div>
@@ -1378,7 +1428,7 @@ const CheckoutInner = ({ payhereEnabled }) => {
                 {paymentButtonLabel}
               </button>
 
-              {payhereEnabled && (
+              {activePaymentSelection === 'PayHere' && (
                 <p className="mt-3 text-center text-xs leading-5 text-gray-500">
                   PayHere&apos;s secure popup may retain its own branding for compliance and card security.
                 </p>

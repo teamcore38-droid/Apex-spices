@@ -21,7 +21,7 @@ import {
   getShippingOptions,
 } from '../utils/commerceService.js';
 import { resolveSupportedCurrency } from '../utils/currencyService.js';
-import { resolveCountryCode } from '../utils/shippingLocations.js';
+import { isSriLankaDestination, resolveCountryCode } from '../utils/shippingLocations.js';
 import {
   applyReservation,
   deductReservedInventory,
@@ -42,6 +42,10 @@ import {
   buildCheckoutIntegrity,
   recordFraudSignal,
 } from '../utils/fraudService.js';
+import {
+  isCashOnDeliveryOrder,
+  resolveCheckoutPayment,
+} from '../utils/paymentOptions.js';
 
 const VALID_ORDER_STATUSES = [
   'Processing',
@@ -179,6 +183,29 @@ const resolvePaymentCurrency = (currency = '', paymentProvider = 'Manual') => {
   }
 
   return resolveSupportedCurrency(currency || 'USD');
+};
+
+const resolveOrderPayment = ({ paymentProvider, paymentMethod, shippingAddress }) => {
+  const paymentSelection = resolveCheckoutPayment({
+    paymentProvider,
+    paymentMethod,
+    payhereConfigured: Boolean(String(process.env.PAYHERE_MERCHANT_ID || '').trim()),
+    stripeConfigured: isStripeConfigured(),
+  });
+
+  if (!paymentSelection.valid) {
+    const error = new Error(paymentSelection.message);
+    error.statusCode = paymentSelection.status;
+    throw error;
+  }
+
+  if (paymentSelection.isCashOnDelivery && !isSriLankaDestination(shippingAddress)) {
+    const error = new Error('Cash on delivery is currently available only for Sri Lanka deliveries.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return paymentSelection;
 };
 
 const buildGuestCustomer = (shippingAddress = {}) => ({
@@ -353,6 +380,8 @@ const buildInvoicePayload = (order) => ({
     status: getNormalizedPaymentStatus(order.paymentStatus, order.isPaid),
     paymentIntentId: order.paymentIntentId || '',
     paidAt: order.paidAt || null,
+    codStatus: order.codStatus || 'Not Applicable',
+    codCollectedAt: order.codCollectedAt || null,
   },
   refund: {
     status: order.refundStatus || 'Not Refunded',
@@ -461,18 +490,16 @@ const addOrderItems = async (req, res) => {
       return res.status(400).json({ message: shippingValidationError });
     }
 
-    const normalizedPaymentProvider =
-      paymentProvider === 'PayHere' && process.env.PAYHERE_MERCHANT_ID
-        ? 'PayHere'
-        : paymentProvider === 'Stripe' && isStripeConfigured()
-        ? 'Stripe'
-        : 'Manual';
-    const normalizedPaymentMethod = String(
-      paymentMethod || (normalizedPaymentProvider === 'Manual' ? 'Development Placeholder' : 'Card')
-    ).trim();
+    const paymentSelection = resolveOrderPayment({
+      paymentProvider,
+      paymentMethod,
+      shippingAddress: normalizedShippingAddress,
+    });
+    const normalizedPaymentProvider = paymentSelection.paymentProvider;
+    const normalizedPaymentMethod = paymentSelection.paymentMethod;
     const requestedCurrency = currency || req.user?.preferredCurrency || '';
     const paymentCurrency = resolvePaymentCurrency(requestedCurrency, normalizedPaymentProvider);
-    const initialPaymentStatus = 'Payment Pending';
+    const initialPaymentStatus = paymentSelection.paymentStatus;
     const pricing = await calculateOrderPricing({
       cartItems: orderItems,
       shippingAddress: normalizedShippingAddress,
@@ -490,6 +517,7 @@ const addOrderItems = async (req, res) => {
       paymentMethod: normalizedPaymentMethod,
       paymentProvider: normalizedPaymentProvider,
       paymentStatus: initialPaymentStatus,
+      codStatus: paymentSelection.isCashOnDelivery ? 'Pending' : 'Not Applicable',
       currency: pricing.currency,
       exchangeRate: pricing.exchangeRate,
       couponCode: pricing.couponCode,
@@ -507,12 +535,13 @@ const addOrderItems = async (req, res) => {
         createHistoryEntry({
           order: { orderStatus: 'Processing' },
           status: 'Processing',
-          note:
-            normalizedPaymentProvider === 'Stripe'
-              ? 'Order created and awaiting Stripe payment confirmation.'
-              : normalizedPaymentProvider === 'PayHere'
-              ? 'Order created and awaiting PayHere payment confirmation.'
-              : 'Order created in development/manual payment mode.',
+          note: paymentSelection.isCashOnDelivery
+            ? 'Cash on delivery order created; payment will be collected on delivery.'
+            : normalizedPaymentProvider === 'Stripe'
+            ? 'Order created and awaiting Stripe payment confirmation.'
+            : normalizedPaymentProvider === 'PayHere'
+            ? 'Order created and awaiting PayHere payment confirmation.'
+            : 'Order created in development/manual payment mode.',
           user: req.user,
         }),
       ],
@@ -565,7 +594,7 @@ const addOrderItems = async (req, res) => {
     res.status(201).json(populatedOrder);
   } catch (error) {
     console.error(error);
-    res.status(400).json({ message: error.message || 'Unable to create order' });
+    res.status(error.statusCode || 400).json({ message: error.message || 'Unable to create order' });
   }
 };
 
@@ -596,16 +625,14 @@ const addGuestOrderItems = async (req, res) => {
       return res.status(400).json({ message: shippingValidationError });
     }
 
-    const normalizedPaymentProvider =
-      paymentProvider === 'PayHere' && process.env.PAYHERE_MERCHANT_ID
-        ? 'PayHere'
-        : paymentProvider === 'Stripe' && isStripeConfigured()
-        ? 'Stripe'
-        : 'Manual';
-    const normalizedPaymentMethod = String(
-      paymentMethod || (normalizedPaymentProvider === 'Manual' ? 'Development Placeholder' : 'Card')
-    ).trim();
-    const requestedCurrency = currency || req.user?.preferredCurrency || '';
+    const paymentSelection = resolveOrderPayment({
+      paymentProvider,
+      paymentMethod,
+      shippingAddress: normalizedShippingAddress,
+    });
+    const normalizedPaymentProvider = paymentSelection.paymentProvider;
+    const normalizedPaymentMethod = paymentSelection.paymentMethod;
+    const requestedCurrency = currency || '';
     const paymentCurrency = resolvePaymentCurrency(requestedCurrency, normalizedPaymentProvider);
 
     const guestCustomer = buildGuestCustomer(normalizedShippingAddress);
@@ -627,7 +654,8 @@ const addGuestOrderItems = async (req, res) => {
       shippingAddress: normalizedShippingAddress,
       paymentMethod: normalizedPaymentMethod,
       paymentProvider: normalizedPaymentProvider,
-      paymentStatus: 'Payment Pending',
+      paymentStatus: paymentSelection.paymentStatus,
+      codStatus: paymentSelection.isCashOnDelivery ? 'Pending' : 'Not Applicable',
       currency: pricing.currency,
       exchangeRate: pricing.exchangeRate,
       couponCode: pricing.couponCode,
@@ -645,7 +673,9 @@ const addGuestOrderItems = async (req, res) => {
         createHistoryEntry({
           order: { orderStatus: 'Processing' },
           status: 'Processing',
-          note: 'Guest order created and awaiting payment confirmation.',
+          note: paymentSelection.isCashOnDelivery
+            ? 'Guest cash on delivery order created; payment will be collected on delivery.'
+            : 'Guest order created and awaiting payment confirmation.',
           user: { name: guestCustomer.name, email: guestCustomer.email },
         }),
       ],
@@ -682,7 +712,7 @@ const addGuestOrderItems = async (req, res) => {
     });
   } catch (error) {
     console.error('[orderController:addGuestOrderItems]', error);
-    res.status(400).json({ message: error.message || 'Unable to create guest order' });
+    res.status(error.statusCode || 400).json({ message: error.message || 'Unable to create guest order' });
   }
 };
 
@@ -813,6 +843,8 @@ const getOrders = async (req, res) => {
           shippingAddress: 1,
           paymentMethod: 1,
           paymentProvider: 1,
+          codStatus: 1,
+          codCollectedAt: 1,
           paymentIntentId: 1,
           paymentStatus: {
             $ifNull: ['$paymentStatus', { $cond: ['$isPaid', 'Paid', 'Unpaid'] }],
@@ -906,10 +938,6 @@ const markOrderAsPaid = async (req, res) => {
   const { paymentIntentId = '' } = req.body;
 
   try {
-    if (!isStripeConfigured()) {
-      return res.status(400).json({ message: 'Stripe payment is not configured for this environment' });
-    }
-
     const order = await Order.findById(req.params.id);
 
     if (!order) {
@@ -918,6 +946,16 @@ const markOrderAsPaid = async (req, res) => {
 
     if (!isOrderOwnerOrAdmin(order, req.user)) {
       return res.status(401).json({ message: 'Not authorized to pay for this order' });
+    }
+
+    if (isCashOnDeliveryOrder(order)) {
+      return res.status(409).json({
+        message: 'Cash on delivery payment must be collected by an authorized fulfillment user.',
+      });
+    }
+
+    if (!isStripeConfigured()) {
+      return res.status(400).json({ message: 'Stripe payment is not configured for this environment' });
     }
 
     if (order.isPaid) {
@@ -988,6 +1026,97 @@ const markOrderAsPaid = async (req, res) => {
   }
 };
 
+// @desc    Collect cash on delivery payment
+// @route   PUT /api/orders/:id/cod/collect
+// @access  Private/Admin
+const collectCashOnDelivery = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (!isCashOnDeliveryOrder(order)) {
+      return res.status(409).json({ message: 'This order is not a cash on delivery order.' });
+    }
+
+    if (order.isPaid || order.codStatus === 'Collected') {
+      return res.status(409).json({ message: 'Cash on delivery payment has already been collected.' });
+    }
+
+    if (order.orderStatus === 'Cancelled') {
+      return res.status(409).json({ message: 'Cancelled orders cannot receive cash on delivery payment.' });
+    }
+
+    if (!order.isDelivered && order.orderStatus !== 'Delivered') {
+      return res.status(409).json({
+        message: 'Mark the order as delivered before recording cash on delivery collection.',
+      });
+    }
+
+    const collectedAt = req.body?.collectedAt ? new Date(req.body.collectedAt) : new Date();
+    if (Number.isNaN(collectedAt.getTime())) {
+      return res.status(400).json({ message: 'Invalid cash collection date' });
+    }
+
+    const collectionNote = String(req.body?.collectionNote || '').trim().slice(0, 500);
+    order.isPaid = true;
+    order.paidAt = collectedAt;
+    order.paymentStatus = 'Paid';
+    order.codStatus = 'Collected';
+    order.codCollectedAt = collectedAt;
+    order.codCollectedBy = req.user._id;
+    order.codCollectionNote = collectionNote;
+    order.paymentResult = {
+      ...order.paymentResult,
+      status: 'Collected',
+      amountReceived: Number(order.totalPrice || 0),
+      currency: order.currency || 'LKR',
+      paymentMethodType: 'cash_on_delivery',
+      receiptEmail: order.shippingAddress?.email || '',
+      created: collectedAt,
+    };
+    await deductReservedInventory({ order, actor: req.user });
+    await commitPromotionsForOrder(order);
+    await awardOrderLoyaltyPoints(order, req.user);
+    appendStatusHistory(order, {
+      status: order.orderStatus,
+      note: `Cash on delivery payment collected by ${req.user.name || req.user.email || 'fulfillment staff'}.`,
+      user: req.user,
+    });
+
+    const updatedOrder = await order.save();
+    await syncVendorOrdersForOrder(updatedOrder);
+    await recordAuditLog(req, 'orders.cod.collect', 'Order', updatedOrder._id, {
+      amount: updatedOrder.totalPrice,
+      collectedAt,
+      collectionNote,
+    });
+    const populatedOrder = await Order.findById(updatedOrder._id).populate('user', 'name email phone');
+    const statusEmailSent = await maybeSendStatusEmail(populatedOrder);
+    if (statusEmailSent) {
+      await populatedOrder.save({ validateBeforeSave: false });
+    }
+    const createdOutbox = await createOrderOutboxEvent(populatedOrder, 'order.paid', { request: req });
+    publishOutboxInBackground(createdOutbox._id);
+    await notifyOrderEvent(populatedOrder, 'order.paid');
+    await emitWebhookEvent('order.paid', populatedOrder.toObject(), {
+      resourceType: 'Order',
+      resourceId: populatedOrder._id.toString(),
+    });
+
+    return res.json(populatedOrder);
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    console.error('[orderController:collectCashOnDelivery]', error);
+    return res.status(500).json({ message: 'Unable to record cash on delivery payment' });
+  }
+};
+
 // @desc    Update order status
 // @route   PUT /api/orders/:id/status
 // @access  Private/Admin
@@ -1027,6 +1156,9 @@ const updateOrderStatus = async (req, res) => {
       order.orderStatus = orderStatus;
 
       if (orderStatus === 'Cancelled') {
+        if (isCashOnDeliveryOrder(order)) {
+          order.codStatus = 'Cancelled';
+        }
         await releaseReservedInventory({
           order,
           actor: req.user,
@@ -1056,12 +1188,24 @@ const updateOrderStatus = async (req, res) => {
         return res.status(400).json({ message: 'Invalid payment status' });
       }
 
+      if (isCashOnDeliveryOrder(order) && ['Paid', 'Refunded'].includes(paymentStatus)) {
+        return res.status(409).json({
+          message: 'Cash on delivery payment must be collected through the COD collection action.',
+        });
+      }
+
       order.paymentStatus = paymentStatus;
     }
 
     if (isPaid !== undefined) {
       if (typeof isPaid !== 'boolean') {
         return res.status(400).json({ message: 'Invalid payment status value' });
+      }
+
+      if (isCashOnDeliveryOrder(order)) {
+        return res.status(409).json({
+          message: 'Cash on delivery payment must be collected through the COD collection action.',
+        });
       }
 
       order.isPaid = isPaid;
@@ -1239,6 +1383,8 @@ const trackOrder = async (req, res) => {
       paymentStatus: getNormalizedPaymentStatus(order.paymentStatus, order.isPaid),
       paymentMethod: order.paymentMethod || '',
       paymentProvider: order.paymentProvider || '',
+      codStatus: order.codStatus || 'Not Applicable',
+      codCollectedAt: order.codCollectedAt || null,
       refundedAmount: Number(order.refundedAmount || 0),
       refundStatus: order.refundStatus || 'Not Refunded',
       isPaid: order.isPaid,
@@ -1598,6 +1744,7 @@ export {
   addOrderItems,
   addGuestOrderItems,
   addShipmentUpdate,
+  collectCashOnDelivery,
   createCancellationRequest,
   getOrders,
   getOrderById,

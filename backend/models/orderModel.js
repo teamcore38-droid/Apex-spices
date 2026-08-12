@@ -21,6 +21,14 @@ const PAYMENT_STATUS_VALUES = [
   'Refunded',
 ];
 
+const COD_STATUS_VALUES = [
+  'Not Applicable',
+  'Pending',
+  'Collected',
+  'Failed',
+  'Cancelled',
+];
+
 const REFUND_STATUS_VALUES = [
   'Not Refunded',
   'Partially Refunded',
@@ -138,6 +146,25 @@ const orderSchema = mongoose.Schema(
       type: String,
       enum: PAYMENT_STATUS_VALUES,
       default: 'Payment Pending',
+    },
+    codStatus: {
+      type: String,
+      enum: COD_STATUS_VALUES,
+      default: 'Not Applicable',
+    },
+    codCollectedAt: {
+      type: Date,
+    },
+    codCollectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    codCollectionNote: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 500,
     },
     checkoutIntegrity: {
       clientReportedTotal: { type: Number, default: null },

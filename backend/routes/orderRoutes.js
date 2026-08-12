@@ -3,6 +3,7 @@ import {
   addOrderItems,
   addGuestOrderItems,
   addShipmentUpdate,
+  collectCashOnDelivery,
   createCancellationRequest,
   getOrders,
   getOrderById,
@@ -32,6 +33,9 @@ router.route('/shipping-rates').post(protectOptional, getOrderShippingRates);
 router.route('/:id/invoice').get(protect, getOrderInvoice);
 router.route('/:id/packing-slip').get(protect, requirePermission(PERMISSIONS.ORDERS_READ), getOrderPackingSlip);
 router.route('/:id/pay').put(protect, markOrderAsPaid);
+router
+  .route('/:id/cod/collect')
+  .put(protect, requirePermission(PERMISSIONS.ORDERS_WRITE), collectCashOnDelivery);
 router.route('/:id').get(protect, getOrderById);
 router.route('/:id/status').put(protect, requirePermission(PERMISSIONS.ORDERS_WRITE), updateOrderStatus);
 router.route('/:id/cancellation-requests').post(protectOptional, createCancellationRequest);
