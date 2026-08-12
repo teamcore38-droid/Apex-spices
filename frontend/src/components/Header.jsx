@@ -205,7 +205,7 @@ const Header = () => {
           </div>
         </Link>
 
-        <nav className={`hidden min-w-0 flex-1 items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] lg:flex xl:gap-5 xl:text-xs xl:tracking-[0.14em] 2xl:gap-7 2xl:text-sm 2xl:tracking-[0.2em] ${NAV_FONT_CLASS}`}>
+        <nav className={`hidden min-w-0 flex-1 items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-[0.02em] lg:flex xl:gap-5 xl:text-xs xl:tracking-[0.14em] 2xl:gap-7 2xl:text-sm 2xl:tracking-[0.2em] ${NAV_FONT_CLASS}`}>
           {PRIMARY_NAV_LINKS.map(([label, path]) => (
             <Link
               key={path}
@@ -222,7 +222,7 @@ const Header = () => {
           {canAccessAdmin && (
             <Link
               to="/admin"
-              className={`hidden shrink-0 whitespace-nowrap border-b-2 pb-1 transition-colors 2xl:inline-block ${
+              className={`shrink-0 whitespace-nowrap border-b-2 pb-1 transition-colors ${
                 isActiveLink('/admin')
                   ? 'border-brand-accent text-brand-accent'
                   : 'border-transparent hover:text-brand-accent'
@@ -233,7 +233,7 @@ const Header = () => {
           )}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-2 xl:gap-3 2xl:gap-5">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-4 lg:gap-1 xl:gap-3 2xl:gap-5">
           <CurrencySelect
             currency={currency}
             changeCurrency={changeCurrency}
@@ -257,7 +257,7 @@ const Header = () => {
               <button
                 type="button"
                 onClick={() => setAccountMenuOpen((open) => !open)}
-                className={`inline-flex max-w-[150px] items-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition-colors duration-200 hover:border-brand-accent hover:text-brand-accent xl:max-w-[180px] xl:px-4 xl:text-sm xl:tracking-[0.16em] ${NAV_FONT_CLASS}`}
+                className={`inline-flex max-w-[120px] items-center rounded-full border border-white/10 bg-white/5 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.06em] transition-colors duration-200 hover:border-brand-accent hover:text-brand-accent xl:max-w-[180px] xl:px-4 xl:text-sm xl:tracking-[0.16em] ${NAV_FONT_CLASS}`}
               >
                 <User size={18} className="mr-1.5 shrink-0 text-brand-accent xl:mr-2" />
                 <span className="truncate">{userInfo.name?.split(' ')[0] || 'Account'}</span>
