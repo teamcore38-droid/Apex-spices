@@ -357,7 +357,7 @@ const HomePage = () => {
       </ScrollRevealSection>
 
       <ScrollRevealSection id="featured-collection" className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] py-10 md:py-12">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-10 text-center md:mb-12" data-reveal-heading>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Curated Signature Picks</p>
             <h2 className="mt-3 font-serif text-3xl font-bold text-brand-dark md:text-4xl">Featured Collection</h2>
@@ -368,7 +368,7 @@ const HomePage = () => {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:px-6">
               {[...Array(3)].map((_, index) => (
                 <div key={index} className="h-[460px] animate-pulse rounded-[28px] border border-[#dce4ef] bg-[#eff3f9]" />
               ))}
@@ -395,7 +395,9 @@ const HomePage = () => {
               </Link>
             </div>
           ) : (
-            <FeaturedProductCarousel products={featuredProducts} revealCards />
+            <div className="lg:px-6">
+              <FeaturedProductCarousel products={featuredProducts} revealCards />
+            </div>
           )}
 
           {!loading && !error && featuredProducts.length > 0 && (
@@ -413,7 +415,7 @@ const HomePage = () => {
 
       {!loading && bestSellers.length > 0 && (
         <ScrollRevealSection id="best-sellers" className="bg-[#edf1f8] py-20">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto max-w-7xl px-4">
             <div className="mb-12 flex flex-wrap items-end justify-between gap-4" data-reveal-heading>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Customer Favorites</p>
@@ -427,7 +429,7 @@ const HomePage = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 lg:px-6">
               {bestSellers.map((product, index) => (
                 <div key={product._id} className="h-full" data-reveal-card style={{ '--reveal-index': index }}>
                   <Product product={product} />

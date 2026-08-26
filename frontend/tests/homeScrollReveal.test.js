@@ -35,3 +35,15 @@ test('reveal behavior is observed once and respects reduced motion', () => {
   assert.match(cssSource, /var\(--reveal-index, 0\) \* 100ms/);
   assert.match(cssSource, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test('desktop featured and best-seller cards match the shop card frame', () => {
+  assert.match(
+    homeSource,
+    /id="featured-collection"[\s\S]*?container mx-auto max-w-7xl px-4[\s\S]*?className="lg:px-6"[\s\S]*?<FeaturedProductCarousel/
+  );
+  assert.match(
+    homeSource,
+    /id="best-sellers"[\s\S]*?container mx-auto max-w-7xl px-4[\s\S]*?grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 lg:px-6/
+  );
+  assert.doesNotMatch(homeSource, /id="best-sellers"[\s\S]*?xl:grid-cols-4/);
+});
