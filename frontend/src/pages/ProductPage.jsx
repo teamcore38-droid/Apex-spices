@@ -493,9 +493,9 @@ const ProductPage = () => {
   const whatsappInquiryUrl = `https://wa.me/${COMPANY_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappInquiryMessage)}`;
 
   return (
-    <div className="bg-[#f7f9fc] pb-8 lg:pb-10">
-      <div className="container mx-auto max-w-7xl px-4 pb-8 pt-4 sm:pt-5 lg:pb-10 lg:pt-6">
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-600">
+    <div className="max-w-full overflow-x-clip bg-[#f7f9fc] pb-8 lg:pb-10">
+      <div className="container mx-auto w-full min-w-0 max-w-7xl px-3 pb-8 pt-4 sm:px-4 sm:pt-5 lg:pb-10 lg:pt-6">
+        <nav aria-label="Breadcrumb" className="flex min-w-0 max-w-full flex-wrap items-center gap-2 overflow-hidden text-sm font-semibold text-gray-600">
           <Link to="/" className="transition-colors hover:text-brand-primary">Home</Link>
           <span aria-hidden="true">/</span>
           <Link to="/products" className="inline-flex items-center transition-colors hover:text-brand-primary">
@@ -509,12 +509,12 @@ const ProductPage = () => {
             {product.category}
           </Link>
           <span aria-hidden="true">/</span>
-          <span className="max-w-full truncate text-brand-dark" aria-current="page">{product.name}</span>
+          <span className="min-w-0 flex-1 truncate text-brand-dark" aria-current="page">{product.name}</span>
         </nav>
 
-        <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] lg:items-start xl:gap-8">
-          <section className="space-y-4">
-            <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_24px_70px_rgba(11,31,58,0.10)]">
+        <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] lg:items-start xl:gap-8">
+          <section className="min-w-0 max-w-full space-y-4">
+            <div className="max-w-full overflow-hidden rounded-[24px] bg-white shadow-[0_24px_70px_rgba(11,31,58,0.10)] sm:rounded-[32px]">
               <img
                 src={getOptimizedImageUrl(selectedImage || product.image, 1200)}
                 srcSet={getCloudinarySrcSet(selectedImage || product.image, [600, 900, 1200, 1600])}
@@ -530,14 +530,14 @@ const ProductPage = () => {
                   event.currentTarget.src = selectedImage || product.image;
                   setImageReady(true);
                 }}
-                className={`h-[420px] w-full object-cover transition duration-300 ease-out sm:h-[500px] lg:h-[520px] ${
+                className={`aspect-[4/3] h-auto w-full max-w-full object-contain transition duration-300 ease-out ${
                   imageReady ? 'scale-100 opacity-100' : 'scale-[1.01] opacity-0'
                 }`}
               />
             </div>
 
             {productImages.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
+              <div className="grid max-w-full grid-cols-4 gap-2 sm:gap-3">
                 {productImages.map((image, index) => (
                   <button
                     key={image}
@@ -548,7 +548,7 @@ const ProductPage = () => {
                         setSelectedImage(image);
                       }
                     }}
-                    className={`w-24 flex-shrink-0 overflow-hidden rounded-[20px] border-2 transition sm:w-full ${
+                    className={`w-full min-w-0 overflow-hidden rounded-[16px] border-2 transition sm:rounded-[20px] ${
                       selectedImage === image ? 'border-brand-primary' : 'border-transparent'
                     }`}
                   >
@@ -559,7 +559,7 @@ const ProductPage = () => {
                       height="224"
                       loading="lazy"
                       decoding="async"
-                      className="h-24 w-full object-cover sm:h-28"
+                      className="aspect-[4/3] h-auto w-full object-contain sm:h-28"
                     />
                   </button>
                 ))}
@@ -567,11 +567,11 @@ const ProductPage = () => {
             )}
           </section>
 
-          <section className="rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.10)]">
-            <div className="flex flex-wrap items-center gap-3">
+          <section className="min-w-0 max-w-full rounded-[24px] bg-white p-4 shadow-[0_24px_70px_rgba(11,31,58,0.10)] sm:rounded-[32px] sm:p-6">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
               <Link
                 to={`/category/${slugifyCategoryName(product.category)}`}
-                className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent transition-colors duration-200 hover:text-brand-primary"
+                className="min-w-0 break-words text-xs font-bold uppercase tracking-[0.2em] text-brand-accent transition-colors duration-200 hover:text-brand-primary sm:tracking-[0.25em]"
               >
                 {product.category}
               </Link>
@@ -587,7 +587,7 @@ const ProductPage = () => {
               )}
             </div>
 
-            <h1 className="mt-3 font-serif text-4xl font-bold text-brand-dark sm:text-5xl">{product.name}</h1>
+            <h1 className="mt-3 break-words font-serif text-3xl font-bold text-brand-dark sm:text-5xl">{product.name}</h1>
 
             <button
               type="button"
@@ -597,8 +597,8 @@ const ProductPage = () => {
               Share Product
             </button>
 
-            <div className="mt-4 flex flex-wrap items-center gap-4">
-              <div className="flex items-center text-brand-accent">
+            <div className="mt-4 flex min-w-0 flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex min-w-0 flex-wrap items-center text-brand-accent">
                 {[...Array(5)].map((_, index) => (
                   <Star
                     key={index}
@@ -616,13 +616,13 @@ const ProductPage = () => {
               </span>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-end gap-4">
+            <div className="mt-5 flex min-w-0 flex-wrap items-end gap-3 sm:gap-4">
               {product.compareAtPrice > product.price && (
-                <p className="text-xl text-gray-400 line-through">
+                <p className="whitespace-nowrap text-lg text-gray-400 line-through sm:text-xl">
                   {formatPrice(product.compareAtPrice)}
                 </p>
               )}
-              <p className="font-serif text-4xl font-bold text-brand-dark">
+              <p className="min-w-0 break-all font-serif text-3xl font-bold text-brand-dark sm:text-4xl">
                 {formatPrice(effectivePrice)}
               </p>
               {product.weight && (
@@ -637,7 +637,7 @@ const ProductPage = () => {
                 type="button"
                 onClick={() => setDetailsOpen((current) => !current)}
                 aria-expanded={detailsOpen}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors duration-200 hover:bg-[#eef2f8]"
+                className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-4 text-left transition-colors duration-200 hover:bg-[#eef2f8] sm:gap-4 sm:px-5"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Product Details</p>
@@ -655,12 +655,12 @@ const ProductPage = () => {
 
               <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${detailsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                 <div className="overflow-hidden">
-                  <div className="border-t border-white px-5 pb-5 pt-4">
-                    <p className="text-base leading-8 text-gray-700">
+                  <div className="border-t border-white px-4 pb-5 pt-4 sm:px-5">
+                    <p className="break-words text-base leading-8 text-gray-700">
                       {product.description}
                     </p>
 
-                    <div className="mt-5 grid gap-4 rounded-[24px] bg-white/70 p-5 sm:grid-cols-2">
+                    <div className="mt-5 grid min-w-0 gap-4 rounded-[20px] bg-white/70 p-4 sm:grid-cols-2 sm:rounded-[24px] sm:p-5">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-accent">Origin</p>
                         <p className="mt-2 text-sm leading-7 text-gray-700">{product.origin || 'Premium source details coming soon.'}</p>
@@ -675,18 +675,18 @@ const ProductPage = () => {
               </div>
             </div>
 
-            <div className="mt-6 rounded-[28px] border border-[#e1e8f2] p-5">
+            <div className="mt-6 min-w-0 max-w-full rounded-[24px] border border-[#e1e8f2] p-3 sm:rounded-[28px] sm:p-5">
               {isCustomQtyProduct ? (
-                <div className="mb-6 rounded-2xl bg-[#f7f9fc] p-4 border border-gray-200/80">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="mb-6 min-w-0 max-w-full rounded-2xl border border-gray-200/80 bg-[#f7f9fc] p-3 sm:p-4">
+                  <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-dark">Select Required Quantity</p>
-                    <p className="text-xs font-semibold text-gray-500">
+                    <p className="max-w-full break-words text-xs font-semibold text-gray-500">
                       Rate: <span className="font-bold text-brand-primary">{formatPrice(customUnitPrice)}</span> / {customUnit}
                     </p>
                   </div>
 
                   <div className="mt-3 space-y-3">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid min-w-0 grid-cols-2 gap-2 min-[390px]:grid-cols-4">
                       {customQtyPresets.map((preset) => (
                         <button
                           key={preset.value}
@@ -695,7 +695,7 @@ const ProductPage = () => {
                             setCustomQtyInput(String(preset.value));
                             setValidationError('');
                           }}
-                          className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
+                          className={`min-w-0 rounded-xl border px-2 py-2 text-xs font-bold transition sm:px-3.5 ${
                             Number(customQtyInput) === preset.value
                               ? 'border-brand-primary bg-brand-primary text-white shadow-sm'
                               : 'border-gray-200 bg-white text-gray-700 hover:border-brand-primary/40'
@@ -706,8 +706,8 @@ const ProductPage = () => {
                       ))}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex-1">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="relative min-w-0 flex-1">
                         <input
                           type="number"
                           step="any"
@@ -719,7 +719,7 @@ const ProductPage = () => {
                             setValidationError('');
                           }}
                           placeholder={`Enter quantity in ${customUnit}`}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-brand-dark outline-none focus:border-brand-primary"
+                          className="min-w-0 w-full rounded-xl border border-gray-200 bg-white py-3 pl-4 pr-12 text-sm font-bold text-brand-dark outline-none focus:border-brand-primary"
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-gray-400">
                           {customUnit}
@@ -732,7 +732,7 @@ const ProductPage = () => {
                     </p>
 
                     {parsedCustomQty > 0 && !Number.isNaN(parsedCustomQty) && (
-                      <div className="mt-2 rounded-xl bg-white p-3 border border-brand-primary/20 flex items-center justify-between text-sm">
+                      <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-primary/20 bg-white p-3 text-sm">
                         <span className="text-gray-600">Calculated Total Price:</span>
                         <span className="font-bold text-brand-dark text-base">{formatPrice(computedCustomTotalPrice)}</span>
                       </div>
@@ -780,7 +780,7 @@ const ProductPage = () => {
                 </div>
               )}
 
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-start lg:gap-4">
+              <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:items-start lg:gap-4">
                 {!isCustomQtyProduct && (
                   <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:self-end">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Quantity</p>
@@ -809,7 +809,7 @@ const ProductPage = () => {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={effectiveStock === 0}
-                  className={`order-2 inline-flex h-14 w-full items-center justify-center rounded-xl px-6 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 lg:order-none lg:col-start-1 lg:row-start-1 lg:self-end ${
+                  className={`order-2 inline-flex h-14 w-full min-w-0 items-center justify-center rounded-xl px-4 text-sm font-bold uppercase tracking-[0.14em] transition-colors duration-200 sm:px-6 sm:tracking-[0.2em] lg:order-none lg:col-start-1 lg:row-start-1 lg:self-end ${
                     effectiveStock === 0
                       ? 'cursor-not-allowed bg-gray-200 text-gray-500'
                       : 'bg-brand-primary text-white hover:bg-brand-dark'
@@ -828,9 +828,9 @@ const ProductPage = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_product_inquiry', { productId: product._id, name: product.name })}
-                    className="inline-flex h-14 w-full items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-5 text-xs font-bold uppercase tracking-[0.12em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:text-sm lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
+                    className="inline-flex h-14 w-full min-w-0 items-center justify-center rounded-xl border border-[#1fae5b]/30 bg-[#e9f8ef] px-3 text-center text-[11px] font-bold uppercase tracking-[0.08em] text-[#116b3a] transition-colors duration-200 hover:border-[#116b3a] hover:bg-[#116b3a] hover:text-white sm:px-5 sm:text-sm sm:tracking-[0.12em] lg:px-3 lg:text-[10px] xl:px-4 xl:text-xs"
                   >
-                    <MessageSquareText size={16} className="mr-2" />
+                    <MessageSquareText size={16} className="mr-2 shrink-0" />
                     WhatsApp Inquiry
                   </a>
                   <p className="mt-3 text-center text-xs font-semibold leading-5 text-[#116b3a] lg:hidden">
@@ -842,7 +842,7 @@ const ProductPage = () => {
                   type="button"
                   onClick={handleBuyNow}
                   disabled={effectiveStock === 0}
-                  className={`order-4 inline-flex h-14 w-full items-center justify-center rounded-xl px-6 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-200 lg:order-none lg:col-span-2 lg:row-start-3 ${
+                  className={`order-4 inline-flex h-14 w-full min-w-0 items-center justify-center rounded-xl px-4 text-sm font-bold uppercase tracking-[0.14em] transition-colors duration-200 sm:px-6 sm:tracking-[0.2em] lg:order-none lg:col-span-2 lg:row-start-3 ${
                     effectiveStock === 0
                       ? 'cursor-not-allowed bg-gray-200 text-gray-500'
                       : 'bg-[#1fae5b] text-white hover:bg-[#116b3a]'
@@ -854,7 +854,7 @@ const ProductPage = () => {
 
                 <Link
                   to="/products"
-                  className="order-5 inline-flex h-14 w-full items-center justify-center rounded-xl border border-brand-primary/20 px-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white lg:order-none lg:col-span-2 lg:row-start-4 lg:px-4"
+                  className="order-5 inline-flex h-14 w-full min-w-0 items-center justify-center rounded-xl border border-brand-primary/20 px-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white sm:px-6 sm:text-sm sm:tracking-[0.18em] lg:order-none lg:col-span-2 lg:row-start-4 lg:px-4"
                 >
                   Continue Shopping
                 </Link>
@@ -869,7 +869,7 @@ const ProductPage = () => {
           </section>
         </div>
 
-        <section className="mt-6 rounded-[32px] bg-white p-6 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-8 sm:p-7">
+        <section className="mt-6 min-w-0 max-w-full rounded-[24px] bg-white p-4 shadow-[0_24px_70px_rgba(11,31,58,0.08)] sm:mt-8 sm:rounded-[32px] sm:p-7">
           <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-accent">Reviews</p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-brand-dark">Customer feedback</h2>

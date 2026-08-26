@@ -313,13 +313,13 @@ const ProductsPage = () => {
   );
 
   return (
-    <div className="relative overflow-hidden bg-[#f4f7fb] pb-8 pt-3 sm:pb-10 sm:pt-4">
+    <div className="relative max-w-full overflow-x-clip bg-[#f4f7fb] pb-8 pt-3 sm:pb-10 sm:pt-4">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#e2e9f3] to-transparent opacity-70" />
       <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-multiply" />
 
-      <div className="relative z-10 container mx-auto max-w-7xl px-4">
-        <div className="rounded-[30px] bg-white p-4 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:p-6">
-          <h1 className="mb-4 font-serif text-2xl font-bold text-brand-dark sm:text-3xl">
+      <div className="relative z-10 container mx-auto w-full min-w-0 max-w-7xl px-3 sm:px-4">
+        <div className="min-w-0 max-w-full rounded-[24px] bg-white p-4 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:rounded-[30px] sm:p-6">
+          <h1 className="mb-4 break-words font-serif text-2xl font-bold text-brand-dark sm:text-3xl">
             Shop Premium Sri Lankan Spices
           </h1>
           <div className="hidden flex-col gap-6 lg:flex lg:flex-row lg:items-end lg:justify-between">
@@ -358,11 +358,11 @@ const ProductsPage = () => {
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen((current) => !current)}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-bold uppercase tracking-[0.08em] transition sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em] ${
                   mobileSearchOpen || filters.keyword
                     ? 'border-brand-primary bg-brand-primary text-white'
                     : 'border-gray-200 bg-[#f7f9fc] text-brand-dark'
@@ -373,7 +373,7 @@ const ProductsPage = () => {
               <button
                 type="button"
                 onClick={openMobileFilters}
-                className={`relative inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                className={`relative inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-bold uppercase tracking-[0.08em] transition sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em] ${
                   activeFilterCount
                     ? 'border-brand-primary bg-brand-primary text-white'
                     : 'border-gray-200 bg-[#f7f9fc] text-brand-dark'
@@ -389,7 +389,7 @@ const ProductsPage = () => {
               <button
                 type="button"
                 onClick={() => setMobileSortOpen((current) => !current)}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-bold uppercase tracking-[0.08em] transition sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em] ${
                   mobileSortOpen || filters.sort
                     ? 'border-brand-primary bg-brand-primary text-white'
                     : 'border-gray-200 bg-[#f7f9fc] text-brand-dark'
@@ -450,7 +450,7 @@ const ProductsPage = () => {
               {error}
             </div>
           ) : loading ? (
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-3">
+            <div className="mt-6 grid min-w-0 grid-cols-2 gap-3 sm:mt-8 sm:gap-6 lg:grid-cols-3">
               {[...Array(PRODUCT_PAGE_SIZE)].map((_, index) => (
                 <div key={index} className="h-[390px] animate-pulse rounded-[18px] bg-[#f4f7fb] sm:h-[470px] sm:rounded-[28px]" />
               ))}
@@ -479,7 +479,7 @@ const ProductsPage = () => {
             </div>
           ) : (
             <>
-              <div className="mt-6 grid grid-cols-2 gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-3">
+              <div className="mt-6 grid min-w-0 grid-cols-2 gap-3 sm:mt-8 sm:gap-6 lg:grid-cols-3">
                 {products.map((product) => (
                   <Product key={product._id} product={product} compactOnMobile />
                 ))}
