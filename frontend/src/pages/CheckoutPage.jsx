@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
-  RotateCcw,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -185,12 +184,12 @@ const CheckoutInner = ({ payhereEnabled }) => {
   const [success, setSuccess] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
   const [pendingOrderNumber, setPendingOrderNumber] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [giftCardCode, setGiftCardCode] = useState('');
+  const [couponCode] = useState('');
+  const [giftCardCode] = useState('');
   const [paymentSelection, setPaymentSelection] = useState('PayHere');
   const [shippingRateId, setShippingRateId] = useState('');
   const [quote, setQuote] = useState(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [, setQuoteLoading] = useState(false);
   const [isPaymentInfoExpanded, setIsPaymentInfoExpanded] = useState(true);
   const guestCheckoutEnabled = true;
 
@@ -953,92 +952,6 @@ const CheckoutInner = ({ payhereEnabled }) => {
                   </div>
                 </div>
               )}
-            </section>
-
-            <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand-primary">
-                  <RotateCcw size={20} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-accent">Pricing Options</p>
-                  <h2 className="font-serif text-2xl font-bold text-brand-dark">Promos, currency, and shipping</h2>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-brand-dark">Currency</label>
-                  <div className="rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm font-semibold text-brand-dark">
-                    {displayCurrency}
-                    {checkoutCurrency !== currency && (
-                      <span className="ml-2 text-xs font-medium text-gray-500">PayHere checkout currency</span>
-                    )}
-                    {activeQuote?.currencyFallback && (
-                      <span className="ml-2 text-xs font-medium text-gray-500">fallback applied</span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-brand-dark">Shipping Service</label>
-                  <CustomSelect
-                    value={shippingRateId}
-                    onChange={(nextValue) => {
-                      setShippingRateId(nextValue);
-                      setQuote(null);
-                    }}
-                    options={[
-                      { value: '', label: 'Best available rate' },
-                      ...(activeQuote?.shippingOptions || []).map((option) => ({
-                        value: option.id,
-                        label: `${option.carrier} - ${option.service} (${formatCurrency(option.price, activeQuote.currency)})`,
-                      })),
-                    ]}
-                  />
-                </div>
-                {isInternationalDelivery && (
-                  <div className="md:col-span-2 rounded-2xl border border-brand-accent/25 bg-[#fff8e8] px-4 py-3 text-sm leading-6 text-brand-dark">
-                    <p className="font-serif text-lg font-bold">International Shipping Notice</p>
-                    <p className="mt-1 text-gray-700">
-                      Your delivery address is outside Sri Lanka. An international shipping charge will be applied based on your destination country.
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-brand-dark">Coupon Code</label>
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(event) => {
-                      setCouponCode(event.target.value.toUpperCase());
-                      setQuote(null);
-                    }}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-brand-dark">Gift Card Code</label>
-                  <input
-                    type="text"
-                    value={giftCardCode}
-                    onChange={(event) => {
-                      setGiftCardCode(event.target.value.toUpperCase());
-                      setQuote(null);
-                    }}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f9fc] px-4 py-3 text-sm text-brand-dark outline-none transition focus:border-brand-accent"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => requestQuote(form)}
-                disabled={quoteLoading}
-                className="mt-5 inline-flex items-center rounded-xl border border-brand-primary/20 px-5 py-3 text-sm font-bold uppercase tracking-[0.16em] text-brand-primary transition-colors duration-200 hover:bg-brand-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {quoteLoading && <Loader2 size={16} className="mr-2 animate-spin" />}
-                Refresh Pricing
-              </button>
             </section>
 
             <section className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.08)] sm:p-8">
