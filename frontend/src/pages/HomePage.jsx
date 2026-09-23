@@ -356,7 +356,7 @@ const HomePage = () => {
         </div>
       </ScrollRevealSection>
 
-      <ScrollRevealSection id="featured-collection" className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] py-10 md:py-12">
+      <ScrollRevealSection id="featured-collection" className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] pt-10 pb-4 md:pt-12 md:pb-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-10 text-center md:mb-12" data-reveal-heading>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Curated Signature Picks</p>
@@ -401,7 +401,7 @@ const HomePage = () => {
           )}
 
           {!loading && !error && featuredProducts.length > 0 && (
-            <div className="mt-10 text-center">
+            <div className="mt-6 text-center">
               <Link
                 to="/products"
                 className="inline-flex items-center rounded-md border border-brand-primary px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
@@ -414,9 +414,9 @@ const HomePage = () => {
       </ScrollRevealSection>
 
       {!loading && bestSellers.length > 0 && (
-        <ScrollRevealSection id="best-sellers" className="bg-[#edf1f8] py-20">
+        <ScrollRevealSection id="best-sellers" className="bg-[#edf1f8] pt-2 pb-12 sm:pt-4 sm:pb-16 md:pt-4 md:pb-20">
           <div className="container mx-auto max-w-7xl px-4">
-            <div className="mb-12 flex flex-wrap items-end justify-between gap-4" data-reveal-heading>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8" data-reveal-heading>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Customer Favorites</p>
                 <h2 className="mt-3 font-serif text-3xl font-bold text-brand-dark md:text-4xl">Best Sellers</h2>
