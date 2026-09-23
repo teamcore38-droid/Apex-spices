@@ -174,8 +174,8 @@ const CategoryPage = () => {
 
   return (
     <div className="bg-[#f4f7fb] pb-8 sm:pb-10">
-      <div className="container mx-auto max-w-7xl px-4 pt-3 sm:pt-4 lg:pt-5">
-        <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(11,31,58,0.06)]">
+      <div className="container mx-auto w-full min-w-0 max-w-7xl px-3 sm:px-4 pt-3 sm:pt-4 lg:pt-5">
+        <div className="min-w-0 max-w-full rounded-[24px] bg-white p-4 shadow-[0_18px_40px_rgba(11,31,58,0.06)] sm:rounded-[28px] sm:p-6">
           <nav aria-label="Breadcrumb" className="mb-5 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary">
             <Link to="/" className="transition-colors hover:text-brand-dark">Home</Link>
             <span aria-hidden="true">/</span>
@@ -247,9 +247,9 @@ const CategoryPage = () => {
             )}
 
             {loadingProducts ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {[...Array(4)].map((_, index) => (
-                  <div key={index} className="h-[420px] animate-pulse rounded-[28px] bg-[#f4f7fb]" />
+              <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
+                {[...Array(6)].map((_, index) => (
+                  <div key={index} className="h-64 sm:h-[420px] animate-pulse rounded-[18px] sm:rounded-[28px] bg-[#f4f7fb]" />
                 ))}
               </div>
             ) : products.length === 0 ? (
@@ -280,9 +280,9 @@ const CategoryPage = () => {
               </div>
             ) : (
               <>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
                   {products.map((product) => (
-                    <Product key={product._id} product={product} />
+                    <Product key={product._id} product={product} compactOnMobile />
                   ))}
                 </div>
 

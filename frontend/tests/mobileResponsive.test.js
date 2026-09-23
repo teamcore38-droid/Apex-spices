@@ -30,3 +30,12 @@ test('product detail keeps media, controls, and nested cards inside narrow scree
   assert.match(source, /relative min-w-0 flex-1/);
   assert.match(source, /w-full min-w-0 items-center justify-center/);
 });
+
+test('category page matches shop page grid and compact mobile card presentation', async () => {
+  const source = await readSource('../src/pages/CategoryPage.jsx');
+
+  assert.match(source, /grid min-w-0 grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3/);
+  assert.match(source, /<Product key=\{product\._id\} product=\{product\} compactOnMobile \/>/);
+  assert.doesNotMatch(source, /xl:grid-cols-4/);
+});
+
