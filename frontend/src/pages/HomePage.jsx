@@ -280,10 +280,10 @@ const HomePage = () => {
         </div>
       </div>
 
-      <ScrollRevealSection id="shop-by-category" className="bg-[#fcfaf7] py-12 md:py-14">
+      <ScrollRevealSection id="shop-by-category" className="bg-[#fcfaf7] pt-5 pb-5 md:pt-7 md:pb-7">
         <div className="container mx-auto px-4">
-          <div className="mb-10 text-center md:mb-14" data-reveal-heading>
-            <h2 className="mb-4 font-serif text-3xl font-bold text-brand-dark md:text-5xl">Shop by Category</h2>
+          <div className="mb-5 text-center md:mb-7" data-reveal-heading>
+            <h2 className="mb-3 font-serif text-3xl font-bold text-brand-dark md:mb-4 md:text-5xl">Shop by Category</h2>
             <div className="mx-auto h-1 w-24 bg-brand-accent"></div>
           </div>
 
@@ -356,7 +356,7 @@ const HomePage = () => {
         </div>
       </ScrollRevealSection>
 
-      <ScrollRevealSection id="featured-collection" className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] pt-10 pb-4 md:pt-12 md:pb-6">
+      <ScrollRevealSection id="featured-collection" className="bg-[radial-gradient(circle_at_top,_rgba(197,168,128,0.12),_transparent_58%),#fcfaf7] pt-5 pb-4 md:pt-7 md:pb-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-10 text-center md:mb-12" data-reveal-heading>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-accent">Curated Signature Picks</p>
